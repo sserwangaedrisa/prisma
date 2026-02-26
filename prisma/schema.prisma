@@ -1,0 +1,135 @@
+generator client {
+  provider = "prisma-client"
+  output   = "./generated"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String        @id @default(uuid())
+  email         String        @unique
+  name          String
+  createdAt     DateTime      @default(now())
+  isActive      Boolean       @default(true)
+  password      String
+  phone         String?
+  role          Role
+  updatedAt     DateTime      @updatedAt
+  activityLogs  ActivityLog[]
+  payments      Payment[]
+  foremanSites  Site[]        @relation("ForemanSites")
+  ownedSites    Site[]        @relation("OwnerSites")
+  assignedSites SiteWorker[]
+  workerRecords WorkEntry[]
+}
+
+model Site {
+  id          String       @id @default(uuid())
+  name        String
+  location    String
+  description String?
+  ownerId     String
+  foremanId   String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  monthCloses MonthClose[]
+  payments    Payment[]
+  foreman     User?        @relation("ForemanSites", fields: [foremanId], references: [id])
+  owner       User         @relation("OwnerSites", fields: [ownerId], references: [id])
+  workers     SiteWorker[]
+  workEntries WorkEntry[]
+}
+
+model SiteWorker {
+  id         String   @id @default(uuid())
+  siteId     String
+  workerId   String
+  assignedAt DateTime @default(now())
+  site       Site     @relation(fields: [siteId], references: [id])
+  worker     User     @relation(fields: [workerId], references: [id])
+
+  @@unique([siteId, workerId])
+}
+
+model WorkEntry {
+  id        String   @id @default(uuid())
+  workerId  String
+  siteId    String
+  date      DateTime
+  hours     Float
+  overtime  Float    @default(0)
+  notes     String?
+  createdAt DateTime @default(now())
+  site      Site     @relation(fields: [siteId], references: [id])
+  worker    User     @relation(fields: [workerId], references: [id])
+}
+
+model MonthClose {
+  id        String      @id @default(uuid())
+  siteId    String
+  month     Int
+  year      Int
+  status    MonthStatus @default(OPEN)
+  lockedAt  DateTime?
+  createdAt DateTime    @default(now())
+  site      Site        @relation(fields: [siteId], references: [id])
+
+  @@unique([siteId, month, year])
+}
+
+model Payment {
+  id          String        @id @default(uuid())
+  workerId    String
+  siteId      String
+  month       Int
+  year        Int
+  totalHours  Float
+  overtime    Float
+  baseAmount  Float
+  overtimePay Float
+  totalAmount Float
+  status      PaymentStatus @default(PENDING)
+  approvedAt  DateTime?
+  paidAt      DateTime?
+  createdAt   DateTime      @default(now())
+  site        Site          @relation(fields: [siteId], references: [id])
+  worker      User          @relation(fields: [workerId], references: [id])
+}
+
+model Settings {
+  id             String   @id @default(uuid())
+  overtimeRate   Float    @default(1.5)
+  maxDailyHours  Float    @default(8)
+  baseHourlyRate Float    @default(20)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model ActivityLog {
+  id        String   @id @default(uuid())
+  userId    String
+  action    String
+  entity    String
+  entityId  String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+enum Role {
+  OWNER
+  FOREMAN
+  WORKER
+}
+
+enum PaymentStatus {
+  PENDING
+  APPROVED
+  PAID
+}
+
+enum MonthStatus {
+  OPEN
+  LOCKED
+}
