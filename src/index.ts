@@ -87,6 +87,8 @@ app.use((error: any, _req: Request, res: Response, _next: NextFunction) => {
 
 (async () => {
   try {
+    const sites = await prisma.site.findMany()
+    console.log('sites: ', sites)
     await prisma.$connect();
     console.log("✅ PostgreSQL connected successfully");
 

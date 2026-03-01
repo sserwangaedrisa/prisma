@@ -3,7 +3,8 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "dev": "tsx src/index.ts"
+    "start": "nodemon src/index.ts",
+    "dev": "tsx watch src/index.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.1.0",
@@ -32,6 +33,7 @@
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",
     "prisma": "^7.1.0",
+    "ts-node": "^10.9.2",
     "tsx": "^4.19.4",
     "typescript": "^5.8.3"
   }

@@ -1051,10 +1051,10 @@ export const UserScalarFieldEnum = {
   password: 'password',
   phone: 'phone',
   role: 'role',
+  updatedAt: 'updatedAt',
   status: 'status',
   verificationCode: 'verificationCode',
-  verificationExpiry: 'verificationExpiry',
-  updatedAt: 'updatedAt'
+  verificationExpiry: 'verificationExpiry'
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
