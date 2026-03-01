@@ -1,40 +1,101 @@
-import 'dotenv/config'
-import { PrismaClient } from '../prisma/generated/client'
-import { PrismaPg } from '@prisma/adapter-pg'
+import "dotenv/config";
+import { PrismaClient } from "../prisma/generated/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+import express, {
+  type Application,
+  type Request,
+  type Response,
+  type NextFunction,
+} from "express";
+import morgan from "morgan";
+import cors from "cors";
+import swaggerUi from "swagger-ui-express";
+import swaggerJsDocs from "swagger-jsdoc";
+import dotenv from "dotenv";
+import http from "http";
+import path from "path";
+import { fileURLToPath } from "url";
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = path.dirname(__filename);
+import userRoute from "./routes/user.js";
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+const prisma = new PrismaClient({ adapter });
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL })
-const prisma = new PrismaClient({ adapter })
+dotenv.config();
 
-async function main() {
-  // Create a user with a post
-  // const user = await prisma.user.create({
-  //   data: {
-  //     email: `alice${Date.now()}@prisma.io`,
-  //     name: "Alice",
-  //     posts: {
-  //       create: {
-  //         title: "Hello from Prisma Postgres!",
-  //         content: "This is my first post",
-  //         published: true,
-  //       },
-  //     },
-  //   },
-  //   include: { posts: true },
-  // });
-  // console.log("Created user with post:", user);
+// Swagger components
+import components from "./utils/swagger-components.js";
 
-  // Query all published posts
-  const posts = await prisma.user.findMany()
-  console.log('All published posts:', posts)
+const app: Application = express();
 
-  // Update a post
-  // const updatedPost = await prisma.post.update({
-  //   where: { id: user.posts[0].id },
-  //   data: { title: "Hello from Prisma Postgres! (updated)" },
-  // });
-  // console.log("Updated post:", updatedPost);
-}
+app.set("trust proxy", 1);
 
-main()
-  .catch(console.error)
-  .finally(() => prisma.$disconnect())
+const server = http.createServer(app);
+
+const PORT = process.env.PORT || 8000;
+
+// ===== Middleware =====
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  }),
+);
+
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
+app.use(morgan("dev"));
+
+// ===== Swagger Setup =====
+const swaggerOptions = {
+  definition: {
+    openapi: "3.0.0",
+    info: {
+      title: "Gataama API",
+      version: "1.0.0",
+    },
+    components,
+  },
+  apis: ["./src/routes/*.ts"], // pointing to TS routes
+};
+const swaggerDocs = swaggerJsDocs(swaggerOptions);
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+
+app.use("/healthz", (_req: Request, res: Response) => {
+  res.status(200).json({ message: "API is working" });
+});
+
+app.use(
+  "/api/images",
+  express.static(path.join(__dirname, "generated/generated/uploads/blog/")),
+);
+
+app.use("/users", userRoute);
+
+app.use((_req: Request, res: Response) => {
+  res.status(404).json({ message: "Not Found" });
+});
+
+app.use((error: any, _req: Request, res: Response, _next: NextFunction) => {
+  res.status(error.status || 500).json({
+    message: error.message || "Internal Server Error",
+    err: error.message || "Internal Server Error",
+  });
+});
+
+(async () => {
+  try {
+    await prisma.$connect();
+    console.log("✅ PostgreSQL connected successfully");
+
+    server.listen(PORT, () => {
+      console.log(
+        `Server running in ${process.env.NODE_ENV || "development"} mode on port ${PORT}`,
+      );
+    });
+  } catch (error) {
+    console.error("❌ Failed to connect to PostgreSQL:", error);
+  }
+})();

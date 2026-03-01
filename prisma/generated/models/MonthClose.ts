@@ -472,10 +472,6 @@ export type EnumMonthStatusFieldUpdateOperationsInput = {
   set?: $Enums.MonthStatus
 }
 
-export type NullableDateTimeFieldUpdateOperationsInput = {
-  set?: Date | string | null
-}
-
 export type MonthCloseCreateWithoutSiteInput = {
   id?: string
   month: number

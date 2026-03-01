@@ -16,6 +16,9 @@ model User {
   password      String
   phone         String?
   role          Role
+  status        Boolean?
+  verificationCode  String?
+  verificationExpiry  DateTime?
   updatedAt     DateTime      @updatedAt
   activityLogs  ActivityLog[]
   payments      Payment[]
