@@ -3,7 +3,7 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "dev": "tsx src/index.ts"
+    "dev": "tsx watch src/index.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.1.0",

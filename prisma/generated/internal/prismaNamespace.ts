@@ -1051,6 +1051,7 @@ export const UserScalarFieldEnum = {
   password: 'password',
   phone: 'phone',
   role: 'role',
+  sites: 'sites',
   status: 'status',
   verificationCode: 'verificationCode',
   verificationExpiry: 'verificationExpiry',

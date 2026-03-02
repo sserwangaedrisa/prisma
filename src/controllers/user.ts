@@ -64,18 +64,9 @@ export const users = asyncHandler(
 
 export const registerUser = asyncHandler(
   async (req: Request, res: Response): Promise<void> => {
-    const { name, email, password, phone, isActive, createdAt, role } =
+    const { name, email, password, phone, isActive, createdAt, role, sites } =
       req.body;
-
-    if (
-      !name ||
-      !email ||
-      !phone ||
-      !password ||
-      !isActive ||
-      !createdAt ||
-      !role
-    ) {
+    if (!name || !email || !phone || !password || !role) {
       res.status(400).json({ message: "All fields are required" });
       return;
     }
@@ -101,14 +92,23 @@ export const registerUser = asyncHandler(
       const verificationCode = generateOTP();
       const verificationExpiry = new Date(Date.now() + 15 * 60 * 1000);
 
+      console.log("data", {
+        verificationCode,
+        verificationExpiry,
+        email,
+        name,
+        role,
+        sites,
+      });
+
       const user = await prisma.user.create({
         data: {
           name: name.trim(),
           email: email.toLowerCase().trim(),
           password: hashedPassword,
           role: role,
-          isActive,
-          createdAt,
+          isActive: false,
+          sites,
           verificationCode,
           verificationExpiry,
         },
@@ -180,24 +180,11 @@ export const loginUser = asyncHandler(
         where: { email: email.toLowerCase().trim() },
         select: {
           id: true,
-          fullName: true,
+          name: true,
           email: true,
           password: true,
           status: true,
-          role: {
-            select: {
-              id: true,
-              name: true,
-              description: true,
-            },
-          },
-          country: {
-            select: {
-              id: true,
-              name: true,
-              flagUrl: true,
-            },
-          },
+          role: true,
         },
       });
 
@@ -219,24 +206,24 @@ export const loginUser = asyncHandler(
         });
       }
 
-      if (user.status === "banned") {
+      if (user.status === "Banned") {
         res.status(403).json({
           message:
             "Your account has been permanently suspended. Contact support for more information.",
         });
         return;
       }
-      if (user.status === "suspended") {
+      if (user.status === "Suspended") {
         res.status(403).json({
           message:
             "Your account is temporarily suspended. Please try again later or contact support.",
         });
         return;
       }
-      if (user.status === "in_active") {
+      if (user.status === "In_active") {
         await prisma.user.update({
           where: { id: user.id },
-          data: { status: "active" },
+          data: { status: "Active" },
         });
       }
 
@@ -259,15 +246,19 @@ export const resendOTP = asyncHandler(
     try {
       const { userId } = req.body;
       if (!userId) {
-        res
-          .status(400)
-          .json({ message: "The userId missing, Please signup again." });
+        res.status(400).json({
+          status: "user_id_missing",
+          message: "The userId missing, Please signup again.",
+        });
         return;
       }
 
       const user = await prisma.user.findUnique({ where: { id: userId } });
       if (!user) {
-        res.status(404).json({ message: "User not found" });
+        res.status(404).json({
+          status: "user_not_found",
+          message: "User not found",
+        });
         return;
       }
 
@@ -315,6 +306,7 @@ export const resendOTP = asyncHandler(
       });
 
       res.status(200).json({
+        status: "success",
         message: "OTP resent successfully. Please check your email.",
       });
     } catch (error) {
@@ -329,12 +321,18 @@ export const verifyAccount = asyncHandler(
       const { otp, userId } = req.body;
 
       if (!otp || otp.length !== 6) {
-        res.status(400).json({ message: "Provide a valid OTP" });
+        res.status(400).json({
+          status: "invalid_otp",
+          message: "Provide a valid OTP",
+        });
         return;
       }
 
       if (!userId) {
-        res.status(400).json({ message: "user id missing" });
+        res.status(400).json({
+          status: "user_id_missing",
+          message: "user id missing, please signup to create an account",
+        });
         return;
       }
 
@@ -343,14 +341,18 @@ export const verifyAccount = asyncHandler(
         select: { id: true, verificationCode: true, verificationExpiry: true },
       });
       if (!user) {
-        res.status(400).json({ message: "user not found" });
+        res.status(400).json({
+          status: "user_not_found",
+          message: "user not found , please signup to create an account",
+        });
         return;
       }
 
       if (!user.verificationCode || !user.verificationExpiry) {
-        res
-          .status(400)
-          .json({ message: "No OTP found, please request a new one" });
+        res.status(400).json({
+          status: "no_otp",
+          message: "No OTP found, please send a new one",
+        });
         return;
       }
 
@@ -364,6 +366,7 @@ export const verifyAccount = asyncHandler(
         });
 
         res.status(400).json({
+          status: "expired",
           message:
             "OTP expired, signup again to get the new verification code!",
         });
@@ -371,24 +374,27 @@ export const verifyAccount = asyncHandler(
       }
 
       if (user.verificationCode !== otp.trim()) {
-        res.status(400).json({ message: "incorrect OTP" });
+        res.status(400).json({
+          status: "incorrect_otp",
+          message: "incorrect OTP",
+        });
         return;
       }
 
       const updatedUser = await prisma.user.update({
         where: { id: userId },
         data: {
-          status: true,
+          status: "Active",
+          isActive: true,
           verificationCode: null,
           verificationExpiry: null,
         },
-        select: { id: true },
+        select: { id: true, email: true },
       });
 
       res.status(200).json({
-        pageState: "login",
-        message: "Account verified successfully. Proceed to login",
-        data: updatedUser,
+        status: "success",
+        message: `Account verified successfully. Proceed to login with your ${updatedUser.email} and your password to access your dashboard.`,
       });
     } catch (error) {
       handleError(error, res);
@@ -463,11 +469,6 @@ export const forgotPassword = asyncHandler(
 
       const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { password: hashedPassword },
-      });
-
       const emailHtml = `
             <!DOCTYPE html>
             <html lang="en">
@@ -501,6 +502,10 @@ export const forgotPassword = asyncHandler(
         recipient: user.email,
         subject: "Gataama - Password Reset",
         message: emailHtml,
+      });
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { password: hashedPassword },
       });
 
       res.status(200).json({

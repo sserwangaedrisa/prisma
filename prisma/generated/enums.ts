@@ -12,7 +12,7 @@
 export const Role = {
   OWNER: 'OWNER',
   FOREMAN: 'FOREMAN',
-  WORKER: 'WORKER'
+  LABORER: 'LABORER'
 } as const
 
 export type Role = (typeof Role)[keyof typeof Role]

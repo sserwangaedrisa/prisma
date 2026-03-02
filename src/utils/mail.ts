@@ -8,8 +8,8 @@ const transporter = nodemailer.createTransport({
   //port: 465, // Changed from 993 to 465 for SMTP over SSL
   //secure: true, // true for port 465, false for port 587
   auth: {
-    user: process.env.SENDER_EMAIL || "donations@gataama.com",
-    pass: process.env.SENDER_EMAIL_PASSWORD || "ABCabc123*#",
+    user: process.env.SENDER_EMAIL,
+    pass: process.env.SENDER_EMAIL_PASSWORD,
   },
 });
 
@@ -25,14 +25,17 @@ export default async function sendEmail({
   message,
 }: sendMailProps) {
   try {
+    console.log("sender", process.env.SENDER_EMAIL);
+    console.log("password", process.env.SENDER_EMAIL_PASSWORD);
     await transporter.sendMail({
-      from: `Gataama <${process.env.SENDER_EMAIL}>`,
+      from: `Labor company <${process.env.SENDER_EMAIL}>`,
       sender: process.env.SENDER_EMAIL,
       subject: subject,
       to: recipient,
       html: message,
     });
   } catch (error) {
+    console.log("erro", error);
     throw new Error("Error sending mail");
   }
 }

@@ -8,24 +8,25 @@ datasource db {
 }
 
 model User {
-  id            String        @id @default(uuid())
-  email         String        @unique
-  name          String
-  createdAt     DateTime      @default(now())
-  isActive      Boolean       @default(true)
-  password      String
-  phone         String?
-  role          Role
-  status        Boolean?
-  verificationCode  String?
-  verificationExpiry  DateTime?
-  updatedAt     DateTime      @updatedAt
-  activityLogs  ActivityLog[]
-  payments      Payment[]
-  foremanSites  Site[]        @relation("ForemanSites")
-  ownedSites    Site[]        @relation("OwnerSites")
-  assignedSites SiteWorker[]
-  workerRecords WorkEntry[]
+  id                 String        @id @default(uuid())
+  email              String        @unique
+  name               String
+  createdAt          DateTime      @default(now())
+  isActive           Boolean       @default(true)
+  password           String
+  phone              String?
+  role               Role
+  updatedAt          DateTime      @updatedAt
+  status             String?
+  verificationCode   String?
+  verificationExpiry DateTime?
+  sites              String?
+  activityLogs       ActivityLog[]
+  payments           Payment[]
+  foremanSites       Site[]        @relation("ForemanSites")
+  ownedSites         Site[]        @relation("OwnerSites")
+  assignedSites      SiteWorker[]
+  workerRecords      WorkEntry[]
 }
 
 model Site {
@@ -124,6 +125,7 @@ enum Role {
   OWNER
   FOREMAN
   WORKER
+  LABORER
 }
 
 enum PaymentStatus {
