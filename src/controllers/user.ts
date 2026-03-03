@@ -1,4 +1,4 @@
-import { type Request, type Response } from "express";
+import e, { type Request, type Response } from "express";
 import asyncHandler from "express-async-handler";
 import bcrypt from "bcryptjs";
 import uploadToDrive from "../utils/googleDrive.js";
@@ -92,30 +92,8 @@ export const registerUser = asyncHandler(
       const verificationCode = generateOTP();
       const verificationExpiry = new Date(Date.now() + 15 * 60 * 1000);
 
-      console.log("data", {
-        verificationCode,
-        verificationExpiry,
-        email,
-        name,
-        role,
-        sites,
-      });
-
-      const user = await prisma.user.create({
-        data: {
-          name: name.trim(),
-          email: email.toLowerCase().trim(),
-          password: hashedPassword,
-          role: role,
-          isActive: false,
-          sites,
-          verificationCode,
-          verificationExpiry,
-        },
-        select: { id: true, name: true, email: true },
-      });
-
       //sending verification email logic will be added here later
+      const Email = email.toLowerCase().trim();
       const html = `
             <!DOCTYPE html>
             <html lang="en">
@@ -131,7 +109,7 @@ export const registerUser = asyncHandler(
                 <div class="container">
                 <div class="row">
                     <div class="col">
-                    <p>Dear ${user.name}, Your new account was created successfully</p>
+                    <p>Dear ${name}, Your new account was created successfully</p>
                     <p>Use the OTP ${verificationCode} to verify your account</p>
                     
                     <p>Best,</p>
@@ -145,9 +123,23 @@ export const registerUser = asyncHandler(
             </body>
             </html>`;
       await sendEmail({
-        recipient: user.email,
+        recipient: Email,
         subject: "Company - Email Verification",
         message: html,
+      });
+
+      const user = await prisma.user.create({
+        data: {
+          name: name.trim(),
+          email: email.toLowerCase().trim(),
+          password: hashedPassword,
+          role: role,
+          isActive: false,
+          sites,
+          verificationCode,
+          verificationExpiry,
+        },
+        select: { id: true, name: true, email: true },
       });
 
       res.status(201).json({
@@ -263,13 +255,6 @@ export const resendOTP = asyncHandler(
       }
 
       const otp = generateOTP();
-      await prisma.user.update({
-        where: { id: userId },
-        data: {
-          verificationCode: otp,
-          verificationExpiry: new Date(Date.now() + 10 * 60 * 1000),
-        },
-      });
 
       const emailHtml = `
             <!DOCTYPE html>
@@ -303,6 +288,14 @@ export const resendOTP = asyncHandler(
         recipient: user.email,
         subject: "Company - OTP Verification",
         message: emailHtml,
+      });
+
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          verificationCode: otp,
+          verificationExpiry: new Date(Date.now() + 10 * 60 * 1000),
+        },
       });
 
       res.status(200).json({
