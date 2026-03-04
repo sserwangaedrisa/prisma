@@ -110,10 +110,9 @@ export const registerUser = asyncHandler(
                 <div class="row">
                     <div class="col">
                     <p>Dear ${name}, Your new account was created successfully</p>
-                    <p>Use the OTP ${verificationCode} to verify your account</p>
-                    
+                    <p >Use the OTP<em>${verificationCode}</em> to verify your account</p>
                     <p>Best,</p>
-                    <p>The Gataama Team.</p>
+                    <p>Labor company</p>
                     </div>
                 </div>
                 </div>
@@ -143,6 +142,7 @@ export const registerUser = asyncHandler(
       });
 
       res.status(201).json({
+        status: "success",
         message: `Verification code sent to your email. Check your inbox to finish the registration`,
         userId: user.id,
         pagestate: "emailVerification",
@@ -312,7 +312,7 @@ export const verifyAccount = asyncHandler(
   async (req: Request, res: Response): Promise<void> => {
     try {
       const { otp, userId } = req.body;
-
+      console.log("request body", req.body);
       if (!otp || otp.length !== 6) {
         res.status(400).json({
           status: "invalid_otp",
