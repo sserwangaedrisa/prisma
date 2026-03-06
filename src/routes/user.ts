@@ -19,13 +19,12 @@ import {
 
 import verifyToken from "../middleware/auth.js";
 import { isAdmin } from "../middleware/role.js";
-import upload from "../middleware/multer.js";
 import { Router } from "express";
-
+import upload from "../middleware/multer";
 const router = Router();
 
 router.get("/", users);
-router.post("/register", registerUser);
+router.post("/register", upload.single("image"), registerUser);
 router.post("/verify-account", verifyAccount);
 router.post("/resend-otp", resendOTP);
 router.post("/login", loginUserPolicy, loginUser);

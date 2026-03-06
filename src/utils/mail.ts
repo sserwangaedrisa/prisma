@@ -37,8 +37,6 @@ export default async function sendEmail({
   message,
 }: sendMailProps) {
   try {
-    console.log("sender", process.env.SENDER_EMAIL);
-    console.log("password", process.env.SENDER_EMAIL_PASSWORD);
     await transporter.sendMail({
       from: `Labor company <${process.env.SENDER_EMAIL}>`,
       sender: process.env.SENDER_EMAIL,

@@ -1,12 +1,13 @@
 import e, { type Request, type Response } from "express";
 import asyncHandler from "express-async-handler";
 import bcrypt from "bcryptjs";
-import uploadToDrive from "../utils/googleDrive.js";
+import uploadToD from "../utils/googleDrive.js";
 import { google } from "googleapis";
 import sendEmail from "../utils/mail.js";
 import prisma from "../../prisma/config.js";
 import handleError from "../utils/errorHandler.js";
 import { validateEmail } from "../utils/emailVerification.js";
+import { uploadToDrive } from "../middleware/image-upload.js";
 import {
   generateAccessToken,
   generateRefreshToken,
@@ -64,17 +65,16 @@ export const users = asyncHandler(
 
 export const registerUser = asyncHandler(
   async (req: Request, res: Response): Promise<void> => {
-    const { name, email, password, phone, isActive, createdAt, role, sites } =
-      req.body;
+    const { name, email, password, phone, role, sites } = req.body;
+
     if (!name || !email || !phone || !password || !role) {
       res.status(400).json({ message: "All fields are required" });
       return;
     }
-    if (email) {
-      if (!validateEmail(email)) {
-        res.status(400).json({ message: "Invalid email address" });
-        return;
-      }
+
+    if (!validateEmail(email)) {
+      res.status(400).json({ message: "Invalid email address" });
+      return;
     }
 
     try {
@@ -86,73 +86,67 @@ export const registerUser = asyncHandler(
         res.status(403).json({ message: "Email taken, use a different one" });
         return;
       }
+
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(password, salt);
 
       const verificationCode = generateOTP();
       const verificationExpiry = new Date(Date.now() + 15 * 60 * 1000);
 
-      //sending verification email logic will be added here later
       const Email = email.toLowerCase().trim();
-      const html = `
-            <!DOCTYPE html>
-            <html lang="en">
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Email verification</title>
-                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.2/css/bootstrap.min.css"
-                integrity="sha512-CpIKUSyh9QX2+zSdfGP+eWLx23C8Dj9/XmHjZY2uDtfkdLGo0uY12jgcnkX9vXOgYajEKb/jiw67EYm+kBf+6g=="
-                crossorigin="anonymous" referrerpolicy="no-referrer" />
-            </head>
-            <body>
-                <div class="container">
-                <div class="row">
-                    <div class="col">
-                    <p>Dear ${name}, Your new account was created successfully</p>
-                    <p >Use the OTP<em>${verificationCode}</em> to verify your account</p>
-                    <p>Best,</p>
-                    <p>Labor company</p>
-                    </div>
-                </div>
-                </div>
-                <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.2/js/bootstrap.min.js"
-                integrity="sha512-5BqtYqlWfJemW5+v+TZUs22uigI8tXeVah5S/1Z6qBLVO7gakAOtkOzUtgq6dsIo5c0NJdmGPs0H9I+2OHUHVQ=="
-                crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-            </body>
-            </html>`;
+
+      /* ---------------- EMAIL ---------------- */
+
+      const html = `...your html...`;
+
       await sendEmail({
         recipient: Email,
         subject: "Company - Email Verification",
         message: html,
       });
 
+      /* ---------------- IMAGE UPLOAD ---------------- */
+
+      let imageUrl: string | undefined;
+
+      if (req.file) {
+        const uploadingImage = await uploadToDrive(req.file);
+
+        if (uploadingImage.status === "success") {
+          imageUrl = uploadingImage.link;
+        }
+      }
+
+      /* ---------------- CREATE USER ---------------- */
+
       const user = await prisma.user.create({
         data: {
           name: name.trim(),
           email: email.toLowerCase().trim(),
           password: hashedPassword,
-          role: role,
+          role,
           isActive: false,
           sites,
           verificationCode,
           verificationExpiry,
+          imageUrl,
         },
         select: { id: true, name: true, email: true },
       });
 
       res.status(201).json({
         status: "success",
-        message: `Verification code sent to your email. Check your inbox to finish the registration`,
+        message:
+          "Verification code sent to your email. Check your inbox to finish the registration",
         userId: user.id,
         pagestate: "emailVerification",
       });
     } catch (error) {
+      console.log(error);
       handleError(error, res);
     }
   },
 );
-
 export const loginUser = asyncHandler(
   async (req: Request, res: Response): Promise<void> => {
     const { email, password } = req.body;

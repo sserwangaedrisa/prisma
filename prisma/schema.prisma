@@ -17,6 +17,7 @@ model User {
   phone              String?
   role               Role
   updatedAt          DateTime      @updatedAt
+  imageUrl           String?       @default("")
   status             String?
   verificationCode   String?
   verificationExpiry DateTime?
