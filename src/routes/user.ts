@@ -20,7 +20,7 @@ import {
 import verifyToken from "../middleware/auth.js";
 import { isAdmin } from "../middleware/role.js";
 import { Router } from "express";
-import upload from "../middleware/multer";
+import { upload } from "../middleware/multer";
 const router = Router();
 
 router.get("/", users);

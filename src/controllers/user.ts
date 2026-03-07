@@ -8,6 +8,7 @@ import prisma from "../../prisma/config.js";
 import handleError from "../utils/errorHandler.js";
 import { validateEmail } from "../utils/emailVerification.js";
 import { uploadToDrive } from "../middleware/image-upload.js";
+import { uploadToSupabase } from "../utils/uploadToSupabase.js";
 import {
   generateAccessToken,
   generateRefreshToken,
@@ -95,9 +96,33 @@ export const registerUser = asyncHandler(
 
       const Email = email.toLowerCase().trim();
 
-      /* ---------------- EMAIL ---------------- */
-
-      const html = `...your html...`;
+      const html = `
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Email verification</title>
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.2/css/bootstrap.min.css"
+                integrity="sha512-CpIKUSyh9QX2+zSdfGP+eWLx23C8Dj9/XmHjZY2uDtfkdLGo0uY12jgcnkX9vXOgYajEKb/jiw67EYm+kBf+6g=="
+                crossorigin="anonymous" referrerpolicy="no-referrer" />
+            </head>
+            <body>
+                <div class="container">
+                <div class="row">
+                    <div class="col">
+                    <p>Dear ${name}, Your new account was created successfully</p>
+                    <p >Use the OTP<em>${verificationCode}</em> to verify your account</p>
+                    <p>Best,</p>
+                    <p>Labor company</p>
+                    </div>
+                </div>
+                </div>
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.2/js/bootstrap.min.js"
+                integrity="sha512-5BqtYqlWfJemW5+v+TZUs22uigI8tXeVah5S/1Z6qBLVO7gakAOtkOzUtgq6dsIo5c0NJdmGPs0H9I+2OHUHVQ=="
+                crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            </body>
+            </html>`;
 
       await sendEmail({
         recipient: Email,
@@ -110,10 +135,10 @@ export const registerUser = asyncHandler(
       let imageUrl: string | undefined;
 
       if (req.file) {
-        const uploadingImage = await uploadToDrive(req.file);
+        const superbaseImageLink = await uploadToSupabase(req.file);
 
-        if (uploadingImage.status === "success") {
-          imageUrl = uploadingImage.link;
+        if (superbaseImageLink !== "Failed to apload") {
+          imageUrl = superbaseImageLink;
         }
       }
 
