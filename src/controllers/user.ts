@@ -69,12 +69,14 @@ export const registerUser = asyncHandler(
     const { name, email, password, phone, role, sites } = req.body;
 
     if (!name || !email || !phone || !password || !role) {
-      res.status(400).json({ message: "All fields are required" });
+      res
+        .status(200)
+        .json({ status: "missing-fields", message: "All fields are required" });
       return;
     }
 
     if (!validateEmail(email)) {
-      res.status(400).json({ message: "Invalid email address" });
+      res.status(200).json({ message: "Invalid email address" });
       return;
     }
 
@@ -84,7 +86,10 @@ export const registerUser = asyncHandler(
       });
 
       if (existingUser) {
-        res.status(403).json({ message: "Email taken, use a different one" });
+        res.status(200).json({
+          status: "email-taken",
+          message: "Email taken, use a different one",
+        });
         return;
       }
 
@@ -92,7 +97,7 @@ export const registerUser = asyncHandler(
       const hashedPassword = await bcrypt.hash(password, salt);
 
       const verificationCode = generateOTP();
-      const verificationExpiry = new Date(Date.now() + 15 * 60 * 1000);
+      const verificationExpiry = new Date(Date.now() + 1 * 60 * 1000);
 
       const Email = email.toLowerCase().trim();
 
@@ -112,7 +117,7 @@ export const registerUser = asyncHandler(
                 <div class="row">
                     <div class="col">
                     <p>Dear ${name}, Your new account was created successfully</p>
-                    <p >Use the OTP<em>${verificationCode}</em> to verify your account</p>
+                    <p>Use the OTP <em style="color: blue;">${verificationCode}</em> to verify your account</p>
                     <p>Best,</p>
                     <p>Labor company</p>
                     </div>
@@ -159,7 +164,7 @@ export const registerUser = asyncHandler(
         select: { id: true, name: true, email: true },
       });
 
-      res.status(201).json({
+      res.status(200).json({
         status: "success",
         message:
           "Verification code sent to your email. Check your inbox to finish the registration",
@@ -257,7 +262,7 @@ export const resendOTP = asyncHandler(
     try {
       const { userId } = req.body;
       if (!userId) {
-        res.status(400).json({
+        res.status(200).json({
           status: "user_id_missing",
           message: "The userId missing, Please signup again.",
         });
@@ -266,7 +271,7 @@ export const resendOTP = asyncHandler(
 
       const user = await prisma.user.findUnique({ where: { id: userId } });
       if (!user) {
-        res.status(404).json({
+        res.status(200).json({
           status: "user_not_found",
           message: "User not found",
         });
@@ -291,10 +296,10 @@ export const resendOTP = asyncHandler(
                 <div class="row">
                     <div class="col">
                     <p>Dear ${user.name},</p>
-                    <p>Your new OTP code is <strong>${otp}</strong>. Please use this code to verify your account.</p>
+                    <p>Your new OTP code is <strong style="color: blue">${otp}</strong>. Please use this code to verify your account.</p>
                     <p>This OTP is valid for 10 minutes.</p>
                     <p>Best regards,</p>
-                    <p>The Gataama Team.</p>
+                    <p>Labor compony.</p>
                     </div>
                 </div>
                 </div>
@@ -331,7 +336,6 @@ export const verifyAccount = asyncHandler(
   async (req: Request, res: Response): Promise<void> => {
     try {
       const { otp, userId } = req.body;
-      console.log("request body", req.body);
       if (!otp || otp.length !== 6) {
         res.status(400).json({
           status: "invalid_otp",
@@ -341,7 +345,7 @@ export const verifyAccount = asyncHandler(
       }
 
       if (!userId) {
-        res.status(400).json({
+        res.status(200).json({
           status: "user_id_missing",
           message: "user id missing, please signup to create an account",
         });
@@ -353,7 +357,7 @@ export const verifyAccount = asyncHandler(
         select: { id: true, verificationCode: true, verificationExpiry: true },
       });
       if (!user) {
-        res.status(400).json({
+        res.status(200).json({
           status: "user_not_found",
           message: "user not found , please signup to create an account",
         });
@@ -361,7 +365,7 @@ export const verifyAccount = asyncHandler(
       }
 
       if (!user.verificationCode || !user.verificationExpiry) {
-        res.status(400).json({
+        res.status(200).json({
           status: "no_otp",
           message: "No OTP found, please send a new one",
         });
@@ -369,24 +373,15 @@ export const verifyAccount = asyncHandler(
       }
 
       if (user.verificationExpiry! < new Date()) {
-        await prisma.user.update({
-          where: { id: userId },
-          data: {
-            verificationCode: null,
-            verificationExpiry: null,
-          },
-        });
-
-        res.status(400).json({
+        res.status(200).json({
           status: "expired",
-          message:
-            "OTP expired, signup again to get the new verification code!",
+          message: "Otp provided is expired, please ask fo the new otp!",
         });
         return;
       }
 
       if (user.verificationCode !== otp.trim()) {
-        res.status(400).json({
+        res.status(200).json({
           status: "incorrect_otp",
           message: "incorrect OTP",
         });
