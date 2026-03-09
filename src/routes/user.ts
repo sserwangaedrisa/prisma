@@ -4,7 +4,8 @@ import {
   resendOTP,
   deleteUser,
   loginUser,
-  forgotPassword,
+  resetPassword,
+  verifyEmail,
   //uploadImage,
   getImage,
   updateUser,
@@ -27,8 +28,9 @@ router.get("/", users);
 router.post("/register", upload.single("image"), registerUser);
 router.post("/verify-account", verifyAccount);
 router.post("/resend-otp", resendOTP);
+router.post("/verifyEmail", verifyEmail);
 router.post("/login", loginUserPolicy, loginUser);
-router.post("/forgotPassword", forgotPasswordPolicy, forgotPassword);
+router.post("/resetPassword", resetPassword);
 
 //router.post("/upload", upload.single("image"), uploadImage);
 router.get("/images/:id", getImage);

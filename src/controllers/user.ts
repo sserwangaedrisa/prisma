@@ -337,7 +337,7 @@ export const verifyAccount = asyncHandler(
     try {
       const { otp, userId } = req.body;
       if (!otp || otp.length !== 6) {
-        res.status(400).json({
+        res.status(200).json({
           status: "invalid_otp",
           message: "Provide a valid OTP",
         });
@@ -400,8 +400,89 @@ export const verifyAccount = asyncHandler(
       });
 
       res.status(200).json({
+        user: updatedUser,
         status: "success",
         message: `Account verified successfully. Proceed to login with your ${updatedUser.email} and your password to access your dashboard.`,
+      });
+    } catch (error) {
+      handleError(error, res);
+    }
+  },
+);
+
+export const verifyEmail = asyncHandler(
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        res.status(200).json({
+          status: "Email_missing",
+          message: "The email missing, Please fill in the email and try again.",
+        });
+        return;
+      }
+
+      const user = await prisma.user.findUnique({ where: { email: email } });
+      if (!user) {
+        res.status(200).json({
+          status: "user_not_found",
+          message: "User not found",
+        });
+        return;
+      }
+
+      const otp = generateOTP();
+
+      const emailHtml = `
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Gataama - OTP Verification</title>
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.2/css/bootstrap.min.css"
+                integrity="sha512-CpIKUSyh9QX2+zSdfGP+eWLx23C8Dj9/XmHjZY2uDtfkdLGo0uY12jgcnkX9vXOgYajEKb/jiw67EYm+kBf+6g=="
+                crossorigin="anonymous" referrerpolicy="no-referrer" />
+            </head>
+            <body>
+                <div class="container">
+                <div class="row">
+                    <div class="col">
+                    <p>Dear ${user.name},</p>
+                    <p>Your OTP code is <strong style="color: blue">${otp}</strong>. Please use this code to verify your account.</p>
+                    <p>This OTP is valid for 10 minutes.</p>
+                    <p>Best regards,</p>
+                    <p>Labor compony.</p>
+                    </div>
+                </div>
+                </div>
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.2/js/bootstrap.min.js"
+                integrity="sha512-5BqtYqlWfJemW5+v+TZUs22uigI8tXeVah5S/1Z6qBLVO7gakAOtkOzUtgq6dsIo5c0NJdmGPs0H9I+2OHUHVQ=="
+                crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            </body>
+            </html>`;
+      await sendEmail({
+        recipient: user.email,
+        subject: "Company - OTP Verification",
+        message: emailHtml,
+      });
+
+      const newUser = await prisma.user.update({
+        where: { email: email },
+        data: {
+          verificationCode: otp,
+          verificationExpiry: new Date(Date.now() + 10 * 60 * 1000),
+        },
+        select: {
+          id: true,
+          email: true,
+        },
+      });
+
+      res.status(200).json({
+        user: newUser,
+        status: "success",
+        message: "OTP resent successfully. Please check your email.",
       });
     } catch (error) {
       handleError(error, res);
@@ -451,30 +532,32 @@ export const getAdmin = asyncHandler(
   },
 );
 
-export const forgotPassword = asyncHandler(
+export const resetPassword = asyncHandler(
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const { email } = req.body;
+      const { email, newPassword } = req.body;
 
       if (!email.trim()) {
-        res.status(400).json({ message: "Email is required." });
+        res.status(200).json({ message: "Email is required." });
         return;
       }
       if (!validateEmail(email)) {
-        res.status(400).json({ message: "Invalid email address." });
+        res.status(200).json({ message: "Invalid email address." });
         return;
       }
 
       const user = await prisma.user.findUnique({ where: { email } });
       if (!user) {
-        res.status(404).json({ message: "User not found." });
+        res
+          .status(200)
+          .json({ message: "User not found. SignUp again to continue" });
         return;
       }
 
-      const tempPasswordNumber = Math.floor(1000 + Math.random() * 9000);
-      const tempPassword = `${tempPasswordNumber}rfh`;
+      // const tempPasswordNumber = Math.floor(1000 + Math.random() * 9000);
+      // const tempPassword = `${tempPasswordNumber}rfh`;
 
-      const hashedPassword = await bcrypt.hash(tempPassword, 10);
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
 
       const emailHtml = `
             <!DOCTYPE html>
@@ -491,7 +574,7 @@ export const forgotPassword = asyncHandler(
                 <div class="container">
                     <div class="row">
                         <div class="col">
-                            <p>Your new account password is <strong>${tempPassword}</strong>.</p>
+                            <p>Your new account password has been set successfully, please login using your newly set password.</p>
                             <p>Best regards,</p>
                             <p>The Company.</p>
                         </div>
@@ -507,7 +590,7 @@ export const forgotPassword = asyncHandler(
 
       await sendEmail({
         recipient: user.email,
-        subject: "Gataama - Password Reset",
+        subject: "Company port- Password Reset",
         message: emailHtml,
       });
       await prisma.user.update({
@@ -516,6 +599,7 @@ export const forgotPassword = asyncHandler(
       });
 
       res.status(200).json({
+        status: "success",
         message: "A temporary password has been sent to your email address.",
       });
     } catch (error) {
