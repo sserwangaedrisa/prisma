@@ -30,7 +30,7 @@ router.post("/verify-account", verifyAccount);
 router.post("/resend-otp", resendOTP);
 router.post("/verifyEmail", verifyEmail);
 router.post("/login", loginUserPolicy, loginUser);
-router.post("/resetPassword", resetPassword);
+router.patch("/resetPassword", resetPassword);
 
 //router.post("/upload", upload.single("image"), uploadImage);
 router.get("/images/:id", getImage);

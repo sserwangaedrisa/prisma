@@ -15,9 +15,8 @@ import dotenv from "dotenv";
 import http from "http";
 import path from "path";
 import { fileURLToPath } from "url";
-// const __filename = fileURLToPath(import.meta.url);
-// const __dirname = path.dirname(__filename);
 import userRoute from "./routes/user.js";
+import workerRoute from "./routes/worker";
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
@@ -72,6 +71,7 @@ app.use(
 );
 
 app.use("/users", userRoute);
+app.use("/worker", workerRoute);
 
 app.use((_req: Request, res: Response) => {
   res.status(404).json({ message: "Not Found" });

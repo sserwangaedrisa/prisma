@@ -252,6 +252,7 @@ export const loginUser = asyncHandler(
         },
       });
     } catch (error) {
+      console.log("error: ", error);
       handleError(error, res);
     }
   },
