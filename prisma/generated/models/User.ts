@@ -20,8 +20,18 @@ export type UserModel = runtime.Types.Result.DefaultSelection<Prisma.$UserPayloa
 
 export type AggregateUser = {
   _count: UserCountAggregateOutputType | null
+  _avg: UserAvgAggregateOutputType | null
+  _sum: UserSumAggregateOutputType | null
   _min: UserMinAggregateOutputType | null
   _max: UserMaxAggregateOutputType | null
+}
+
+export type UserAvgAggregateOutputType = {
+  wageRating: number | null
+}
+
+export type UserSumAggregateOutputType = {
+  wageRating: number | null
 }
 
 export type UserMinAggregateOutputType = {
@@ -33,6 +43,8 @@ export type UserMinAggregateOutputType = {
   password: string | null
   phone: string | null
   role: $Enums.Role | null
+  job: string | null
+  wageRating: number | null
   updatedAt: Date | null
   imageUrl: string | null
   status: string | null
@@ -50,6 +62,8 @@ export type UserMaxAggregateOutputType = {
   password: string | null
   phone: string | null
   role: $Enums.Role | null
+  job: string | null
+  wageRating: number | null
   updatedAt: Date | null
   imageUrl: string | null
   status: string | null
@@ -67,6 +81,8 @@ export type UserCountAggregateOutputType = {
   password: number
   phone: number
   role: number
+  job: number
+  wageRating: number
   updatedAt: number
   imageUrl: number
   status: number
@@ -77,6 +93,14 @@ export type UserCountAggregateOutputType = {
 }
 
 
+export type UserAvgAggregateInputType = {
+  wageRating?: true
+}
+
+export type UserSumAggregateInputType = {
+  wageRating?: true
+}
+
 export type UserMinAggregateInputType = {
   id?: true
   email?: true
@@ -86,6 +110,8 @@ export type UserMinAggregateInputType = {
   password?: true
   phone?: true
   role?: true
+  job?: true
+  wageRating?: true
   updatedAt?: true
   imageUrl?: true
   status?: true
@@ -103,6 +129,8 @@ export type UserMaxAggregateInputType = {
   password?: true
   phone?: true
   role?: true
+  job?: true
+  wageRating?: true
   updatedAt?: true
   imageUrl?: true
   status?: true
@@ -120,6 +148,8 @@ export type UserCountAggregateInputType = {
   password?: true
   phone?: true
   role?: true
+  job?: true
+  wageRating?: true
   updatedAt?: true
   imageUrl?: true
   status?: true
@@ -167,6 +197,18 @@ export type UserAggregateArgs<ExtArgs extends runtime.Types.Extensions.InternalA
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    * 
+   * Select which fields to average
+  **/
+  _avg?: UserAvgAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
+   * Select which fields to sum
+  **/
+  _sum?: UserSumAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
    * Select which fields to find the minimum value
   **/
   _min?: UserMinAggregateInputType
@@ -197,6 +239,8 @@ export type UserGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
   take?: number
   skip?: number
   _count?: UserCountAggregateInputType | true
+  _avg?: UserAvgAggregateInputType
+  _sum?: UserSumAggregateInputType
   _min?: UserMinAggregateInputType
   _max?: UserMaxAggregateInputType
 }
@@ -210,6 +254,8 @@ export type UserGroupByOutputType = {
   password: string
   phone: string | null
   role: $Enums.Role
+  job: string | null
+  wageRating: number | null
   updatedAt: Date
   imageUrl: string | null
   status: string | null
@@ -217,6 +263,8 @@ export type UserGroupByOutputType = {
   verificationExpiry: Date | null
   sites: string | null
   _count: UserCountAggregateOutputType | null
+  _avg: UserAvgAggregateOutputType | null
+  _sum: UserSumAggregateOutputType | null
   _min: UserMinAggregateOutputType | null
   _max: UserMaxAggregateOutputType | null
 }
@@ -248,6 +296,8 @@ export type UserWhereInput = {
   password?: Prisma.StringFilter<"User"> | string
   phone?: Prisma.StringNullableFilter<"User"> | string | null
   role?: Prisma.EnumRoleFilter<"User"> | $Enums.Role
+  job?: Prisma.StringNullableFilter<"User"> | string | null
+  wageRating?: Prisma.FloatNullableFilter<"User"> | number | null
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
   imageUrl?: Prisma.StringNullableFilter<"User"> | string | null
   status?: Prisma.StringNullableFilter<"User"> | string | null
@@ -271,6 +321,8 @@ export type UserOrderByWithRelationInput = {
   password?: Prisma.SortOrder
   phone?: Prisma.SortOrderInput | Prisma.SortOrder
   role?: Prisma.SortOrder
+  job?: Prisma.SortOrderInput | Prisma.SortOrder
+  wageRating?: Prisma.SortOrderInput | Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   imageUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -297,6 +349,8 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   password?: Prisma.StringFilter<"User"> | string
   phone?: Prisma.StringNullableFilter<"User"> | string | null
   role?: Prisma.EnumRoleFilter<"User"> | $Enums.Role
+  job?: Prisma.StringNullableFilter<"User"> | string | null
+  wageRating?: Prisma.FloatNullableFilter<"User"> | number | null
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
   imageUrl?: Prisma.StringNullableFilter<"User"> | string | null
   status?: Prisma.StringNullableFilter<"User"> | string | null
@@ -320,6 +374,8 @@ export type UserOrderByWithAggregationInput = {
   password?: Prisma.SortOrder
   phone?: Prisma.SortOrderInput | Prisma.SortOrder
   role?: Prisma.SortOrder
+  job?: Prisma.SortOrderInput | Prisma.SortOrder
+  wageRating?: Prisma.SortOrderInput | Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   imageUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -327,8 +383,10 @@ export type UserOrderByWithAggregationInput = {
   verificationExpiry?: Prisma.SortOrderInput | Prisma.SortOrder
   sites?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.UserCountOrderByAggregateInput
+  _avg?: Prisma.UserAvgOrderByAggregateInput
   _max?: Prisma.UserMaxOrderByAggregateInput
   _min?: Prisma.UserMinOrderByAggregateInput
+  _sum?: Prisma.UserSumOrderByAggregateInput
 }
 
 export type UserScalarWhereWithAggregatesInput = {
@@ -343,6 +401,8 @@ export type UserScalarWhereWithAggregatesInput = {
   password?: Prisma.StringWithAggregatesFilter<"User"> | string
   phone?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   role?: Prisma.EnumRoleWithAggregatesFilter<"User"> | $Enums.Role
+  job?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
+  wageRating?: Prisma.FloatNullableWithAggregatesFilter<"User"> | number | null
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
   imageUrl?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   status?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
@@ -360,6 +420,8 @@ export type UserCreateInput = {
   password: string
   phone?: string | null
   role: $Enums.Role
+  job?: string | null
+  wageRating?: number | null
   updatedAt?: Date | string
   imageUrl?: string | null
   status?: string | null
@@ -383,6 +445,8 @@ export type UserUncheckedCreateInput = {
   password: string
   phone?: string | null
   role: $Enums.Role
+  job?: string | null
+  wageRating?: number | null
   updatedAt?: Date | string
   imageUrl?: string | null
   status?: string | null
@@ -406,6 +470,8 @@ export type UserUpdateInput = {
   password?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  job?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  wageRating?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -429,6 +495,8 @@ export type UserUncheckedUpdateInput = {
   password?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  job?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  wageRating?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -452,6 +520,8 @@ export type UserCreateManyInput = {
   password: string
   phone?: string | null
   role: $Enums.Role
+  job?: string | null
+  wageRating?: number | null
   updatedAt?: Date | string
   imageUrl?: string | null
   status?: string | null
@@ -469,6 +539,8 @@ export type UserUpdateManyMutationInput = {
   password?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  job?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  wageRating?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -486,6 +558,8 @@ export type UserUncheckedUpdateManyInput = {
   password?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  job?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  wageRating?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -503,12 +577,18 @@ export type UserCountOrderByAggregateInput = {
   password?: Prisma.SortOrder
   phone?: Prisma.SortOrder
   role?: Prisma.SortOrder
+  job?: Prisma.SortOrder
+  wageRating?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   imageUrl?: Prisma.SortOrder
   status?: Prisma.SortOrder
   verificationCode?: Prisma.SortOrder
   verificationExpiry?: Prisma.SortOrder
   sites?: Prisma.SortOrder
+}
+
+export type UserAvgOrderByAggregateInput = {
+  wageRating?: Prisma.SortOrder
 }
 
 export type UserMaxOrderByAggregateInput = {
@@ -520,6 +600,8 @@ export type UserMaxOrderByAggregateInput = {
   password?: Prisma.SortOrder
   phone?: Prisma.SortOrder
   role?: Prisma.SortOrder
+  job?: Prisma.SortOrder
+  wageRating?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   imageUrl?: Prisma.SortOrder
   status?: Prisma.SortOrder
@@ -537,12 +619,18 @@ export type UserMinOrderByAggregateInput = {
   password?: Prisma.SortOrder
   phone?: Prisma.SortOrder
   role?: Prisma.SortOrder
+  job?: Prisma.SortOrder
+  wageRating?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   imageUrl?: Prisma.SortOrder
   status?: Prisma.SortOrder
   verificationCode?: Prisma.SortOrder
   verificationExpiry?: Prisma.SortOrder
   sites?: Prisma.SortOrder
+}
+
+export type UserSumOrderByAggregateInput = {
+  wageRating?: Prisma.SortOrder
 }
 
 export type UserNullableScalarRelationFilter = {
@@ -575,6 +663,14 @@ export type EnumRoleFieldUpdateOperationsInput = {
   set?: $Enums.Role
 }
 
+export type NullableFloatFieldUpdateOperationsInput = {
+  set?: number | null
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
+}
+
 export type NullableDateTimeFieldUpdateOperationsInput = {
   set?: Date | string | null
 }
@@ -601,10 +697,12 @@ export type UserUpdateOneWithoutForemanSitesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutForemanSitesInput, Prisma.UserUpdateWithoutForemanSitesInput>, Prisma.UserUncheckedUpdateWithoutForemanSitesInput>
 }
 
-export type UserUpdateOneRequiredWithoutOwnedSitesNestedInput = {
+export type UserUpdateOneWithoutOwnedSitesNestedInput = {
   create?: Prisma.XOR<Prisma.UserCreateWithoutOwnedSitesInput, Prisma.UserUncheckedCreateWithoutOwnedSitesInput>
   connectOrCreate?: Prisma.UserCreateOrConnectWithoutOwnedSitesInput
   upsert?: Prisma.UserUpsertWithoutOwnedSitesInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
   connect?: Prisma.UserWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutOwnedSitesInput, Prisma.UserUpdateWithoutOwnedSitesInput>, Prisma.UserUncheckedUpdateWithoutOwnedSitesInput>
 }
@@ -674,6 +772,8 @@ export type UserCreateWithoutForemanSitesInput = {
   password: string
   phone?: string | null
   role: $Enums.Role
+  job?: string | null
+  wageRating?: number | null
   updatedAt?: Date | string
   imageUrl?: string | null
   status?: string | null
@@ -696,6 +796,8 @@ export type UserUncheckedCreateWithoutForemanSitesInput = {
   password: string
   phone?: string | null
   role: $Enums.Role
+  job?: string | null
+  wageRating?: number | null
   updatedAt?: Date | string
   imageUrl?: string | null
   status?: string | null
@@ -723,6 +825,8 @@ export type UserCreateWithoutOwnedSitesInput = {
   password: string
   phone?: string | null
   role: $Enums.Role
+  job?: string | null
+  wageRating?: number | null
   updatedAt?: Date | string
   imageUrl?: string | null
   status?: string | null
@@ -745,6 +849,8 @@ export type UserUncheckedCreateWithoutOwnedSitesInput = {
   password: string
   phone?: string | null
   role: $Enums.Role
+  job?: string | null
+  wageRating?: number | null
   updatedAt?: Date | string
   imageUrl?: string | null
   status?: string | null
@@ -783,6 +889,8 @@ export type UserUpdateWithoutForemanSitesInput = {
   password?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  job?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  wageRating?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -805,6 +913,8 @@ export type UserUncheckedUpdateWithoutForemanSitesInput = {
   password?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  job?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  wageRating?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -838,6 +948,8 @@ export type UserUpdateWithoutOwnedSitesInput = {
   password?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  job?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  wageRating?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -860,6 +972,8 @@ export type UserUncheckedUpdateWithoutOwnedSitesInput = {
   password?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  job?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  wageRating?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -882,6 +996,8 @@ export type UserCreateWithoutAssignedSitesInput = {
   password: string
   phone?: string | null
   role: $Enums.Role
+  job?: string | null
+  wageRating?: number | null
   updatedAt?: Date | string
   imageUrl?: string | null
   status?: string | null
@@ -904,6 +1020,8 @@ export type UserUncheckedCreateWithoutAssignedSitesInput = {
   password: string
   phone?: string | null
   role: $Enums.Role
+  job?: string | null
+  wageRating?: number | null
   updatedAt?: Date | string
   imageUrl?: string | null
   status?: string | null
@@ -942,6 +1060,8 @@ export type UserUpdateWithoutAssignedSitesInput = {
   password?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  job?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  wageRating?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -964,6 +1084,8 @@ export type UserUncheckedUpdateWithoutAssignedSitesInput = {
   password?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  job?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  wageRating?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -986,6 +1108,8 @@ export type UserCreateWithoutWorkerRecordsInput = {
   password: string
   phone?: string | null
   role: $Enums.Role
+  job?: string | null
+  wageRating?: number | null
   updatedAt?: Date | string
   imageUrl?: string | null
   status?: string | null
@@ -1008,6 +1132,8 @@ export type UserUncheckedCreateWithoutWorkerRecordsInput = {
   password: string
   phone?: string | null
   role: $Enums.Role
+  job?: string | null
+  wageRating?: number | null
   updatedAt?: Date | string
   imageUrl?: string | null
   status?: string | null
@@ -1046,6 +1172,8 @@ export type UserUpdateWithoutWorkerRecordsInput = {
   password?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  job?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  wageRating?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1068,6 +1196,8 @@ export type UserUncheckedUpdateWithoutWorkerRecordsInput = {
   password?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  job?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  wageRating?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1090,6 +1220,8 @@ export type UserCreateWithoutPaymentsInput = {
   password: string
   phone?: string | null
   role: $Enums.Role
+  job?: string | null
+  wageRating?: number | null
   updatedAt?: Date | string
   imageUrl?: string | null
   status?: string | null
@@ -1112,6 +1244,8 @@ export type UserUncheckedCreateWithoutPaymentsInput = {
   password: string
   phone?: string | null
   role: $Enums.Role
+  job?: string | null
+  wageRating?: number | null
   updatedAt?: Date | string
   imageUrl?: string | null
   status?: string | null
@@ -1150,6 +1284,8 @@ export type UserUpdateWithoutPaymentsInput = {
   password?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  job?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  wageRating?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1172,6 +1308,8 @@ export type UserUncheckedUpdateWithoutPaymentsInput = {
   password?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  job?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  wageRating?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1194,6 +1332,8 @@ export type UserCreateWithoutActivityLogsInput = {
   password: string
   phone?: string | null
   role: $Enums.Role
+  job?: string | null
+  wageRating?: number | null
   updatedAt?: Date | string
   imageUrl?: string | null
   status?: string | null
@@ -1216,6 +1356,8 @@ export type UserUncheckedCreateWithoutActivityLogsInput = {
   password: string
   phone?: string | null
   role: $Enums.Role
+  job?: string | null
+  wageRating?: number | null
   updatedAt?: Date | string
   imageUrl?: string | null
   status?: string | null
@@ -1254,6 +1396,8 @@ export type UserUpdateWithoutActivityLogsInput = {
   password?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  job?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  wageRating?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1276,6 +1420,8 @@ export type UserUncheckedUpdateWithoutActivityLogsInput = {
   password?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  job?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  wageRating?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1374,6 +1520,8 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   password?: boolean
   phone?: boolean
   role?: boolean
+  job?: boolean
+  wageRating?: boolean
   updatedAt?: boolean
   imageUrl?: boolean
   status?: boolean
@@ -1398,6 +1546,8 @@ export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   password?: boolean
   phone?: boolean
   role?: boolean
+  job?: boolean
+  wageRating?: boolean
   updatedAt?: boolean
   imageUrl?: boolean
   status?: boolean
@@ -1415,6 +1565,8 @@ export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   password?: boolean
   phone?: boolean
   role?: boolean
+  job?: boolean
+  wageRating?: boolean
   updatedAt?: boolean
   imageUrl?: boolean
   status?: boolean
@@ -1432,6 +1584,8 @@ export type UserSelectScalar = {
   password?: boolean
   phone?: boolean
   role?: boolean
+  job?: boolean
+  wageRating?: boolean
   updatedAt?: boolean
   imageUrl?: boolean
   status?: boolean
@@ -1440,7 +1594,7 @@ export type UserSelectScalar = {
   sites?: boolean
 }
 
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "name" | "createdAt" | "isActive" | "password" | "phone" | "role" | "updatedAt" | "imageUrl" | "status" | "verificationCode" | "verificationExpiry" | "sites", ExtArgs["result"]["user"]>
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "name" | "createdAt" | "isActive" | "password" | "phone" | "role" | "job" | "wageRating" | "updatedAt" | "imageUrl" | "status" | "verificationCode" | "verificationExpiry" | "sites", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   activityLogs?: boolean | Prisma.User$activityLogsArgs<ExtArgs>
   payments?: boolean | Prisma.User$paymentsArgs<ExtArgs>
@@ -1472,6 +1626,8 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     password: string
     phone: string | null
     role: $Enums.Role
+    job: string | null
+    wageRating: number | null
     updatedAt: Date
     imageUrl: string | null
     status: string | null
@@ -1915,6 +2071,8 @@ export interface UserFieldRefs {
   readonly password: Prisma.FieldRef<"User", 'String'>
   readonly phone: Prisma.FieldRef<"User", 'String'>
   readonly role: Prisma.FieldRef<"User", 'Role'>
+  readonly job: Prisma.FieldRef<"User", 'String'>
+  readonly wageRating: Prisma.FieldRef<"User", 'Float'>
   readonly updatedAt: Prisma.FieldRef<"User", 'DateTime'>
   readonly imageUrl: Prisma.FieldRef<"User", 'String'>
   readonly status: Prisma.FieldRef<"User", 'String'>
