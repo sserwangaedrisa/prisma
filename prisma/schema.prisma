@@ -16,10 +16,14 @@ model User {
   password           String
   phone              String?
   role               Role
+  job                String?       @default("USER")
+  wageRating         Float?        @default(0.0)
   updatedAt          DateTime      @updatedAt
-  status             Boolean?
+  imageUrl           String?       @default("")
+  status             String?
   verificationCode   String?
   verificationExpiry DateTime?
+  sites              String?
   activityLogs       ActivityLog[]
   payments           Payment[]
   foremanSites       Site[]        @relation("ForemanSites")
@@ -33,14 +37,14 @@ model Site {
   name        String
   location    String
   description String?
-  ownerId     String
+  ownerId     String?
   foremanId   String?
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   monthCloses MonthClose[]
   payments    Payment[]
   foreman     User?        @relation("ForemanSites", fields: [foremanId], references: [id])
-  owner       User         @relation("OwnerSites", fields: [ownerId], references: [id])
+  owner       User?        @relation("OwnerSites", fields: [ownerId], references: [id])
   workers     SiteWorker[]
   workEntries WorkEntry[]
 }
@@ -124,6 +128,7 @@ enum Role {
   OWNER
   FOREMAN
   WORKER
+  LABORER
 }
 
 enum PaymentStatus {
@@ -135,4 +140,16 @@ enum PaymentStatus {
 enum MonthStatus {
   OPEN
   LOCKED
+}
+
+enum job {
+  USER
+  HELPER
+  MASON
+  STEEL_FIXER
+  FOREMAN
+  SITE_ADMIN
+  PAINTER
+  ELECTRICIAN
+  ADMIN
 }

@@ -32,6 +32,7 @@ export const loginUserPolicy = async (
     password: Joi.string().required(),
   });
   const { email, password } = req.body;
+
   const { error } = schema.validate({ email, password });
   if (error) {
     return res.status(500).send({

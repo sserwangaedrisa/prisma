@@ -12,7 +12,8 @@
 export const Role = {
   OWNER: 'OWNER',
   FOREMAN: 'FOREMAN',
-  WORKER: 'WORKER'
+  WORKER: 'WORKER',
+  LABORER: 'LABORER'
 } as const
 
 export type Role = (typeof Role)[keyof typeof Role]
@@ -33,3 +34,18 @@ export const MonthStatus = {
 } as const
 
 export type MonthStatus = (typeof MonthStatus)[keyof typeof MonthStatus]
+
+
+export const job = {
+  USER: 'USER',
+  HELPER: 'HELPER',
+  MASON: 'MASON',
+  STEEL_FIXER: 'STEEL_FIXER',
+  FOREMAN: 'FOREMAN',
+  SITE_ADMIN: 'SITE_ADMIN',
+  PAINTER: 'PAINTER',
+  ELECTRICIAN: 'ELECTRICIAN',
+  ADMIN: 'ADMIN'
+} as const
+
+export type job = (typeof job)[keyof typeof job]

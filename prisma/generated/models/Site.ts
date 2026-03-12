@@ -170,7 +170,7 @@ export type SiteGroupByOutputType = {
   name: string
   location: string
   description: string | null
-  ownerId: string
+  ownerId: string | null
   foremanId: string | null
   createdAt: Date
   updatedAt: Date
@@ -202,14 +202,14 @@ export type SiteWhereInput = {
   name?: Prisma.StringFilter<"Site"> | string
   location?: Prisma.StringFilter<"Site"> | string
   description?: Prisma.StringNullableFilter<"Site"> | string | null
-  ownerId?: Prisma.StringFilter<"Site"> | string
+  ownerId?: Prisma.StringNullableFilter<"Site"> | string | null
   foremanId?: Prisma.StringNullableFilter<"Site"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Site"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Site"> | Date | string
   monthCloses?: Prisma.MonthCloseListRelationFilter
   payments?: Prisma.PaymentListRelationFilter
   foreman?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
-  owner?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  owner?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   workers?: Prisma.SiteWorkerListRelationFilter
   workEntries?: Prisma.WorkEntryListRelationFilter
 }
@@ -219,7 +219,7 @@ export type SiteOrderByWithRelationInput = {
   name?: Prisma.SortOrder
   location?: Prisma.SortOrder
   description?: Prisma.SortOrderInput | Prisma.SortOrder
-  ownerId?: Prisma.SortOrder
+  ownerId?: Prisma.SortOrderInput | Prisma.SortOrder
   foremanId?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -239,14 +239,14 @@ export type SiteWhereUniqueInput = Prisma.AtLeast<{
   name?: Prisma.StringFilter<"Site"> | string
   location?: Prisma.StringFilter<"Site"> | string
   description?: Prisma.StringNullableFilter<"Site"> | string | null
-  ownerId?: Prisma.StringFilter<"Site"> | string
+  ownerId?: Prisma.StringNullableFilter<"Site"> | string | null
   foremanId?: Prisma.StringNullableFilter<"Site"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Site"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Site"> | Date | string
   monthCloses?: Prisma.MonthCloseListRelationFilter
   payments?: Prisma.PaymentListRelationFilter
   foreman?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
-  owner?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  owner?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   workers?: Prisma.SiteWorkerListRelationFilter
   workEntries?: Prisma.WorkEntryListRelationFilter
 }, "id">
@@ -256,7 +256,7 @@ export type SiteOrderByWithAggregationInput = {
   name?: Prisma.SortOrder
   location?: Prisma.SortOrder
   description?: Prisma.SortOrderInput | Prisma.SortOrder
-  ownerId?: Prisma.SortOrder
+  ownerId?: Prisma.SortOrderInput | Prisma.SortOrder
   foremanId?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -273,7 +273,7 @@ export type SiteScalarWhereWithAggregatesInput = {
   name?: Prisma.StringWithAggregatesFilter<"Site"> | string
   location?: Prisma.StringWithAggregatesFilter<"Site"> | string
   description?: Prisma.StringNullableWithAggregatesFilter<"Site"> | string | null
-  ownerId?: Prisma.StringWithAggregatesFilter<"Site"> | string
+  ownerId?: Prisma.StringNullableWithAggregatesFilter<"Site"> | string | null
   foremanId?: Prisma.StringNullableWithAggregatesFilter<"Site"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Site"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Site"> | Date | string
@@ -289,7 +289,7 @@ export type SiteCreateInput = {
   monthCloses?: Prisma.MonthCloseCreateNestedManyWithoutSiteInput
   payments?: Prisma.PaymentCreateNestedManyWithoutSiteInput
   foreman?: Prisma.UserCreateNestedOneWithoutForemanSitesInput
-  owner: Prisma.UserCreateNestedOneWithoutOwnedSitesInput
+  owner?: Prisma.UserCreateNestedOneWithoutOwnedSitesInput
   workers?: Prisma.SiteWorkerCreateNestedManyWithoutSiteInput
   workEntries?: Prisma.WorkEntryCreateNestedManyWithoutSiteInput
 }
@@ -299,7 +299,7 @@ export type SiteUncheckedCreateInput = {
   name: string
   location: string
   description?: string | null
-  ownerId: string
+  ownerId?: string | null
   foremanId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -319,7 +319,7 @@ export type SiteUpdateInput = {
   monthCloses?: Prisma.MonthCloseUpdateManyWithoutSiteNestedInput
   payments?: Prisma.PaymentUpdateManyWithoutSiteNestedInput
   foreman?: Prisma.UserUpdateOneWithoutForemanSitesNestedInput
-  owner?: Prisma.UserUpdateOneRequiredWithoutOwnedSitesNestedInput
+  owner?: Prisma.UserUpdateOneWithoutOwnedSitesNestedInput
   workers?: Prisma.SiteWorkerUpdateManyWithoutSiteNestedInput
   workEntries?: Prisma.WorkEntryUpdateManyWithoutSiteNestedInput
 }
@@ -329,7 +329,7 @@ export type SiteUncheckedUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   location?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  ownerId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   foremanId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -344,7 +344,7 @@ export type SiteCreateManyInput = {
   name: string
   location: string
   description?: string | null
-  ownerId: string
+  ownerId?: string | null
   foremanId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -364,7 +364,7 @@ export type SiteUncheckedUpdateManyInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   location?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  ownerId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   foremanId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -567,7 +567,7 @@ export type SiteCreateWithoutForemanInput = {
   updatedAt?: Date | string
   monthCloses?: Prisma.MonthCloseCreateNestedManyWithoutSiteInput
   payments?: Prisma.PaymentCreateNestedManyWithoutSiteInput
-  owner: Prisma.UserCreateNestedOneWithoutOwnedSitesInput
+  owner?: Prisma.UserCreateNestedOneWithoutOwnedSitesInput
   workers?: Prisma.SiteWorkerCreateNestedManyWithoutSiteInput
   workEntries?: Prisma.WorkEntryCreateNestedManyWithoutSiteInput
 }
@@ -577,7 +577,7 @@ export type SiteUncheckedCreateWithoutForemanInput = {
   name: string
   location: string
   description?: string | null
-  ownerId: string
+  ownerId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   monthCloses?: Prisma.MonthCloseUncheckedCreateNestedManyWithoutSiteInput
@@ -658,7 +658,7 @@ export type SiteScalarWhereInput = {
   name?: Prisma.StringFilter<"Site"> | string
   location?: Prisma.StringFilter<"Site"> | string
   description?: Prisma.StringNullableFilter<"Site"> | string | null
-  ownerId?: Prisma.StringFilter<"Site"> | string
+  ownerId?: Prisma.StringNullableFilter<"Site"> | string | null
   foremanId?: Prisma.StringNullableFilter<"Site"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Site"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Site"> | Date | string
@@ -690,7 +690,7 @@ export type SiteCreateWithoutWorkersInput = {
   monthCloses?: Prisma.MonthCloseCreateNestedManyWithoutSiteInput
   payments?: Prisma.PaymentCreateNestedManyWithoutSiteInput
   foreman?: Prisma.UserCreateNestedOneWithoutForemanSitesInput
-  owner: Prisma.UserCreateNestedOneWithoutOwnedSitesInput
+  owner?: Prisma.UserCreateNestedOneWithoutOwnedSitesInput
   workEntries?: Prisma.WorkEntryCreateNestedManyWithoutSiteInput
 }
 
@@ -699,7 +699,7 @@ export type SiteUncheckedCreateWithoutWorkersInput = {
   name: string
   location: string
   description?: string | null
-  ownerId: string
+  ownerId?: string | null
   foremanId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -734,7 +734,7 @@ export type SiteUpdateWithoutWorkersInput = {
   monthCloses?: Prisma.MonthCloseUpdateManyWithoutSiteNestedInput
   payments?: Prisma.PaymentUpdateManyWithoutSiteNestedInput
   foreman?: Prisma.UserUpdateOneWithoutForemanSitesNestedInput
-  owner?: Prisma.UserUpdateOneRequiredWithoutOwnedSitesNestedInput
+  owner?: Prisma.UserUpdateOneWithoutOwnedSitesNestedInput
   workEntries?: Prisma.WorkEntryUpdateManyWithoutSiteNestedInput
 }
 
@@ -743,7 +743,7 @@ export type SiteUncheckedUpdateWithoutWorkersInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   location?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  ownerId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   foremanId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -762,7 +762,7 @@ export type SiteCreateWithoutWorkEntriesInput = {
   monthCloses?: Prisma.MonthCloseCreateNestedManyWithoutSiteInput
   payments?: Prisma.PaymentCreateNestedManyWithoutSiteInput
   foreman?: Prisma.UserCreateNestedOneWithoutForemanSitesInput
-  owner: Prisma.UserCreateNestedOneWithoutOwnedSitesInput
+  owner?: Prisma.UserCreateNestedOneWithoutOwnedSitesInput
   workers?: Prisma.SiteWorkerCreateNestedManyWithoutSiteInput
 }
 
@@ -771,7 +771,7 @@ export type SiteUncheckedCreateWithoutWorkEntriesInput = {
   name: string
   location: string
   description?: string | null
-  ownerId: string
+  ownerId?: string | null
   foremanId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -806,7 +806,7 @@ export type SiteUpdateWithoutWorkEntriesInput = {
   monthCloses?: Prisma.MonthCloseUpdateManyWithoutSiteNestedInput
   payments?: Prisma.PaymentUpdateManyWithoutSiteNestedInput
   foreman?: Prisma.UserUpdateOneWithoutForemanSitesNestedInput
-  owner?: Prisma.UserUpdateOneRequiredWithoutOwnedSitesNestedInput
+  owner?: Prisma.UserUpdateOneWithoutOwnedSitesNestedInput
   workers?: Prisma.SiteWorkerUpdateManyWithoutSiteNestedInput
 }
 
@@ -815,7 +815,7 @@ export type SiteUncheckedUpdateWithoutWorkEntriesInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   location?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  ownerId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   foremanId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -833,7 +833,7 @@ export type SiteCreateWithoutMonthClosesInput = {
   updatedAt?: Date | string
   payments?: Prisma.PaymentCreateNestedManyWithoutSiteInput
   foreman?: Prisma.UserCreateNestedOneWithoutForemanSitesInput
-  owner: Prisma.UserCreateNestedOneWithoutOwnedSitesInput
+  owner?: Prisma.UserCreateNestedOneWithoutOwnedSitesInput
   workers?: Prisma.SiteWorkerCreateNestedManyWithoutSiteInput
   workEntries?: Prisma.WorkEntryCreateNestedManyWithoutSiteInput
 }
@@ -843,7 +843,7 @@ export type SiteUncheckedCreateWithoutMonthClosesInput = {
   name: string
   location: string
   description?: string | null
-  ownerId: string
+  ownerId?: string | null
   foremanId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -877,7 +877,7 @@ export type SiteUpdateWithoutMonthClosesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   payments?: Prisma.PaymentUpdateManyWithoutSiteNestedInput
   foreman?: Prisma.UserUpdateOneWithoutForemanSitesNestedInput
-  owner?: Prisma.UserUpdateOneRequiredWithoutOwnedSitesNestedInput
+  owner?: Prisma.UserUpdateOneWithoutOwnedSitesNestedInput
   workers?: Prisma.SiteWorkerUpdateManyWithoutSiteNestedInput
   workEntries?: Prisma.WorkEntryUpdateManyWithoutSiteNestedInput
 }
@@ -887,7 +887,7 @@ export type SiteUncheckedUpdateWithoutMonthClosesInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   location?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  ownerId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   foremanId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -905,7 +905,7 @@ export type SiteCreateWithoutPaymentsInput = {
   updatedAt?: Date | string
   monthCloses?: Prisma.MonthCloseCreateNestedManyWithoutSiteInput
   foreman?: Prisma.UserCreateNestedOneWithoutForemanSitesInput
-  owner: Prisma.UserCreateNestedOneWithoutOwnedSitesInput
+  owner?: Prisma.UserCreateNestedOneWithoutOwnedSitesInput
   workers?: Prisma.SiteWorkerCreateNestedManyWithoutSiteInput
   workEntries?: Prisma.WorkEntryCreateNestedManyWithoutSiteInput
 }
@@ -915,7 +915,7 @@ export type SiteUncheckedCreateWithoutPaymentsInput = {
   name: string
   location: string
   description?: string | null
-  ownerId: string
+  ownerId?: string | null
   foremanId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -949,7 +949,7 @@ export type SiteUpdateWithoutPaymentsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   monthCloses?: Prisma.MonthCloseUpdateManyWithoutSiteNestedInput
   foreman?: Prisma.UserUpdateOneWithoutForemanSitesNestedInput
-  owner?: Prisma.UserUpdateOneRequiredWithoutOwnedSitesNestedInput
+  owner?: Prisma.UserUpdateOneWithoutOwnedSitesNestedInput
   workers?: Prisma.SiteWorkerUpdateManyWithoutSiteNestedInput
   workEntries?: Prisma.WorkEntryUpdateManyWithoutSiteNestedInput
 }
@@ -959,7 +959,7 @@ export type SiteUncheckedUpdateWithoutPaymentsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   location?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  ownerId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   foremanId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -973,7 +973,7 @@ export type SiteCreateManyForemanInput = {
   name: string
   location: string
   description?: string | null
-  ownerId: string
+  ownerId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -997,7 +997,7 @@ export type SiteUpdateWithoutForemanInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   monthCloses?: Prisma.MonthCloseUpdateManyWithoutSiteNestedInput
   payments?: Prisma.PaymentUpdateManyWithoutSiteNestedInput
-  owner?: Prisma.UserUpdateOneRequiredWithoutOwnedSitesNestedInput
+  owner?: Prisma.UserUpdateOneWithoutOwnedSitesNestedInput
   workers?: Prisma.SiteWorkerUpdateManyWithoutSiteNestedInput
   workEntries?: Prisma.WorkEntryUpdateManyWithoutSiteNestedInput
 }
@@ -1007,7 +1007,7 @@ export type SiteUncheckedUpdateWithoutForemanInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   location?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  ownerId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   monthCloses?: Prisma.MonthCloseUncheckedUpdateManyWithoutSiteNestedInput
@@ -1021,7 +1021,7 @@ export type SiteUncheckedUpdateManyWithoutForemanInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   location?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  ownerId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -1134,7 +1134,7 @@ export type SiteSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   monthCloses?: boolean | Prisma.Site$monthClosesArgs<ExtArgs>
   payments?: boolean | Prisma.Site$paymentsArgs<ExtArgs>
   foreman?: boolean | Prisma.Site$foremanArgs<ExtArgs>
-  owner?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  owner?: boolean | Prisma.Site$ownerArgs<ExtArgs>
   workers?: boolean | Prisma.Site$workersArgs<ExtArgs>
   workEntries?: boolean | Prisma.Site$workEntriesArgs<ExtArgs>
   _count?: boolean | Prisma.SiteCountOutputTypeDefaultArgs<ExtArgs>
@@ -1150,7 +1150,7 @@ export type SiteSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   createdAt?: boolean
   updatedAt?: boolean
   foreman?: boolean | Prisma.Site$foremanArgs<ExtArgs>
-  owner?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  owner?: boolean | Prisma.Site$ownerArgs<ExtArgs>
 }, ExtArgs["result"]["site"]>
 
 export type SiteSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -1163,7 +1163,7 @@ export type SiteSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   createdAt?: boolean
   updatedAt?: boolean
   foreman?: boolean | Prisma.Site$foremanArgs<ExtArgs>
-  owner?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  owner?: boolean | Prisma.Site$ownerArgs<ExtArgs>
 }, ExtArgs["result"]["site"]>
 
 export type SiteSelectScalar = {
@@ -1182,18 +1182,18 @@ export type SiteInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   monthCloses?: boolean | Prisma.Site$monthClosesArgs<ExtArgs>
   payments?: boolean | Prisma.Site$paymentsArgs<ExtArgs>
   foreman?: boolean | Prisma.Site$foremanArgs<ExtArgs>
-  owner?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  owner?: boolean | Prisma.Site$ownerArgs<ExtArgs>
   workers?: boolean | Prisma.Site$workersArgs<ExtArgs>
   workEntries?: boolean | Prisma.Site$workEntriesArgs<ExtArgs>
   _count?: boolean | Prisma.SiteCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type SiteIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   foreman?: boolean | Prisma.Site$foremanArgs<ExtArgs>
-  owner?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  owner?: boolean | Prisma.Site$ownerArgs<ExtArgs>
 }
 export type SiteIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   foreman?: boolean | Prisma.Site$foremanArgs<ExtArgs>
-  owner?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  owner?: boolean | Prisma.Site$ownerArgs<ExtArgs>
 }
 
 export type $SitePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1202,7 +1202,7 @@ export type $SitePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     monthCloses: Prisma.$MonthClosePayload<ExtArgs>[]
     payments: Prisma.$PaymentPayload<ExtArgs>[]
     foreman: Prisma.$UserPayload<ExtArgs> | null
-    owner: Prisma.$UserPayload<ExtArgs>
+    owner: Prisma.$UserPayload<ExtArgs> | null
     workers: Prisma.$SiteWorkerPayload<ExtArgs>[]
     workEntries: Prisma.$WorkEntryPayload<ExtArgs>[]
   }
@@ -1211,7 +1211,7 @@ export type $SitePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     name: string
     location: string
     description: string | null
-    ownerId: string
+    ownerId: string | null
     foremanId: string | null
     createdAt: Date
     updatedAt: Date
@@ -1612,7 +1612,7 @@ export interface Prisma__SiteClient<T, Null = never, ExtArgs extends runtime.Typ
   monthCloses<T extends Prisma.Site$monthClosesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Site$monthClosesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MonthClosePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   payments<T extends Prisma.Site$paymentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Site$paymentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PaymentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   foreman<T extends Prisma.Site$foremanArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Site$foremanArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-  owner<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  owner<T extends Prisma.Site$ownerArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Site$ownerArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   workers<T extends Prisma.Site$workersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Site$workersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SiteWorkerPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   workEntries<T extends Prisma.Site$workEntriesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Site$workEntriesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WorkEntryPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
@@ -2099,6 +2099,25 @@ export type Site$paymentsArgs<ExtArgs extends runtime.Types.Extensions.InternalA
  * Site.foreman
  */
 export type Site$foremanArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the User
+   */
+  select?: Prisma.UserSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the User
+   */
+  omit?: Prisma.UserOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserInclude<ExtArgs> | null
+  where?: Prisma.UserWhereInput
+}
+
+/**
+ * Site.owner
+ */
+export type Site$ownerArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
    * Select specific fields to fetch from the User
    */

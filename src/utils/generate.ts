@@ -10,7 +10,7 @@ export const generateOTP = ()=> {
 
 export const generateAccessToken = (id:string): string => {
     const secretKey = process.env.JWT_SECRET!
-    const expiresIn = '15m';
+    const expiresIn = '60m';
 
     return jwt.sign({ id }, secretKey, { expiresIn });
 };

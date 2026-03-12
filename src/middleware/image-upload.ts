@@ -1,64 +1,89 @@
-import multer from "multer";
-import path from "path";
-import fs from "fs";
-import { type Request } from "express";
+import { google } from "googleapis";
+import { Readable } from "stream";
+import "dotenv/config";
 
-const uploadDir = path.join(
-  __dirname,
-  "..",
-  "generated",
-  "uploads",
-  "blog"
-);
-console.log('Upload Directory:', uploadDir);
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+interface UploadResult {
+  status: string;
+  id: string;
+  link: string;
+  message?: string;
 }
 
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (_req, file, cb) => {
-    const safeName = file.originalname.replace(/\s+/g, "_");
-    cb(null, `${Date.now()}-${safeName}`);
-  },
-});
+const SHARED_DRIVE_ID = process.env.GOOGLE_DRIVE_FOLDER_ID || "";
 
-const fileFilter = (
-  _req: Request,
+export async function uploadToDrive(
   file: Express.Multer.File,
-  cb: multer.FileFilterCallback
-) => {
-  const allowedTypes = ["image/jpeg", "image/png", "image/gif"];
-  if (allowedTypes.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    cb(new Error("Invalid file type"));
-  }
-};
+): Promise<UploadResult> {
+  try {
+    if (!file || !file.buffer) {
+      return {
+        status: "error",
+        id: "",
+        link: "",
+        message: "Invalid file",
+      };
+    }
 
-const upload = multer({
-  storage,
-  fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 },
-});
-
-export const deleteImage = async (filename: string): Promise<void> => {
-  if (!filename) return;
-
-  const filePath = path.join(uploadDir, filename);
-
-  return new Promise((resolve, reject) => {
-    fs.access(filePath, fs.constants.F_OK, (err) => {
-      if (err) return resolve();
-
-      fs.unlink(filePath, (err) => {
-        if (err) reject(err);
-        else resolve();
-      });
+    const auth = new google.auth.GoogleAuth({
+      keyFile: "service-account.json",
+      scopes: ["https://www.googleapis.com/auth/drive"],
     });
-  });
-};
 
-export default upload;
+    const drive = google.drive({ version: "v3", auth });
+
+    const bufferStream = new Readable();
+    bufferStream.push(file.buffer);
+    bufferStream.push(null);
+
+    // IMPORTANT: Upload to Shared Drive
+    const response = await drive.files.create({
+      requestBody: {
+        name: file.originalname,
+        mimeType: file.mimetype,
+        parents: [SHARED_DRIVE_ID], // Shared Drive ID
+      },
+      media: {
+        mimeType: file.mimetype,
+        body: bufferStream,
+      },
+      fields: "id, webViewLink",
+      supportsAllDrives: true, // Required for Shared Drives
+    });
+
+    const fileId = response.data.id;
+
+    if (!fileId) {
+      return {
+        status: "error",
+        id: "",
+        link: "",
+        message: "Upload failed, no file ID returned",
+      };
+    }
+
+    // Make file publicly accessible (optional)
+    await drive.permissions.create({
+      fileId,
+      requestBody: {
+        role: "reader",
+        type: "anyone",
+      },
+      supportsAllDrives: true, // Required for Shared Drives
+    });
+
+    return {
+      status: "success",
+      id: fileId,
+      link:
+        response.data.webViewLink || `https://drive.google.com/uc?id=${fileId}`,
+    };
+  } catch (error: any) {
+    console.error("Upload failed:", error);
+    return {
+      status: "error",
+      id: "",
+      link: "",
+      message: error.message || "Upload failed",
+    };
+  }
+}

@@ -4,7 +4,8 @@ import {
   resendOTP,
   deleteUser,
   loginUser,
-  forgotPassword,
+  resetPassword,
+  verifyEmail,
   //uploadImage,
   getImage,
   updateUser,
@@ -19,17 +20,17 @@ import {
 
 import verifyToken from "../middleware/auth.js";
 import { isAdmin } from "../middleware/role.js";
-import upload from "../middleware/multer.js";
 import { Router } from "express";
-
+import { upload } from "../middleware/multer";
 const router = Router();
 
 router.get("/", users);
-router.post("/register", registerUser);
+router.post("/register", upload.single("image"), registerUser);
 router.post("/verify-account", verifyAccount);
 router.post("/resend-otp", resendOTP);
+router.post("/verifyEmail", verifyEmail);
 router.post("/login", loginUserPolicy, loginUser);
-router.post("/forgotPassword", forgotPasswordPolicy, forgotPassword);
+router.patch("/resetPassword", resetPassword);
 
 //router.post("/upload", upload.single("image"), uploadImage);
 router.get("/images/:id", getImage);

@@ -8,10 +8,22 @@ const transporter = nodemailer.createTransport({
   //port: 465, // Changed from 993 to 465 for SMTP over SSL
   //secure: true, // true for port 465, false for port 587
   auth: {
-    user: process.env.SENDER_EMAIL || "donations@gataama.com",
-    pass: process.env.SENDER_EMAIL_PASSWORD || "ABCabc123*#",
+    user: process.env.SENDER_EMAIL,
+    pass: process.env.SENDER_EMAIL_PASSWORD,
   },
 });
+
+// Create a transporter using Ethereal test credentials.
+// For production, replace with your actual SMTP server details.
+// const transporter = nodemailer.createTransport({
+//   host: "smtp.ethereal.email",
+//   port: 587,
+//   secure: false, // Use true for port 465, false for port 587
+//   auth: {
+//     user: process.env.SENDER_EMAIL,
+//     pass: process.env.SENDER_EMAIL_PASSWORD,
+//   },
+// });
 
 type sendMailProps = {
   recipient: string;
@@ -26,13 +38,14 @@ export default async function sendEmail({
 }: sendMailProps) {
   try {
     await transporter.sendMail({
-      from: `Gataama <${process.env.SENDER_EMAIL}>`,
+      from: `Labor company <${process.env.SENDER_EMAIL}>`,
       sender: process.env.SENDER_EMAIL,
       subject: subject,
       to: recipient,
       html: message,
     });
   } catch (error) {
+    console.log("erro", error);
     throw new Error("Error sending mail");
   }
 }
