@@ -17,6 +17,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import userRoute from "./routes/user.js";
 import workerRoute from "./routes/worker";
+import attendanceRoute from "./routes/attendance";
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
@@ -72,6 +73,7 @@ app.use(
 
 app.use("/users", userRoute);
 app.use("/worker", workerRoute);
+app.use("/attendance", attendanceRoute);
 
 app.use((_req: Request, res: Response) => {
   res.status(404).json({ message: "Not Found" });
@@ -86,8 +88,6 @@ app.use((error: any, _req: Request, res: Response, _next: NextFunction) => {
 
 (async () => {
   try {
-    const sites = await prisma.site.findMany()
-    console.log('sites: ', sites)
     await prisma.$connect();
     console.log("✅ PostgreSQL connected successfully");
 

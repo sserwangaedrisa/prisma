@@ -39,6 +39,7 @@ model Site {
   description String?
   ownerId     String?
   foremanId   String?
+  dutyHours   Float?
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   monthCloses MonthClose[]
@@ -64,7 +65,7 @@ model WorkEntry {
   id        String   @id @default(uuid())
   workerId  String
   siteId    String
-  date      DateTime
+  date      DateTime @default(now())
   hours     Float
   overtime  Float    @default(0)
   notes     String?

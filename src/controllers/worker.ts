@@ -1,7 +1,5 @@
 import e, { type Request, type Response } from "express";
-import asyncHandler from "express-async-handler";
 import prisma from "../../prisma/config.js";
-import { Worker } from "node:cluster";
 
 export const getSiteDetails = async (req: Request, res: Response) => {
   const { foremanId } = req.body;
