@@ -54,9 +54,9 @@ export const recordAttendance = async (req: Request, res: Response) => {
         workerId,
         siteId,
         date,
-        hours,
+        hours: parseInt(hours, 10),
         notes,
-        overtime,
+        overtime: overtime ? parseInt(overtime, 10) : 0,
       },
     });
 
@@ -70,5 +70,51 @@ export const recordAttendance = async (req: Request, res: Response) => {
       status: "failed",
       massage: "An error occured while recording attendance.",
     });
+  }
+};
+
+export const todayAttendace = async (req: Request, res: Response) => {
+  const { siteId } = req.body;
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+
+  const endOfDay = new Date();
+  endOfDay.setHours(23, 59, 59, 999);
+
+  try {
+    const presentWorkers = await prisma.workEntry.findMany({
+      where: {
+        siteId: siteId,
+        date: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+      },
+      select: {
+        workerId: true,
+      },
+      distinct: ["workerId"],
+    });
+
+    if (!presentWorkers) {
+      res.status(200).json({
+        status: "no attandace record found",
+        message: "no attendace  record found ",
+      });
+      return;
+    }
+
+    const todayWorkers = presentWorkers.map((w) => w.workerId);
+
+    res.status(200).json({
+      message: "attandance list for today retrieved successfully",
+      status: "success",
+      presentWorkers: todayWorkers,
+    });
+  } catch (error) {
+    console.log("error while getting daily attendance: ", error);
+    res
+      .status(500)
+      .json({ message: " internal server error ", status: "error" });
   }
 };

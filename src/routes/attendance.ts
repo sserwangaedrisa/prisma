@@ -6,5 +6,6 @@ import { Router } from "express";
 const router = Router();
 
 router.post("/record", attendanceController.recordAttendance);
+router.post("/todayAttendace", attendanceController.todayAttendace);
 
 export default router;
