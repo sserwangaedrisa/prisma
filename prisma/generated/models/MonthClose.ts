@@ -1261,6 +1261,11 @@ export type MonthCloseFindManyArgs<ExtArgs extends runtime.Types.Extensions.Inte
    * Skip the first `n` MonthCloses.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   * 
+   * Filter by unique combinations of MonthCloses.
+   */
   distinct?: Prisma.MonthCloseScalarFieldEnum | Prisma.MonthCloseScalarFieldEnum[]
 }
 

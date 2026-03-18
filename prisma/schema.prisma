@@ -48,6 +48,7 @@ model Site {
   owner       User?        @relation("OwnerSites", fields: [ownerId], references: [id])
   workers     SiteWorker[]
   workEntries WorkEntry[]
+  settings   Settings[]
 }
 
 model SiteWorker {
@@ -108,21 +109,23 @@ model Payment {
 
 model Settings {
   id             String   @id @default(uuid())
-  overtimeRate   Float    @default(1.5)
-  maxDailyHours  Float    @default(8)
-  baseHourlyRate Float    @default(20)
+  overtimeRate   Float    @default(0)
+  maxDailyHours  Float    @default(10)
+  baseHourlyRate Float    @default(0)
+  siteId         String
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+  site           Site     @relation(fields: [siteId], references: [id])
 }
 
 model ActivityLog {
   id        String   @id @default(uuid())
-  userId    String
+  userId    String?
   action    String
   entity    String
   entityId  String?
   createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id])
+  user      User?     @relation(fields: [userId], references: [id])
 }
 
 enum Role {

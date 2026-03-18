@@ -1207,6 +1207,11 @@ export type SiteWorkerFindManyArgs<ExtArgs extends runtime.Types.Extensions.Inte
    * Skip the first `n` SiteWorkers.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   * 
+   * Filter by unique combinations of SiteWorkers.
+   */
   distinct?: Prisma.SiteWorkerScalarFieldEnum | Prisma.SiteWorkerScalarFieldEnum[]
 }
 

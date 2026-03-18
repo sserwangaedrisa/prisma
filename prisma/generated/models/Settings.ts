@@ -43,6 +43,7 @@ export type SettingsMinAggregateOutputType = {
   overtimeRate: number | null
   maxDailyHours: number | null
   baseHourlyRate: number | null
+  siteId: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -52,6 +53,7 @@ export type SettingsMaxAggregateOutputType = {
   overtimeRate: number | null
   maxDailyHours: number | null
   baseHourlyRate: number | null
+  siteId: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -61,6 +63,7 @@ export type SettingsCountAggregateOutputType = {
   overtimeRate: number
   maxDailyHours: number
   baseHourlyRate: number
+  siteId: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -84,6 +87,7 @@ export type SettingsMinAggregateInputType = {
   overtimeRate?: true
   maxDailyHours?: true
   baseHourlyRate?: true
+  siteId?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -93,6 +97,7 @@ export type SettingsMaxAggregateInputType = {
   overtimeRate?: true
   maxDailyHours?: true
   baseHourlyRate?: true
+  siteId?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -102,6 +107,7 @@ export type SettingsCountAggregateInputType = {
   overtimeRate?: true
   maxDailyHours?: true
   baseHourlyRate?: true
+  siteId?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -198,6 +204,7 @@ export type SettingsGroupByOutputType = {
   overtimeRate: number
   maxDailyHours: number
   baseHourlyRate: number
+  siteId: string
   createdAt: Date
   updatedAt: Date
   _count: SettingsCountAggregateOutputType | null
@@ -230,8 +237,10 @@ export type SettingsWhereInput = {
   overtimeRate?: Prisma.FloatFilter<"Settings"> | number
   maxDailyHours?: Prisma.FloatFilter<"Settings"> | number
   baseHourlyRate?: Prisma.FloatFilter<"Settings"> | number
+  siteId?: Prisma.StringFilter<"Settings"> | string
   createdAt?: Prisma.DateTimeFilter<"Settings"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Settings"> | Date | string
+  site?: Prisma.XOR<Prisma.SiteScalarRelationFilter, Prisma.SiteWhereInput>
 }
 
 export type SettingsOrderByWithRelationInput = {
@@ -239,8 +248,10 @@ export type SettingsOrderByWithRelationInput = {
   overtimeRate?: Prisma.SortOrder
   maxDailyHours?: Prisma.SortOrder
   baseHourlyRate?: Prisma.SortOrder
+  siteId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  site?: Prisma.SiteOrderByWithRelationInput
 }
 
 export type SettingsWhereUniqueInput = Prisma.AtLeast<{
@@ -251,8 +262,10 @@ export type SettingsWhereUniqueInput = Prisma.AtLeast<{
   overtimeRate?: Prisma.FloatFilter<"Settings"> | number
   maxDailyHours?: Prisma.FloatFilter<"Settings"> | number
   baseHourlyRate?: Prisma.FloatFilter<"Settings"> | number
+  siteId?: Prisma.StringFilter<"Settings"> | string
   createdAt?: Prisma.DateTimeFilter<"Settings"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Settings"> | Date | string
+  site?: Prisma.XOR<Prisma.SiteScalarRelationFilter, Prisma.SiteWhereInput>
 }, "id">
 
 export type SettingsOrderByWithAggregationInput = {
@@ -260,6 +273,7 @@ export type SettingsOrderByWithAggregationInput = {
   overtimeRate?: Prisma.SortOrder
   maxDailyHours?: Prisma.SortOrder
   baseHourlyRate?: Prisma.SortOrder
+  siteId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.SettingsCountOrderByAggregateInput
@@ -277,6 +291,7 @@ export type SettingsScalarWhereWithAggregatesInput = {
   overtimeRate?: Prisma.FloatWithAggregatesFilter<"Settings"> | number
   maxDailyHours?: Prisma.FloatWithAggregatesFilter<"Settings"> | number
   baseHourlyRate?: Prisma.FloatWithAggregatesFilter<"Settings"> | number
+  siteId?: Prisma.StringWithAggregatesFilter<"Settings"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Settings"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Settings"> | Date | string
 }
@@ -288,6 +303,7 @@ export type SettingsCreateInput = {
   baseHourlyRate?: number
   createdAt?: Date | string
   updatedAt?: Date | string
+  site: Prisma.SiteCreateNestedOneWithoutSettingsInput
 }
 
 export type SettingsUncheckedCreateInput = {
@@ -295,6 +311,7 @@ export type SettingsUncheckedCreateInput = {
   overtimeRate?: number
   maxDailyHours?: number
   baseHourlyRate?: number
+  siteId: string
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -306,6 +323,7 @@ export type SettingsUpdateInput = {
   baseHourlyRate?: Prisma.FloatFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  site?: Prisma.SiteUpdateOneRequiredWithoutSettingsNestedInput
 }
 
 export type SettingsUncheckedUpdateInput = {
@@ -313,6 +331,7 @@ export type SettingsUncheckedUpdateInput = {
   overtimeRate?: Prisma.FloatFieldUpdateOperationsInput | number
   maxDailyHours?: Prisma.FloatFieldUpdateOperationsInput | number
   baseHourlyRate?: Prisma.FloatFieldUpdateOperationsInput | number
+  siteId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -322,6 +341,7 @@ export type SettingsCreateManyInput = {
   overtimeRate?: number
   maxDailyHours?: number
   baseHourlyRate?: number
+  siteId: string
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -340,8 +360,19 @@ export type SettingsUncheckedUpdateManyInput = {
   overtimeRate?: Prisma.FloatFieldUpdateOperationsInput | number
   maxDailyHours?: Prisma.FloatFieldUpdateOperationsInput | number
   baseHourlyRate?: Prisma.FloatFieldUpdateOperationsInput | number
+  siteId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type SettingsListRelationFilter = {
+  every?: Prisma.SettingsWhereInput
+  some?: Prisma.SettingsWhereInput
+  none?: Prisma.SettingsWhereInput
+}
+
+export type SettingsOrderByRelationAggregateInput = {
+  _count?: Prisma.SortOrder
 }
 
 export type SettingsCountOrderByAggregateInput = {
@@ -349,6 +380,7 @@ export type SettingsCountOrderByAggregateInput = {
   overtimeRate?: Prisma.SortOrder
   maxDailyHours?: Prisma.SortOrder
   baseHourlyRate?: Prisma.SortOrder
+  siteId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -364,6 +396,7 @@ export type SettingsMaxOrderByAggregateInput = {
   overtimeRate?: Prisma.SortOrder
   maxDailyHours?: Prisma.SortOrder
   baseHourlyRate?: Prisma.SortOrder
+  siteId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -373,6 +406,7 @@ export type SettingsMinOrderByAggregateInput = {
   overtimeRate?: Prisma.SortOrder
   maxDailyHours?: Prisma.SortOrder
   baseHourlyRate?: Prisma.SortOrder
+  siteId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -383,6 +417,141 @@ export type SettingsSumOrderByAggregateInput = {
   baseHourlyRate?: Prisma.SortOrder
 }
 
+export type SettingsCreateNestedManyWithoutSiteInput = {
+  create?: Prisma.XOR<Prisma.SettingsCreateWithoutSiteInput, Prisma.SettingsUncheckedCreateWithoutSiteInput> | Prisma.SettingsCreateWithoutSiteInput[] | Prisma.SettingsUncheckedCreateWithoutSiteInput[]
+  connectOrCreate?: Prisma.SettingsCreateOrConnectWithoutSiteInput | Prisma.SettingsCreateOrConnectWithoutSiteInput[]
+  createMany?: Prisma.SettingsCreateManySiteInputEnvelope
+  connect?: Prisma.SettingsWhereUniqueInput | Prisma.SettingsWhereUniqueInput[]
+}
+
+export type SettingsUncheckedCreateNestedManyWithoutSiteInput = {
+  create?: Prisma.XOR<Prisma.SettingsCreateWithoutSiteInput, Prisma.SettingsUncheckedCreateWithoutSiteInput> | Prisma.SettingsCreateWithoutSiteInput[] | Prisma.SettingsUncheckedCreateWithoutSiteInput[]
+  connectOrCreate?: Prisma.SettingsCreateOrConnectWithoutSiteInput | Prisma.SettingsCreateOrConnectWithoutSiteInput[]
+  createMany?: Prisma.SettingsCreateManySiteInputEnvelope
+  connect?: Prisma.SettingsWhereUniqueInput | Prisma.SettingsWhereUniqueInput[]
+}
+
+export type SettingsUpdateManyWithoutSiteNestedInput = {
+  create?: Prisma.XOR<Prisma.SettingsCreateWithoutSiteInput, Prisma.SettingsUncheckedCreateWithoutSiteInput> | Prisma.SettingsCreateWithoutSiteInput[] | Prisma.SettingsUncheckedCreateWithoutSiteInput[]
+  connectOrCreate?: Prisma.SettingsCreateOrConnectWithoutSiteInput | Prisma.SettingsCreateOrConnectWithoutSiteInput[]
+  upsert?: Prisma.SettingsUpsertWithWhereUniqueWithoutSiteInput | Prisma.SettingsUpsertWithWhereUniqueWithoutSiteInput[]
+  createMany?: Prisma.SettingsCreateManySiteInputEnvelope
+  set?: Prisma.SettingsWhereUniqueInput | Prisma.SettingsWhereUniqueInput[]
+  disconnect?: Prisma.SettingsWhereUniqueInput | Prisma.SettingsWhereUniqueInput[]
+  delete?: Prisma.SettingsWhereUniqueInput | Prisma.SettingsWhereUniqueInput[]
+  connect?: Prisma.SettingsWhereUniqueInput | Prisma.SettingsWhereUniqueInput[]
+  update?: Prisma.SettingsUpdateWithWhereUniqueWithoutSiteInput | Prisma.SettingsUpdateWithWhereUniqueWithoutSiteInput[]
+  updateMany?: Prisma.SettingsUpdateManyWithWhereWithoutSiteInput | Prisma.SettingsUpdateManyWithWhereWithoutSiteInput[]
+  deleteMany?: Prisma.SettingsScalarWhereInput | Prisma.SettingsScalarWhereInput[]
+}
+
+export type SettingsUncheckedUpdateManyWithoutSiteNestedInput = {
+  create?: Prisma.XOR<Prisma.SettingsCreateWithoutSiteInput, Prisma.SettingsUncheckedCreateWithoutSiteInput> | Prisma.SettingsCreateWithoutSiteInput[] | Prisma.SettingsUncheckedCreateWithoutSiteInput[]
+  connectOrCreate?: Prisma.SettingsCreateOrConnectWithoutSiteInput | Prisma.SettingsCreateOrConnectWithoutSiteInput[]
+  upsert?: Prisma.SettingsUpsertWithWhereUniqueWithoutSiteInput | Prisma.SettingsUpsertWithWhereUniqueWithoutSiteInput[]
+  createMany?: Prisma.SettingsCreateManySiteInputEnvelope
+  set?: Prisma.SettingsWhereUniqueInput | Prisma.SettingsWhereUniqueInput[]
+  disconnect?: Prisma.SettingsWhereUniqueInput | Prisma.SettingsWhereUniqueInput[]
+  delete?: Prisma.SettingsWhereUniqueInput | Prisma.SettingsWhereUniqueInput[]
+  connect?: Prisma.SettingsWhereUniqueInput | Prisma.SettingsWhereUniqueInput[]
+  update?: Prisma.SettingsUpdateWithWhereUniqueWithoutSiteInput | Prisma.SettingsUpdateWithWhereUniqueWithoutSiteInput[]
+  updateMany?: Prisma.SettingsUpdateManyWithWhereWithoutSiteInput | Prisma.SettingsUpdateManyWithWhereWithoutSiteInput[]
+  deleteMany?: Prisma.SettingsScalarWhereInput | Prisma.SettingsScalarWhereInput[]
+}
+
+export type SettingsCreateWithoutSiteInput = {
+  id?: string
+  overtimeRate?: number
+  maxDailyHours?: number
+  baseHourlyRate?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type SettingsUncheckedCreateWithoutSiteInput = {
+  id?: string
+  overtimeRate?: number
+  maxDailyHours?: number
+  baseHourlyRate?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type SettingsCreateOrConnectWithoutSiteInput = {
+  where: Prisma.SettingsWhereUniqueInput
+  create: Prisma.XOR<Prisma.SettingsCreateWithoutSiteInput, Prisma.SettingsUncheckedCreateWithoutSiteInput>
+}
+
+export type SettingsCreateManySiteInputEnvelope = {
+  data: Prisma.SettingsCreateManySiteInput | Prisma.SettingsCreateManySiteInput[]
+  skipDuplicates?: boolean
+}
+
+export type SettingsUpsertWithWhereUniqueWithoutSiteInput = {
+  where: Prisma.SettingsWhereUniqueInput
+  update: Prisma.XOR<Prisma.SettingsUpdateWithoutSiteInput, Prisma.SettingsUncheckedUpdateWithoutSiteInput>
+  create: Prisma.XOR<Prisma.SettingsCreateWithoutSiteInput, Prisma.SettingsUncheckedCreateWithoutSiteInput>
+}
+
+export type SettingsUpdateWithWhereUniqueWithoutSiteInput = {
+  where: Prisma.SettingsWhereUniqueInput
+  data: Prisma.XOR<Prisma.SettingsUpdateWithoutSiteInput, Prisma.SettingsUncheckedUpdateWithoutSiteInput>
+}
+
+export type SettingsUpdateManyWithWhereWithoutSiteInput = {
+  where: Prisma.SettingsScalarWhereInput
+  data: Prisma.XOR<Prisma.SettingsUpdateManyMutationInput, Prisma.SettingsUncheckedUpdateManyWithoutSiteInput>
+}
+
+export type SettingsScalarWhereInput = {
+  AND?: Prisma.SettingsScalarWhereInput | Prisma.SettingsScalarWhereInput[]
+  OR?: Prisma.SettingsScalarWhereInput[]
+  NOT?: Prisma.SettingsScalarWhereInput | Prisma.SettingsScalarWhereInput[]
+  id?: Prisma.StringFilter<"Settings"> | string
+  overtimeRate?: Prisma.FloatFilter<"Settings"> | number
+  maxDailyHours?: Prisma.FloatFilter<"Settings"> | number
+  baseHourlyRate?: Prisma.FloatFilter<"Settings"> | number
+  siteId?: Prisma.StringFilter<"Settings"> | string
+  createdAt?: Prisma.DateTimeFilter<"Settings"> | Date | string
+  updatedAt?: Prisma.DateTimeFilter<"Settings"> | Date | string
+}
+
+export type SettingsCreateManySiteInput = {
+  id?: string
+  overtimeRate?: number
+  maxDailyHours?: number
+  baseHourlyRate?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type SettingsUpdateWithoutSiteInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  overtimeRate?: Prisma.FloatFieldUpdateOperationsInput | number
+  maxDailyHours?: Prisma.FloatFieldUpdateOperationsInput | number
+  baseHourlyRate?: Prisma.FloatFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type SettingsUncheckedUpdateWithoutSiteInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  overtimeRate?: Prisma.FloatFieldUpdateOperationsInput | number
+  maxDailyHours?: Prisma.FloatFieldUpdateOperationsInput | number
+  baseHourlyRate?: Prisma.FloatFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type SettingsUncheckedUpdateManyWithoutSiteInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  overtimeRate?: Prisma.FloatFieldUpdateOperationsInput | number
+  maxDailyHours?: Prisma.FloatFieldUpdateOperationsInput | number
+  baseHourlyRate?: Prisma.FloatFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
 
 
 export type SettingsSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -390,8 +559,10 @@ export type SettingsSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   overtimeRate?: boolean
   maxDailyHours?: boolean
   baseHourlyRate?: boolean
+  siteId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  site?: boolean | Prisma.SiteDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["settings"]>
 
 export type SettingsSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -399,8 +570,10 @@ export type SettingsSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exte
   overtimeRate?: boolean
   maxDailyHours?: boolean
   baseHourlyRate?: boolean
+  siteId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  site?: boolean | Prisma.SiteDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["settings"]>
 
 export type SettingsSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -408,8 +581,10 @@ export type SettingsSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exte
   overtimeRate?: boolean
   maxDailyHours?: boolean
   baseHourlyRate?: boolean
+  siteId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  site?: boolean | Prisma.SiteDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["settings"]>
 
 export type SettingsSelectScalar = {
@@ -417,20 +592,33 @@ export type SettingsSelectScalar = {
   overtimeRate?: boolean
   maxDailyHours?: boolean
   baseHourlyRate?: boolean
+  siteId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type SettingsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "overtimeRate" | "maxDailyHours" | "baseHourlyRate" | "createdAt" | "updatedAt", ExtArgs["result"]["settings"]>
+export type SettingsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "overtimeRate" | "maxDailyHours" | "baseHourlyRate" | "siteId" | "createdAt" | "updatedAt", ExtArgs["result"]["settings"]>
+export type SettingsInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  site?: boolean | Prisma.SiteDefaultArgs<ExtArgs>
+}
+export type SettingsIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  site?: boolean | Prisma.SiteDefaultArgs<ExtArgs>
+}
+export type SettingsIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  site?: boolean | Prisma.SiteDefaultArgs<ExtArgs>
+}
 
 export type $SettingsPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Settings"
-  objects: {}
+  objects: {
+    site: Prisma.$SitePayload<ExtArgs>
+  }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     overtimeRate: number
     maxDailyHours: number
     baseHourlyRate: number
+    siteId: string
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["settings"]>
@@ -827,6 +1015,7 @@ readonly fields: SettingsFieldRefs;
  */
 export interface Prisma__SettingsClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  site<T extends Prisma.SiteDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.SiteDefaultArgs<ExtArgs>>): Prisma.Prisma__SiteClient<runtime.Types.Result.GetResult<Prisma.$SitePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -860,6 +1049,7 @@ export interface SettingsFieldRefs {
   readonly overtimeRate: Prisma.FieldRef<"Settings", 'Float'>
   readonly maxDailyHours: Prisma.FieldRef<"Settings", 'Float'>
   readonly baseHourlyRate: Prisma.FieldRef<"Settings", 'Float'>
+  readonly siteId: Prisma.FieldRef<"Settings", 'String'>
   readonly createdAt: Prisma.FieldRef<"Settings", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Settings", 'DateTime'>
 }
@@ -879,6 +1069,10 @@ export type SettingsFindUniqueArgs<ExtArgs extends runtime.Types.Extensions.Inte
    */
   omit?: Prisma.SettingsOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SettingsInclude<ExtArgs> | null
+  /**
    * Filter, which Settings to fetch.
    */
   where: Prisma.SettingsWhereUniqueInput
@@ -897,6 +1091,10 @@ export type SettingsFindUniqueOrThrowArgs<ExtArgs extends runtime.Types.Extensio
    */
   omit?: Prisma.SettingsOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SettingsInclude<ExtArgs> | null
+  /**
    * Filter, which Settings to fetch.
    */
   where: Prisma.SettingsWhereUniqueInput
@@ -914,6 +1112,10 @@ export type SettingsFindFirstArgs<ExtArgs extends runtime.Types.Extensions.Inter
    * Omit specific fields from the Settings
    */
   omit?: Prisma.SettingsOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SettingsInclude<ExtArgs> | null
   /**
    * Filter, which Settings to fetch.
    */
@@ -963,6 +1165,10 @@ export type SettingsFindFirstOrThrowArgs<ExtArgs extends runtime.Types.Extension
    */
   omit?: Prisma.SettingsOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SettingsInclude<ExtArgs> | null
+  /**
    * Filter, which Settings to fetch.
    */
   where?: Prisma.SettingsWhereInput
@@ -1011,6 +1217,10 @@ export type SettingsFindManyArgs<ExtArgs extends runtime.Types.Extensions.Intern
    */
   omit?: Prisma.SettingsOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SettingsInclude<ExtArgs> | null
+  /**
    * Filter, which Settings to fetch.
    */
   where?: Prisma.SettingsWhereInput
@@ -1038,6 +1248,11 @@ export type SettingsFindManyArgs<ExtArgs extends runtime.Types.Extensions.Intern
    * Skip the first `n` Settings.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   * 
+   * Filter by unique combinations of Settings.
+   */
   distinct?: Prisma.SettingsScalarFieldEnum | Prisma.SettingsScalarFieldEnum[]
 }
 
@@ -1053,6 +1268,10 @@ export type SettingsCreateArgs<ExtArgs extends runtime.Types.Extensions.Internal
    * Omit specific fields from the Settings
    */
   omit?: Prisma.SettingsOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SettingsInclude<ExtArgs> | null
   /**
    * The data needed to create a Settings.
    */
@@ -1087,6 +1306,10 @@ export type SettingsCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Extens
    */
   data: Prisma.SettingsCreateManyInput | Prisma.SettingsCreateManyInput[]
   skipDuplicates?: boolean
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SettingsIncludeCreateManyAndReturn<ExtArgs> | null
 }
 
 /**
@@ -1101,6 +1324,10 @@ export type SettingsUpdateArgs<ExtArgs extends runtime.Types.Extensions.Internal
    * Omit specific fields from the Settings
    */
   omit?: Prisma.SettingsOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SettingsInclude<ExtArgs> | null
   /**
    * The data needed to update a Settings.
    */
@@ -1153,6 +1380,10 @@ export type SettingsUpdateManyAndReturnArgs<ExtArgs extends runtime.Types.Extens
    * Limit how many Settings to update.
    */
   limit?: number
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SettingsIncludeUpdateManyAndReturn<ExtArgs> | null
 }
 
 /**
@@ -1167,6 +1398,10 @@ export type SettingsUpsertArgs<ExtArgs extends runtime.Types.Extensions.Internal
    * Omit specific fields from the Settings
    */
   omit?: Prisma.SettingsOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SettingsInclude<ExtArgs> | null
   /**
    * The filter to search for the Settings to update in case it exists.
    */
@@ -1193,6 +1428,10 @@ export type SettingsDeleteArgs<ExtArgs extends runtime.Types.Extensions.Internal
    * Omit specific fields from the Settings
    */
   omit?: Prisma.SettingsOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SettingsInclude<ExtArgs> | null
   /**
    * Filter which Settings to delete.
    */
@@ -1225,4 +1464,8 @@ export type SettingsDefaultArgs<ExtArgs extends runtime.Types.Extensions.Interna
    * Omit specific fields from the Settings
    */
   omit?: Prisma.SettingsOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SettingsInclude<ExtArgs> | null
 }

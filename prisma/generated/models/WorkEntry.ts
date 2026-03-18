@@ -309,7 +309,7 @@ export type WorkEntryScalarWhereWithAggregatesInput = {
 
 export type WorkEntryCreateInput = {
   id?: string
-  date: Date | string
+  date?: Date | string
   hours: number
   overtime?: number
   notes?: string | null
@@ -322,7 +322,7 @@ export type WorkEntryUncheckedCreateInput = {
   id?: string
   workerId: string
   siteId: string
-  date: Date | string
+  date?: Date | string
   hours: number
   overtime?: number
   notes?: string | null
@@ -355,7 +355,7 @@ export type WorkEntryCreateManyInput = {
   id?: string
   workerId: string
   siteId: string
-  date: Date | string
+  date?: Date | string
   hours: number
   overtime?: number
   notes?: string | null
@@ -529,7 +529,7 @@ export type FloatFieldUpdateOperationsInput = {
 
 export type WorkEntryCreateWithoutWorkerInput = {
   id?: string
-  date: Date | string
+  date?: Date | string
   hours: number
   overtime?: number
   notes?: string | null
@@ -540,7 +540,7 @@ export type WorkEntryCreateWithoutWorkerInput = {
 export type WorkEntryUncheckedCreateWithoutWorkerInput = {
   id?: string
   siteId: string
-  date: Date | string
+  date?: Date | string
   hours: number
   overtime?: number
   notes?: string | null
@@ -589,7 +589,7 @@ export type WorkEntryScalarWhereInput = {
 
 export type WorkEntryCreateWithoutSiteInput = {
   id?: string
-  date: Date | string
+  date?: Date | string
   hours: number
   overtime?: number
   notes?: string | null
@@ -600,7 +600,7 @@ export type WorkEntryCreateWithoutSiteInput = {
 export type WorkEntryUncheckedCreateWithoutSiteInput = {
   id?: string
   workerId: string
-  date: Date | string
+  date?: Date | string
   hours: number
   overtime?: number
   notes?: string | null
@@ -636,7 +636,7 @@ export type WorkEntryUpdateManyWithWhereWithoutSiteInput = {
 export type WorkEntryCreateManyWorkerInput = {
   id?: string
   siteId: string
-  date: Date | string
+  date?: Date | string
   hours: number
   overtime?: number
   notes?: string | null
@@ -676,7 +676,7 @@ export type WorkEntryUncheckedUpdateManyWithoutWorkerInput = {
 export type WorkEntryCreateManySiteInput = {
   id?: string
   workerId: string
-  date: Date | string
+  date?: Date | string
   hours: number
   overtime?: number
   notes?: string | null
@@ -1423,6 +1423,11 @@ export type WorkEntryFindManyArgs<ExtArgs extends runtime.Types.Extensions.Inter
    * Skip the first `n` WorkEntries.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   * 
+   * Filter by unique combinations of WorkEntries.
+   */
   distinct?: Prisma.WorkEntryScalarFieldEnum | Prisma.WorkEntryScalarFieldEnum[]
 }
 
