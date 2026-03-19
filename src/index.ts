@@ -15,6 +15,8 @@ import dotenv from "dotenv";
 import http from "http";
 import path from "path";
 import { fileURLToPath } from "url";
+// routes
+import settingsRoute from "./routes/settings";
 import userRoute from "./routes/user.js";
 import workerRoute from "./routes/worker";
 import attendanceRoute from "./routes/attendance";
@@ -74,7 +76,7 @@ app.use(
 app.use("/users", userRoute);
 app.use("/worker", workerRoute);
 app.use("/attendance", attendanceRoute);
-
+app.use("/settings", settingsRoute);
 app.use((_req: Request, res: Response) => {
   res.status(404).json({ message: "Not Found" });
 });

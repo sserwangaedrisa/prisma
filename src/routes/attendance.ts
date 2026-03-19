@@ -13,6 +13,7 @@ router.post("/bulk", attendanceController.bulkCreateWorkEntries);
 // CRUD operations
 router.put("/:id", attendanceController.updateWorkEntry);
 router.delete("/:id", attendanceController.deleteWorkEntry);
+// router.put("/bulk", attendanceController.updateBulk)
 
 // Get entries
 router.get("/worker/:workerId", attendanceController.getWorkerWorkEntries);
