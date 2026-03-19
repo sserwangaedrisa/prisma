@@ -1,4 +1,5 @@
 import express from "express";
+import verifyToken from "../middleware/auth";
 import {
   getLatestSettings,
   getSettingsByDate,
@@ -16,7 +17,7 @@ router.post("/history", getSettingsHistory);
 router.post("/byDate", getSettingsByDate);
 
 // Create/Update routes (restricted to owners and foremen)
-router.post("/create", createSettings);
-router.put("/:id", updateSettings);
+router.post("/create", verifyToken, createSettings);
+router.post("/update", verifyToken, updateSettings);
 
 export default router;

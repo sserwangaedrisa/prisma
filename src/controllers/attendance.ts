@@ -147,8 +147,6 @@ export const todayAttendace = async (req: Request, res: Response) => {
       return;
     }
 
-    console.log("hereere");
-
     // const todayWorkers = presentWorkers.map((w) => w.workerId);
     const todayWorkers = presentWorkers;
 

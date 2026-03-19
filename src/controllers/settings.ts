@@ -52,7 +52,6 @@ export const getSettingsByDate = async (
   req: AuthRequest,
   res: Response,
 ): Promise<Response> => {
-  console.log("hellow   ");
   try {
     const { dateStr, siteId } = req.body;
     if (!dateStr) {
@@ -137,16 +136,6 @@ export const createSettings = async (
 ): Promise<Response> => {
   try {
     const { siteId, overtimeRate, maxDailyHours, baseHourlyRate } = req.body;
-    // const userId = req.user?.id;
-
-    // if (!userId) {
-    //   return res.status(401).json({
-    //     success: false,
-    //     message: "Unauthorized",
-    //   });
-    // }
-
-    // Validate required fields
 
     if (!siteId) {
       return res.status(200).json({
@@ -217,7 +206,7 @@ export const createSettings = async (
     // Log activity
     await prisma.activityLog.create({
       data: {
-        userId: "",
+        userId: req.user?.id,
         action: "CREATE",
         entity: "SETTINGS",
         entityId: newSettings.id,
