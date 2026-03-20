@@ -182,12 +182,12 @@ export const loginUser = asyncHandler(
     const { email, password } = req.body;
 
     if (!email || !password) {
-      res.status(400).json({ message: "Email and password are required" });
+      res.status(200).json({ message: "Email and password are required" });
       return;
     }
 
     if (!validateEmail(email)) {
-      res.status(400).json({ message: "Invalid email address" });
+      res.status(200).json({ message: "Invalid email address" });
       return;
     }
 
@@ -205,7 +205,7 @@ export const loginUser = asyncHandler(
       });
 
       if (!user) {
-        res.status(401).json({
+        res.status(200).json({
           message: "Invalid user credentials",
         });
         return;
@@ -217,20 +217,20 @@ export const loginUser = asyncHandler(
       );
 
       if (!isPasswordValid) {
-        res.status(401).json({
+        res.status(200).json({
           message: "Invalid user credentials",
         });
       }
 
       if (user.status === "Banned") {
-        res.status(403).json({
+        res.status(200).json({
           message:
             "Your account has been permanently suspended. Contact support for more information.",
         });
         return;
       }
       if (user.status === "Suspended") {
-        res.status(403).json({
+        res.status(200).json({
           message:
             "Your account is temporarily suspended. Please try again later or contact support.",
         });
@@ -247,8 +247,8 @@ export const loginUser = asyncHandler(
         message: "Login successful",
         user: user,
         tokens: {
-          accessToken: generateAccessToken(user.id),
-          refreshToken: generateRefreshToken(user.id),
+          accessToken: generateAccessToken(user.id, user.role),
+          refreshToken: generateRefreshToken(user.id, user.role),
         },
       });
     } catch (error) {

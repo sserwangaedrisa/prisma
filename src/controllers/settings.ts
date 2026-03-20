@@ -135,7 +135,9 @@ export const createSettings = async (
   res: Response,
 ): Promise<Response> => {
   try {
-    const { siteId, overtimeRate, maxDailyHours, baseHourlyRate } = req.body;
+    const { siteId, overtimeRate, maxDailyHours, baseHourlyRate, createdAt } =
+      req.body;
+    console.log("creadedAt: ", createdAt);
 
     if (!siteId) {
       return res.status(200).json({
@@ -190,6 +192,7 @@ export const createSettings = async (
     const newSettings = await prisma.settings.create({
       data: {
         siteId,
+        createdAt: new Date(createdAt),
         overtimeRate: parsedOvertimeRate,
         maxDailyHours: parsedMaxDailyHours,
         baseHourlyRate: parsedBaseHourlyRate,
@@ -234,7 +237,10 @@ export const updateSettings = async (
   res: Response,
 ): Promise<Response> => {
   try {
-    const { id, overtimeRate, maxDailyHours, baseHourlyRate } = req.body;
+    const { id, overtimeRate, maxDailyHours, baseHourlyRate, createdAt } =
+      req.body;
+    console.log("creadedAt: ", createdAt);
+
     const userId = req.user?.id;
 
     if (!id) {
@@ -258,6 +264,7 @@ export const updateSettings = async (
 
     // Prepare update data
     const updateData: any = {};
+    updateData.createdAt(new Date(createdAt));
 
     if (overtimeRate !== undefined) {
       const parsedOvertimeRate = parseFloat(overtimeRate as string);
@@ -320,7 +327,7 @@ export const updateSettings = async (
     // Log activity
     await prisma.activityLog.create({
       data: {
-        userId,
+        userId: req.user?.id,
         action: "UPDATE",
         entity: "SETTINGS",
         entityId: id,
@@ -406,12 +413,12 @@ export const deleteSettings = async (
     const { id } = req.body;
     const userId = req.user?.id;
 
-    // if (!userId) {
-    //   return res.status(401).json({
-    //     success: false,
-    //     message: "Unauthorized",
-    //   });
-    // }
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized",
+      });
+    }
 
     if (!id) {
       return res.status(200).json({
@@ -451,7 +458,7 @@ export const deleteSettings = async (
     // Log activity
     await prisma.activityLog.create({
       data: {
-        userId: "",
+        userId,
         action: "DELETE",
         entity: "SETTINGS",
         entityId: id,

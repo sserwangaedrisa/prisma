@@ -2,33 +2,36 @@ import jwt from "jsonwebtoken";
 import prisma from "../../prisma/config";
 import { type Request, type Response, type NextFunction } from "express";
 
+interface DecodedToken {
+  id: string;
+  role: string;
+  iat: number;
+  exp: number;
+}
+
+// declare global {
+//   namespace Express {
+//     interface Request {
+//       user?: DecodedToken;
+//     }
+//   }
+// }
+
 const verifyToken = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const token = req.headers.authorization?.split(" ")[1];
-    if (!token) {
+    const cleanToken = token?.replace(/^["']|["']$/g, "").trim();
+
+    if (!cleanToken) {
       res.status(404).json({ message: "Invalid token" });
       return;
     }
-    console.log("token: ", token);
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!);
-    // const user = await prisma.user.findUnique({
-    //   where: { id: decoded.id },
-    //   select: {
-    //     id: true,
-    //     email: true,
-    //     role: true,
-    //     isActive: true,
-    //   },
-    // });
 
-    // if (!user) {
-    //   res.status(401).json({
-    //     success: false,
-    //     message: "User not found",
-    //   });
-    //   return;
-    // }
-    console.log("user: ", decoded);
+    const decoded = jwt.verify(
+      cleanToken,
+      process.env.JWT_SECRET!,
+    ) as DecodedToken;
+
     req.user = decoded;
     next();
   } catch (err) {
