@@ -264,7 +264,7 @@ export const updateSettings = async (
 
     // Prepare update data
     const updateData: any = {};
-    updateData.createdAt(new Date(createdAt));
+    updateData.createdAt = new Date(createdAt);
 
     if (overtimeRate !== undefined) {
       const parsedOvertimeRate = parseFloat(overtimeRate as string);

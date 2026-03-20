@@ -384,15 +384,15 @@ export const deleteWorkEntry = async (
   res: Response,
 ): Promise<Response> => {
   try {
-    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const { id } = req.body;
     const userId = req.user?.id;
 
-    // if (!userId) {
-    //   return res.status(401).json({
-    //     success: false,
-    //     message: "Unauthorized",
-    //   });
-    // }
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized",
+      });
+    }
 
     // Check if work entry exists
     const existingEntry = await prisma.workEntry.findUnique({
@@ -435,7 +435,7 @@ export const deleteWorkEntry = async (
     // Log activity
     await prisma.activityLog.create({
       data: {
-        userId: "",
+        userId,
         action: "DELETE",
         entity: "WORK_ENTRY",
         entityId: id,

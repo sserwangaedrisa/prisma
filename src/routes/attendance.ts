@@ -1,5 +1,6 @@
 import * as attendanceController from "../controllers/attendance";
 import verifyToken from "../middleware/auth.js";
+import { authorize } from "../middleware/authorize";
 import { isAdmin } from "../middleware/role.js";
 import { Router } from "express";
 
@@ -12,7 +13,12 @@ router.post("/bulk", attendanceController.bulkCreateWorkEntries);
 
 // CRUD operations
 router.put("/:id", attendanceController.updateWorkEntry);
-router.delete("/:id", attendanceController.deleteWorkEntry);
+router.post(
+  "/delete",
+  verifyToken,
+  authorize(["FOREMAN", "OWNER"]),
+  attendanceController.deleteWorkEntry,
+);
 // router.put("/bulk", attendanceController.updateBulk)
 
 // Get entries
