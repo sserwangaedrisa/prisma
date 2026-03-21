@@ -6,13 +6,18 @@ import { Router } from "express";
 
 const router = Router();
 // Record attendace
-router.post("/record", attendanceController.recordAttendance);
+router.post(
+  "/record",
+  verifyToken,
+  authorize(["FOREMAN", "OWNER"]),
+  attendanceController.recordAttendance,
+);
 router.post("/todayAttendace", attendanceController.todayAttendace);
 
 router.post("/bulk", attendanceController.bulkCreateWorkEntries);
 
 // CRUD operations
-router.put("/:id", attendanceController.updateWorkEntry);
+// router.put("/:id", attendanceController.updateWorkEntry);
 router.post(
   "/delete",
   verifyToken,

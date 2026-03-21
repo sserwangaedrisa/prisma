@@ -44,9 +44,11 @@ interface BulkCreateBody {
 // type MonthStatus = "OPENED" | "LOCKED";
 export const recordAttendance = async (req: Request, res: Response) => {
   const { workerId, siteId, date, hours, notes, overtime } = req.body;
+  const userId = req.user.id;
   try {
     if (!workerId || !siteId || !date || !hours) {
       res.status(200).json({
+        success: false,
         status: "missing_fields",
         message: "Worker ID, Site ID, Date, and Hours are required.",
       });
@@ -58,6 +60,8 @@ export const recordAttendance = async (req: Request, res: Response) => {
     });
     if (!worker) {
       res.status(200).json({
+        success: false,
+
         status: "worker_not_found",
         message: "Worker not found.",
       });
@@ -76,6 +80,8 @@ export const recordAttendance = async (req: Request, res: Response) => {
 
     if (!site) {
       res.status(200).json({
+        success: false,
+
         status: "site_not_found",
         message: "Site not found.",
       });
@@ -84,10 +90,82 @@ export const recordAttendance = async (req: Request, res: Response) => {
 
     if (site.workers.length === 0) {
       res.status(200).json({
+        success: false,
+
         status: "not_assigned_to_site",
         message: "Worker is not assigned to the specified site.",
       });
       return;
+    }
+
+    const entryDate = date ? new Date(date) : new Date();
+    const monthClose = await prisma.monthClose.findUnique({
+      where: {
+        siteId_month_year: {
+          siteId: siteId,
+          month: entryDate.getMonth() + 1,
+          year: entryDate.getFullYear(),
+        },
+      },
+    });
+
+    if (monthClose && monthClose.status === "LOCKED") {
+      return res.status(403).json({
+        success: false,
+        message: "Cannot update work entry from a locked month",
+        status: "locked month",
+      });
+    }
+
+    // Check for existing entry on the same day
+    const startOfDay = new Date(entryDate);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(entryDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const existingEntry = await prisma.workEntry.findFirst({
+      where: {
+        workerId,
+        siteId,
+        date: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+      },
+    });
+
+    if (existingEntry) {
+      // Update work entry
+      const id = existingEntry.id;
+
+      const updatedEntry = await prisma.workEntry.update({
+        where: { id },
+        data: {
+          hours: hours ? parseFloat(hours as string) : undefined,
+          overtime:
+            overtime !== undefined ? parseFloat(overtime as string) : undefined,
+          notes: notes !== undefined ? notes : undefined,
+          date: date ? new Date(date) : undefined,
+        },
+      });
+
+      // Log activity
+      await prisma.activityLog.create({
+        data: {
+          userId,
+          action: "UPDATE",
+          entity: "WORK_ENTRY",
+          entityId: id,
+        },
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: "Work entry updated successfully",
+        status: "success",
+        workEntry: updatedEntry,
+      });
     }
 
     const workEntry = await prisma.workEntry.create({
@@ -101,13 +179,25 @@ export const recordAttendance = async (req: Request, res: Response) => {
       },
     });
 
+    await prisma.activityLog.create({
+      data: {
+        userId,
+        action: "Created work entry",
+        entity: "WORK_ENTRY",
+        entityId: workEntry.id,
+      },
+    });
+
     res.status(200).json({
+      success: true,
       status: "success",
       message: "Attendance recorded successfully.",
+      workEntry,
     });
   } catch (error) {
     console.log("error while recording attendance", error);
     res.status(500).json({
+      success: false,
       status: "failed",
       massage: "An error occured while recording attendance.",
     });
@@ -135,6 +225,9 @@ export const todayAttendace = async (req: Request, res: Response) => {
       select: {
         workerId: true,
         id: true,
+        hours: true,
+        date: true,
+        overtime: true,
       },
       distinct: ["workerId"],
     });
@@ -147,7 +240,6 @@ export const todayAttendace = async (req: Request, res: Response) => {
       return;
     }
 
-    // const todayWorkers = presentWorkers.map((w) => w.workerId);
     const todayWorkers = presentWorkers;
 
     res.status(200).json({
@@ -289,94 +381,94 @@ export const createWorkEntry = async (
 };
 
 // Update an existing work entry
-export const updateWorkEntry = async (
-  req: AuthRequest,
-  res: Response,
-): Promise<Response> => {
-  try {
-    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-    const { hours, overtime, notes, date } = req.body as UpdateWorkEntryBody;
-    const userId = req.user?.id;
+// export const updateWorkEntry = async (
+//   req: AuthRequest,
+//   res: Response,
+// ): Promise<Response> => {
+//   try {
+//     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+//     const { hours, overtime, notes, date } = req.body as UpdateWorkEntryBody;
+//     const userId = req.user?.id;
 
-    // if (!userId) {
-    //   return res.status(401).json({
-    //     success: false,
-    //     message: "Unauthorized",
-    //   });
-    // }
+//     // if (!userId) {
+//     //   return res.status(401).json({
+//     //     success: false,
+//     //     message: "Unauthorized",
+//     //   });
+//     // }
 
-    // Check if work entry exists
-    const existingEntry = await prisma.workEntry.findUnique({
-      where: { id },
-      include: {
-        site: true,
-      },
-    });
+//     // Check if work entry exists
+//     const existingEntry = await prisma.workEntry.findUnique({
+//       where: { id },
+//       include: {
+//         site: true,
+//       },
+//     });
 
-    if (!existingEntry) {
-      return res.status(404).json({
-        success: false,
-        message: "Work entry not found",
-        status: "Entry not found",
-      });
-    }
+//     if (!existingEntry) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Work entry not found",
+//         status: "Entry not found",
+//       });
+//     }
 
-    // Check if the month is closed for this site
-    const entryDate = date ? new Date(date) : existingEntry.date;
-    const monthClose = await prisma.monthClose.findUnique({
-      where: {
-        siteId_month_year: {
-          siteId: existingEntry.siteId,
-          month: entryDate.getMonth() + 1,
-          year: entryDate.getFullYear(),
-        },
-      },
-    });
+//     // Check if the month is closed for this site
+//     const entryDate = date ? new Date(date) : existingEntry.date;
+//     const monthClose = await prisma.monthClose.findUnique({
+//       where: {
+//         siteId_month_year: {
+//           siteId: existingEntry.siteId,
+//           month: entryDate.getMonth() + 1,
+//           year: entryDate.getFullYear(),
+//         },
+//       },
+//     });
 
-    if (monthClose && monthClose.status === "LOCKED") {
-      return res.status(403).json({
-        success: false,
-        message: "Cannot update work entry from a locked month",
-        status: "locked month",
-      });
-    }
+//     if (monthClose && monthClose.status === "LOCKED") {
+//       return res.status(403).json({
+//         success: false,
+//         message: "Cannot update work entry from a locked month",
+//         status: "locked month",
+//       });
+//     }
 
-    // Update work entry
-    const updatedEntry = await prisma.workEntry.update({
-      where: { id },
-      data: {
-        hours: hours ? parseFloat(hours as string) : undefined,
-        overtime:
-          overtime !== undefined ? parseFloat(overtime as string) : undefined,
-        notes: notes !== undefined ? notes : undefined,
-        date: date ? new Date(date) : undefined,
-      },
-    });
+//     // Update work entry
+//     const updatedEntry = await prisma.workEntry.update({
+//       where: { id },
+//       data: {
+//         hours: hours ? parseFloat(hours as string) : undefined,
+//         overtime:
+//           overtime !== undefined ? parseFloat(overtime as string) : undefined,
+//         notes: notes !== undefined ? notes : undefined,
+//         date: date ? new Date(date) : undefined,
+//       },
+//     });
 
-    // Log activity
-    await prisma.activityLog.create({
-      data: {
-        userId: "",
-        action: "UPDATE",
-        entity: "WORK_ENTRY",
-        entityId: id,
-      },
-    });
+//     // Log activity
+//     await prisma.activityLog.create({
+//       data: {
+//         userId: "",
+//         action: "UPDATE",
+//         entity: "WORK_ENTRY",
+//         entityId: id,
+//       },
+//     });
 
-    return res.status(200).json({
-      success: true,
-      message: "Work entry updated successfully",
-      status: "success",
-    });
-  } catch (error) {
-    console.error("Error updating work entry:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to update work entry",
-      error: error instanceof Error ? error.message : "Unknown error",
-    });
-  }
-};
+//     return res.status(200).json({
+//       success: true,
+//       message: "Work entry updated successfully",
+//       status: "success",
+//     });
+//   } catch (error) {
+//     console.error("Error updating work entry:", error);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Failed to update work entry",
+//       error: error instanceof Error ? error.message : "Unknown error",
+//     });
+//   }
+// };
 
 // Delete a work entry
 export const deleteWorkEntry = async (

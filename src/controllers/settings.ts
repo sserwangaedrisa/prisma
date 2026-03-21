@@ -137,7 +137,6 @@ export const createSettings = async (
   try {
     const { siteId, overtimeRate, maxDailyHours, baseHourlyRate, createdAt } =
       req.body;
-    console.log("creadedAt: ", createdAt);
 
     if (!siteId) {
       return res.status(200).json({
@@ -166,7 +165,7 @@ export const createSettings = async (
     if (isNaN(parsedOvertimeRate)) {
       return res.status(200).json({
         success: false,
-        message: "Overtime rate must be a number between 1 and 3",
+        message: "Overtime rate must be a number.",
       });
     }
 
@@ -185,6 +184,75 @@ export const createSettings = async (
       return res.status(400).json({
         success: false,
         message: "Base hourly rate must be a positive number",
+      });
+    }
+
+    const entryDate = createdAt ? new Date(createdAt) : new Date();
+    const monthClose = await prisma.monthClose.findUnique({
+      where: {
+        siteId_month_year: {
+          siteId: siteId,
+          month: entryDate.getMonth() + 1,
+          year: entryDate.getFullYear(),
+        },
+      },
+    });
+
+    if (monthClose && monthClose.status === "LOCKED") {
+      return res.status(403).json({
+        success: false,
+        message: "Cannot update work entry from a locked month",
+        status: "locked month",
+      });
+    }
+
+    // Check for existing settings on the same day
+    const startOfDay = new Date(createdAt);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(createdAt);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const existingEntry = await prisma.settings.findFirst({
+      where: {
+        siteId,
+        createdAt: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+      },
+    });
+
+    if (existingEntry) {
+      // Update settings
+      const id = existingEntry.id;
+
+      const updatedEntry = await prisma.settings.update({
+        where: { id },
+        data: {
+          siteId,
+          createdAt: new Date(createdAt),
+          overtimeRate: parsedOvertimeRate,
+          maxDailyHours: parsedMaxDailyHours,
+          baseHourlyRate: parsedBaseHourlyRate,
+        },
+      });
+
+      // Log activity
+      await prisma.activityLog.create({
+        data: {
+          userId: req.user?.id,
+          action: "UPDATE",
+          entity: "WORK_ENTRY",
+          entityId: id,
+        },
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: "Settings updated successfully",
+        status: "success",
+        data: updatedEntry,
       });
     }
 
@@ -366,6 +434,25 @@ export const getSettingsHistory = async (
       if (startDateStr) {
         const startDate = new Date(startDateStr);
         if (!isNaN(startDate.getTime())) {
+          const monthClose = await prisma.monthClose.findUnique({
+            where: {
+              siteId_month_year: {
+                siteId: siteId,
+                month: startDate.getMonth() + 1,
+                year: startDate.getFullYear(),
+              },
+            },
+          });
+
+          if (monthClose && monthClose.status === "LOCKED") {
+            return res.status(403).json({
+              success: false,
+              message:
+                "Cannot get history from locked months from a locked month",
+              status: "locked month",
+            });
+          }
+
           where.createdAt.gte = startDate;
           where.siteId = siteId;
         }
