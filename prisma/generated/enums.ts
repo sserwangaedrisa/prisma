@@ -49,3 +49,12 @@ export const job = {
 } as const
 
 export type job = (typeof job)[keyof typeof job]
+
+
+export const WorkEntryStatus = {
+  NOT_PAID: 'NOT_PAID',
+  PENDING: 'PENDING',
+  PAID: 'PAID'
+} as const
+
+export type WorkEntryStatus = (typeof WorkEntryStatus)[keyof typeof WorkEntryStatus]

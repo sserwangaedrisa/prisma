@@ -70,10 +70,14 @@ model WorkEntry {
   hours     Float
   overtime  Float    @default(0)
   notes     String?
+  status    WorkEntryStatus @default(NOT_PAID)
+  paymentId String? 
   createdAt DateTime @default(now())
   site      Site     @relation(fields: [siteId], references: [id])
   worker    User     @relation(fields: [workerId], references: [id])
+  payment   Payment? @relation(fields: [paymentId], references: [id])
 }
+
 
 model MonthClose {
   id        String      @id @default(uuid())
@@ -87,6 +91,7 @@ model MonthClose {
 
   @@unique([siteId, month, year])
 }
+
 
 model Payment {
   id          String        @id @default(uuid())
@@ -105,6 +110,7 @@ model Payment {
   createdAt   DateTime      @default(now())
   site        Site          @relation(fields: [siteId], references: [id])
   worker      User          @relation(fields: [workerId], references: [id])
+  workEntries WorkEntry[] 
 }
 
 model Settings {
@@ -156,4 +162,10 @@ enum job {
   PAINTER
   ELECTRICIAN
   ADMIN
+}
+
+enum WorkEntryStatus {
+  NOT_PAID      // not yet selected for payment
+  PENDING       // foreman selected it
+  PAID          // owner paid it
 }

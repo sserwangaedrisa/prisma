@@ -1097,6 +1097,8 @@ export const WorkEntryScalarFieldEnum = {
   hours: 'hours',
   overtime: 'overtime',
   notes: 'notes',
+  status: 'status',
+  paymentId: 'paymentId',
   createdAt: 'createdAt'
 } as const
 
@@ -1251,6 +1253,20 @@ export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, '
  * Reference to a field of type 'Float[]'
  */
 export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
+    
+
+
+/**
+ * Reference to a field of type 'WorkEntryStatus'
+ */
+export type EnumWorkEntryStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'WorkEntryStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'WorkEntryStatus[]'
+ */
+export type ListEnumWorkEntryStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'WorkEntryStatus[]'>
     
 
 

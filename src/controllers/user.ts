@@ -66,9 +66,19 @@ export const users = asyncHandler(
 
 export const registerUser = asyncHandler(
   async (req: Request, res: Response): Promise<void> => {
-    const { name, email, password, phone, role, sites } = req.body;
+    const { name, email, password, phone, role, sites, job, wageRating } =
+      req.body;
+    const userId = req.user.id;
 
-    if (!name || !email || !phone || !password || !role) {
+    if (
+      !name ||
+      !email ||
+      !phone ||
+      !password ||
+      !role ||
+      !job ||
+      !wageRating
+    ) {
       res
         .status(200)
         .json({ status: "missing-fields", message: "All fields are required" });
@@ -79,6 +89,23 @@ export const registerUser = asyncHandler(
       res.status(200).json({ message: "Invalid email address" });
       return;
     }
+
+    const site = await prisma.site.findFirst({
+      where: { foremanId: userId },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!site) {
+      res.status(200).json({
+        status: "failed",
+        message: "site not found login again to continue",
+      });
+      return;
+    }
+
+    const siteId = site.id;
 
     try {
       const existingUser = await prisma.user.findUnique({
@@ -155,13 +182,38 @@ export const registerUser = asyncHandler(
           email: email.toLowerCase().trim(),
           password: hashedPassword,
           role,
+          wageRating: parseFloat(wageRating),
+          job,
           isActive: false,
-          sites,
           verificationCode,
           verificationExpiry,
           imageUrl,
         },
         select: { id: true, name: true, email: true },
+      });
+
+      const siteAttachment = await prisma.siteWorker.create({
+        data: {
+          siteId: siteId,
+          workerId: user.id,
+        },
+      });
+
+      if (!siteAttachment) {
+        res.status(200).json({
+          message: "Failed to attach a to site",
+          success: false,
+          status: "site attachment failed",
+        });
+      }
+
+      await prisma.activityLog.create({
+        data: {
+          userId,
+          action: "Created user",
+          entity: "user",
+          entityId: user.id,
+        },
       });
 
       res.status(200).json({

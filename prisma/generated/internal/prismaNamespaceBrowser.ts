@@ -132,6 +132,8 @@ export const WorkEntryScalarFieldEnum = {
   hours: 'hours',
   overtime: 'overtime',
   notes: 'notes',
+  status: 'status',
+  paymentId: 'paymentId',
   createdAt: 'createdAt'
 } as const
 

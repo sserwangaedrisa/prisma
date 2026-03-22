@@ -17,16 +17,28 @@ import {
   loginUserPolicy,
   forgotPasswordPolicy,
 } from "../middleware/validation.js";
-
 import verifyToken from "../middleware/auth.js";
+import { authorize } from "../middleware/authorize.js";
+
 import { isAdmin } from "../middleware/role.js";
 import { Router } from "express";
 import { upload } from "../middleware/multer";
 const router = Router();
 
 router.get("/", users);
-router.post("/register", upload.single("image"), registerUser);
-router.post("/verify-account", verifyAccount);
+router.post(
+  "/register",
+  verifyToken,
+  authorize(["FOREMAN", "OWNER"]),
+  upload.single("image"),
+  registerUser,
+);
+router.post(
+  "/verify-account",
+  verifyToken,
+  authorize(["FOREMAN", "OWNER"]),
+  verifyAccount,
+);
 router.post("/resend-otp", resendOTP);
 router.post("/verifyEmail", verifyEmail);
 router.post("/login", loginUserPolicy, loginUser);
