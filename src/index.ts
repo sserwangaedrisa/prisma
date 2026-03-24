@@ -20,6 +20,7 @@ import settingsRoute from "./routes/settings";
 import userRoute from "./routes/user.js";
 import workerRoute from "./routes/worker";
 import attendanceRoute from "./routes/attendance";
+import paymentRoute from "./routes/payment";
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
@@ -77,6 +78,7 @@ app.use("/users", userRoute);
 app.use("/worker", workerRoute);
 app.use("/attendance", attendanceRoute);
 app.use("/settings", settingsRoute);
+app.use("/payments", paymentRoute);
 app.use((_req: Request, res: Response) => {
   res.status(404).json({ message: "Not Found" });
 });

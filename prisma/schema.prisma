@@ -12,43 +12,48 @@ model User {
   email              String        @unique
   name               String
   createdAt          DateTime      @default(now())
-  isActive           Boolean       @default(true)
   password           String
   phone              String?
+  isActive           Boolean       @default(false)
   role               Role
-  job                String?       @default("USER")
-  wageRating         Float?        @default(0.0)
   updatedAt          DateTime      @updatedAt
-  imageUrl           String?       @default("")
-  status             String?
   verificationCode   String?
   verificationExpiry DateTime?
   sites              String?
+  imageUrl           String?       @default("")
+  wageRating         Float?        @default(0.0)
+  deactivatedAt      DateTime?
+  deactivationReason String?
+  reactivatedAt      DateTime?
+  status             UserStatus    @default(ACTIVE)
+  job                Job?          @default(USER)
   activityLogs       ActivityLog[]
-  payments           Payment[]
   foremanSites       Site[]        @relation("ForemanSites")
   ownedSites         Site[]        @relation("OwnerSites")
-  assignedSites      SiteWorker[]
+  payments           Payment[]
   workerRecords      WorkEntry[]
+
+  @@index([status])
+  @@index([role])
+  @@index([email])
 }
 
 model Site {
-  id          String       @id @default(uuid())
+  id          String     @id @default(uuid())
   name        String
   location    String
   description String?
   ownerId     String?
   foremanId   String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
   dutyHours   Float?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  monthCloses MonthClose[]
-  payments    Payment[]
-  foreman     User?        @relation("ForemanSites", fields: [foremanId], references: [id])
-  owner       User?        @relation("OwnerSites", fields: [ownerId], references: [id])
-  workers     SiteWorker[]
-  workEntries WorkEntry[]
-  settings   Settings[]
+  foreman     User?      @relation("ForemanSites", fields: [foremanId], references: [id])
+  owner       User?      @relation("OwnerSites", fields: [ownerId], references: [id])
+  settings    Settings[] // Added this relation
+
+  @@index([ownerId])
+  @@index([foremanId])
 }
 
 model SiteWorker {
@@ -56,28 +61,33 @@ model SiteWorker {
   siteId     String
   workerId   String
   assignedAt DateTime @default(now())
-  site       Site     @relation(fields: [siteId], references: [id])
-  worker     User     @relation(fields: [workerId], references: [id])
+  assignedBy String?
 
-  @@unique([siteId, workerId])
+  @@index([siteId])
+  @@index([workerId])
 }
 
 model WorkEntry {
-  id        String   @id @default(uuid())
+  id        String          @id @default(uuid())
   workerId  String
   siteId    String
-  date      DateTime @default(now())
+  date      DateTime        @default(now())
   hours     Float
-  overtime  Float    @default(0)
+  overtime  Float           @default(0)
   notes     String?
+  createdAt DateTime        @default(now())
+  paymentId String?
   status    WorkEntryStatus @default(NOT_PAID)
-  paymentId String? 
-  createdAt DateTime @default(now())
-  site      Site     @relation(fields: [siteId], references: [id])
-  worker    User     @relation(fields: [workerId], references: [id])
-  payment   Payment? @relation(fields: [paymentId], references: [id])
-}
+  createdBy String?
+  payment   Payment?        @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  worker    User?           @relation(fields: [workerId], references: [id], onDelete: Cascade)
 
+  @@index([workerId, siteId, date, status])
+  @@index([siteId, date, status])
+  @@index([workerId, status])
+  @@index([date])
+  @@index([paymentId])
+}
 
 model MonthClose {
   id        String      @id @default(uuid())
@@ -87,11 +97,11 @@ model MonthClose {
   status    MonthStatus @default(OPEN)
   lockedAt  DateTime?
   createdAt DateTime    @default(now())
-  site      Site        @relation(fields: [siteId], references: [id])
+  lockedBy  String?
 
-  @@unique([siteId, month, year])
+  @@index([siteId, status])
+  @@index([year, month])
 }
-
 
 model Payment {
   id          String        @id @default(uuid())
@@ -108,20 +118,27 @@ model Payment {
   approvedAt  DateTime?
   paidAt      DateTime?
   createdAt   DateTime      @default(now())
-  site        Site          @relation(fields: [siteId], references: [id])
-  worker      User          @relation(fields: [workerId], references: [id])
-  workEntries WorkEntry[] 
+  approvedBy  String?
+  paidBy      String?
+  workEntries WorkEntry[]
+  worker      User?         @relation(fields: [workerId], references: [id], onDelete: Cascade)
+
+  @@index([workerId])
+  @@index([siteId])
+  @@index([status])
+  @@index([month, year])
 }
 
 model Settings {
   id             String   @id @default(uuid())
-  overtimeRate   Float    @default(0)
+  overtimeRate   Float    @default(1.5)
   maxDailyHours  Float    @default(10)
   baseHourlyRate Float    @default(0)
-  siteId         String
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-  site           Site     @relation(fields: [siteId], references: [id])
+  siteId         String
+  site           Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
 }
 
 model ActivityLog {
@@ -131,7 +148,14 @@ model ActivityLog {
   entity    String
   entityId  String?
   createdAt DateTime @default(now())
-  user      User?     @relation(fields: [userId], references: [id])
+  ipAddress String?
+  metadata  Json?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([entity, entityId])
+  @@index([createdAt])
+  @@index([action])
 }
 
 enum Role {
@@ -141,18 +165,15 @@ enum Role {
   LABORER
 }
 
-enum PaymentStatus {
-  PENDING
-  APPROVED
-  PAID
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  BLOCKED
+  DELETED
 }
 
-enum MonthStatus {
-  OPEN
-  LOCKED
-}
-
-enum job {
+enum Job {
   USER
   HELPER
   MASON
@@ -165,7 +186,18 @@ enum job {
 }
 
 enum WorkEntryStatus {
-  NOT_PAID      // not yet selected for payment
-  PENDING       // foreman selected it
-  PAID          // owner paid it
+  NOT_PAID
+  PENDING
+  PAID
+}
+
+enum PaymentStatus {
+  PENDING
+  APPROVED
+  PAID
+}
+
+enum MonthStatus {
+  OPEN
+  LOCKED
 }
