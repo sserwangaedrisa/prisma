@@ -64,6 +64,77 @@ export const users = asyncHandler(
   },
 );
 
+// getting active site workers
+export const getActiveSiteWorkers = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { siteId } = req.body;
+
+    if (!siteId) {
+      res.status(400).json({
+        message: "Site ID is required",
+        success: false,
+      });
+      return;
+    }
+
+    try {
+      const activeWorkersForSite = await prisma.siteWorker.findMany({
+        where: {
+          siteId: siteId,
+          worker: {
+            isActive: true,
+          },
+        },
+        select: {
+          worker: {
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              phone: true,
+              role: true,
+              job: true,
+              wageRating: true,
+              imageUrl: true,
+              status: true,
+            },
+          },
+          assignedAt: true,
+        },
+        orderBy: {
+          worker: {
+            name: "asc",
+          },
+        },
+      });
+
+      // ✅ Arrays are never null, check length instead
+      if (activeWorkersForSite.length === 0) {
+        res.status(200).json({
+          message: "No active workers found for this site",
+          success: true,
+          data: [],
+        });
+        return;
+      }
+
+      res.status(200).json({
+        message: "Workers retrieved successfully",
+        success: true,
+        data: activeWorkersForSite,
+        count: activeWorkersForSite.length,
+      });
+      return;
+    } catch (error) {
+      console.error("Error while getting site workers:", error);
+      res.status(500).json({
+        message: "Error while getting site workers",
+        success: false,
+      });
+      return;
+    }
+  },
+);
 export const registerUser = asyncHandler(
   async (req: Request, res: Response): Promise<void> => {
     const { name, email, password, phone, role, sites, job, wageRating } =
