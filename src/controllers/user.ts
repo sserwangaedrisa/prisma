@@ -9,6 +9,7 @@ import handleError from "../utils/errorHandler.js";
 import { validateEmail } from "../utils/emailVerification.js";
 import { uploadToDrive } from "../middleware/image-upload.js";
 import { uploadToSupabase } from "../utils/uploadToSupabase.js";
+import { validateUser, validateMonthNotLocked } from "../middleware/validation";
 import {
   generateAccessToken,
   generateRefreshToken,
@@ -135,6 +136,76 @@ export const getActiveSiteWorkers = asyncHandler(
     }
   },
 );
+
+// getting all site workers
+export const getAllSiteWorkers = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { siteId } = req.body;
+
+    if (!siteId) {
+      res.status(400).json({
+        message: "Site ID is required",
+        success: false,
+      });
+      return;
+    }
+
+    try {
+      const activeWorkersForSite = await prisma.siteWorker.findMany({
+        where: {
+          siteId: siteId,
+        },
+        select: {
+          worker: {
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              phone: true,
+              role: true,
+              job: true,
+              wageRating: true,
+              imageUrl: true,
+              status: true,
+              isActive: true,
+            },
+          },
+          assignedAt: true,
+        },
+        orderBy: {
+          worker: {
+            isActive: "desc",
+          },
+        },
+      });
+
+      if (activeWorkersForSite.length === 0) {
+        res.status(200).json({
+          message: "No  workers found for this site",
+          success: true,
+          data: [],
+        });
+        return;
+      }
+
+      res.status(200).json({
+        message: "Workers retrieved successfully",
+        success: true,
+        data: activeWorkersForSite,
+        count: activeWorkersForSite.length,
+      });
+      return;
+    } catch (error) {
+      console.error("Error while getting site workers:", error);
+      res.status(500).json({
+        message: "Error while getting site workers",
+        success: false,
+      });
+      return;
+    }
+  },
+);
+
 export const registerUser = asyncHandler(
   async (req: Request, res: Response): Promise<void> => {
     const { name, email, password, phone, role, sites, job, wageRating } =
@@ -322,8 +393,12 @@ export const loginUser = asyncHandler(
           name: true,
           email: true,
           password: true,
+          isActive: true,
           status: true,
           role: true,
+          foremanSites: {
+            select: { id: true },
+          },
         },
       });
 
@@ -345,25 +420,26 @@ export const loginUser = asyncHandler(
         });
       }
 
-      if (user.status === "Banned") {
+      if (user.status === "BLOCKED") {
         res.status(200).json({
           message:
-            "Your account has been permanently suspended. Contact support for more information.",
+            "Your account has been permanently BLOCKED. Contact support for more information.",
         });
         return;
       }
-      if (user.status === "Suspended") {
+      if (user.status === "SUSPENDED") {
         res.status(200).json({
           message:
             "Your account is temporarily suspended. Please try again later or contact support.",
         });
         return;
       }
-      if (user.status === "In_active") {
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { status: "Active" },
+      if (!user.isActive) {
+        res.status(200).json({
+          message:
+            "Your account is not activated. Please try again later or contact support.",
         });
+        return;
       }
 
       res.status(200).json({
@@ -515,7 +591,7 @@ export const verifyAccount = asyncHandler(
       const updatedUser = await prisma.user.update({
         where: { id: userId },
         data: {
-          status: "Active",
+          status: "ACTIVE",
           isActive: true,
           verificationCode: null,
           verificationExpiry: null,
@@ -609,48 +685,6 @@ export const verifyEmail = asyncHandler(
         message: "OTP resent successfully. Please check your email.",
       });
     } catch (error) {
-      handleError(error, res);
-    }
-  },
-);
-
-export const getAdmin = asyncHandler(
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const admins = await prisma.user.findMany({
-        where: {
-          role: {
-            is: {
-              name: {
-                in: ["admin", "countryAdmin"],
-              },
-            },
-          },
-        },
-        select: {
-          id: true,
-          fullName: true,
-          email: true,
-          createdAt: true,
-          role: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-          country: {
-            select: {
-              id: true,
-              name: true,
-              iso2: true,
-            },
-          },
-        },
-      });
-
-      res.status(200).json({ admins: admins });
-    } catch (error) {
-      console.log(error);
       handleError(error, res);
     }
   },
@@ -794,3 +828,292 @@ export const deleteUser = asyncHandler(
     }
   },
 );
+
+/**
+ * Block a user
+ * Sets isActive to false and status to BLOCKED
+ * Also records deactivation reason and timestamp
+ */
+export const blockUser = async (req: Request, res: Response) => {
+  const { userId, deactivationReason } = req.body;
+  try {
+    // Check if user exists
+
+    const userInfo = await validateUser(userId);
+    if (!userInfo || !userInfo.success) {
+      res.status(200).json({
+        message: "Target account is already non ACTIVE",
+        success: false,
+      });
+      return;
+    }
+
+    const pendingPayments = await prisma.payment.count({
+      where: {
+        workerId: userId,
+        status: "PENDING",
+      },
+    });
+
+    const pendingWorkEntries = await prisma.workEntry.count({
+      where: {
+        workerId: userId,
+        status: "NOT_PAID",
+      },
+    });
+
+    if (pendingPayments > 0 || pendingWorkEntries > 0) {
+      res.status(200).json({
+        message: "worker has pending payments",
+        success: false,
+      });
+      return;
+    }
+
+    // Update user to blocked status
+    const blockedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        isActive: false,
+        status: "BLOCKED",
+        deactivationReason: deactivationReason ? deactivationReason : "",
+        deactivatedAt: new Date(),
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        isActive: true,
+        status: true,
+        role: true,
+      },
+    });
+
+    //  Creating activity log for the block action
+    await prisma.activityLog.create({
+      data: {
+        userId: req.user.id,
+        action: "USER_BLOCKED",
+        entity: "User",
+        entityId: userId,
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "User blocked successfully",
+    });
+  } catch (error) {
+    console.error("Error blocking user:", error);
+    res.status(200).json({
+      message: "error while blocking the user",
+      success: false,
+    });
+    throw error;
+    return;
+  }
+};
+
+/**
+ * Unblock a user
+ * Sets isActive to true and status to ACTIVE
+ * Records reactivation timestamp
+ */
+export const unblockUser = async (req: Request, res: Response) => {
+  const { userId, reactivationReason } = req.body;
+  try {
+    if (!userId) {
+      res.status(200).json({
+        message: "userId missing, try again",
+        success: false,
+      });
+      return;
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, status: true, isActive: true },
+    });
+
+    if (!user) {
+      res.status(200).json({
+        message: "user not found",
+        success: false,
+      });
+      return;
+    }
+
+    if (user?.status === "DELETED") {
+      res.status(200).json({
+        message: "account permanetly blocked",
+        success: false,
+      });
+      return;
+    }
+
+    // Check if user exists
+
+    const unblockedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        isActive: true,
+        status: "ACTIVE",
+        reactivatedAt: new Date(),
+        deactivatedAt: null,
+      },
+    });
+
+    //  activity log for the unblock action
+    await prisma.activityLog.create({
+      data: {
+        userId: req.user.id,
+        action: "USER_UNBLOCKED",
+        entity: "User",
+        entityId: userId,
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "User unblocked successfully",
+    });
+  } catch (error) {
+    console.error("Error unblocking user:", error);
+
+    throw error;
+    res.status(500).json({
+      message: "error while unblocking the user",
+      success: false,
+    });
+    return;
+  }
+};
+
+/**
+ * Get blocked users with optional filters
+ */
+export const getBlockedUsers = async (filters?: {
+  role?: string;
+  startDate?: Date;
+  endDate?: Date;
+  page?: number;
+  limit?: number;
+}) => {
+  try {
+    const { role, startDate, endDate, page = 1, limit = 10 } = filters || {};
+    const skip = (page - 1) * limit;
+
+    const whereClause: any = {
+      status: "BLOCKED",
+    };
+
+    if (role) {
+      whereClause.role = role;
+    }
+
+    if (startDate || endDate) {
+      whereClause.deactivatedAt = {};
+      if (startDate) whereClause.deactivatedAt.gte = startDate;
+      if (endDate) whereClause.deactivatedAt.lte = endDate;
+    }
+
+    const [blockedUsers, totalCount] = await Promise.all([
+      prisma.user.findMany({
+        where: whereClause,
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+          isActive: true,
+          status: true,
+          phone: true,
+          createdAt: true,
+          _count: {
+            select: {
+              workerRecords: {
+                where: {
+                  status: "NOT_PAID",
+                },
+              },
+              payments: {
+                where: {
+                  status: "PENDING",
+                },
+              },
+            },
+          },
+        },
+        skip,
+        take: limit,
+        orderBy: {},
+      }),
+      prisma.user.count({
+        where: whereClause,
+      }),
+    ]);
+
+    return {
+      success: true,
+      data: blockedUsers,
+      pagination: {
+        page,
+        limit,
+        totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+      },
+    };
+  } catch (error) {
+    console.error("Error fetching blocked users:", error);
+    throw error;
+  }
+};
+
+/**
+ * Temporarily suspend a user (alternative to full block)
+ * Sets status to SUSPENDED but maintains isActive state
+ */
+export const suspendUser = async (
+  userId: string,
+  reason?: string,
+  duration?: number,
+) => {
+  try {
+    const existingUser = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!existingUser) {
+      throw new Error("User not found");
+    }
+
+    if (existingUser.status === "SUSPENDED") {
+      throw new Error("User is already suspended");
+    }
+
+    const suspendedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        status: "SUSPENDED",
+      },
+    });
+
+    await prisma.activityLog.create({
+      data: {
+        userId: userId,
+        action: "USER_SUSPENDED",
+        entity: "User",
+        entityId: userId,
+      },
+    });
+
+    return {
+      success: true,
+      message: "User suspended successfully",
+      data: suspendedUser,
+    };
+  } catch (error) {
+    console.error("Error suspending user:", error);
+    throw error;
+  }
+};

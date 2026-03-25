@@ -1058,6 +1058,9 @@ export const UserScalarFieldEnum = {
   status: 'status',
   verificationCode: 'verificationCode',
   verificationExpiry: 'verificationExpiry',
+  deactivatedAt: 'deactivatedAt',
+  deactivationReason: 'deactivationReason',
+  reactivatedAt: 'reactivatedAt',
   sites: 'sites'
 } as const
 
@@ -1243,6 +1246,20 @@ export type ListEnumRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaM
 
 
 /**
+ * Reference to a field of type 'Job'
+ */
+export type EnumJobFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Job'>
+    
+
+
+/**
+ * Reference to a field of type 'Job[]'
+ */
+export type ListEnumJobFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Job[]'>
+    
+
+
+/**
  * Reference to a field of type 'Float'
  */
 export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
@@ -1253,6 +1270,20 @@ export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, '
  * Reference to a field of type 'Float[]'
  */
 export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
+    
+
+
+/**
+ * Reference to a field of type 'UserStatus'
+ */
+export type EnumUserStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'UserStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'UserStatus[]'
+ */
+export type ListEnumUserStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'UserStatus[]'>
     
 
 

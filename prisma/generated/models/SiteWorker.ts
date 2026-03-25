@@ -189,7 +189,6 @@ export type SiteWorkerOrderByWithRelationInput = {
 
 export type SiteWorkerWhereUniqueInput = Prisma.AtLeast<{
   id?: string
-  siteId_workerId?: Prisma.SiteWorkerSiteIdWorkerIdCompoundUniqueInput
   AND?: Prisma.SiteWorkerWhereInput | Prisma.SiteWorkerWhereInput[]
   OR?: Prisma.SiteWorkerWhereInput[]
   NOT?: Prisma.SiteWorkerWhereInput | Prisma.SiteWorkerWhereInput[]
@@ -198,7 +197,7 @@ export type SiteWorkerWhereUniqueInput = Prisma.AtLeast<{
   assignedAt?: Prisma.DateTimeFilter<"SiteWorker"> | Date | string
   site?: Prisma.XOR<Prisma.SiteScalarRelationFilter, Prisma.SiteWhereInput>
   worker?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
-}, "id" | "siteId_workerId">
+}, "id">
 
 export type SiteWorkerOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -275,11 +274,6 @@ export type SiteWorkerListRelationFilter = {
 
 export type SiteWorkerOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
-}
-
-export type SiteWorkerSiteIdWorkerIdCompoundUniqueInput = {
-  siteId: string
-  workerId: string
 }
 
 export type SiteWorkerCountOrderByAggregateInput = {

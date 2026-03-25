@@ -36,7 +36,27 @@ export const MonthStatus = {
 export type MonthStatus = (typeof MonthStatus)[keyof typeof MonthStatus]
 
 
-export const job = {
+export const WorkEntryStatus = {
+  NOT_PAID: 'NOT_PAID',
+  PENDING: 'PENDING',
+  PAID: 'PAID'
+} as const
+
+export type WorkEntryStatus = (typeof WorkEntryStatus)[keyof typeof WorkEntryStatus]
+
+
+export const UserStatus = {
+  ACTIVE: 'ACTIVE',
+  INACTIVE: 'INACTIVE',
+  SUSPENDED: 'SUSPENDED',
+  BLOCKED: 'BLOCKED',
+  DELETED: 'DELETED'
+} as const
+
+export type UserStatus = (typeof UserStatus)[keyof typeof UserStatus]
+
+
+export const Job = {
   USER: 'USER',
   HELPER: 'HELPER',
   MASON: 'MASON',
@@ -48,13 +68,4 @@ export const job = {
   ADMIN: 'ADMIN'
 } as const
 
-export type job = (typeof job)[keyof typeof job]
-
-
-export const WorkEntryStatus = {
-  NOT_PAID: 'NOT_PAID',
-  PENDING: 'PENDING',
-  PAID: 'PAID'
-} as const
-
-export type WorkEntryStatus = (typeof WorkEntryStatus)[keyof typeof WorkEntryStatus]
+export type Job = (typeof Job)[keyof typeof Job]

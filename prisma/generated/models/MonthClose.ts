@@ -252,7 +252,6 @@ export type MonthCloseOrderByWithRelationInput = {
 
 export type MonthCloseWhereUniqueInput = Prisma.AtLeast<{
   id?: string
-  siteId_month_year?: Prisma.MonthCloseSiteIdMonthYearCompoundUniqueInput
   AND?: Prisma.MonthCloseWhereInput | Prisma.MonthCloseWhereInput[]
   OR?: Prisma.MonthCloseWhereInput[]
   NOT?: Prisma.MonthCloseWhereInput | Prisma.MonthCloseWhereInput[]
@@ -263,7 +262,7 @@ export type MonthCloseWhereUniqueInput = Prisma.AtLeast<{
   lockedAt?: Prisma.DateTimeNullableFilter<"MonthClose"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"MonthClose"> | Date | string
   site?: Prisma.XOR<Prisma.SiteScalarRelationFilter, Prisma.SiteWhereInput>
-}, "id" | "siteId_month_year">
+}, "id">
 
 export type MonthCloseOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -370,12 +369,6 @@ export type MonthCloseListRelationFilter = {
 
 export type MonthCloseOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
-}
-
-export type MonthCloseSiteIdMonthYearCompoundUniqueInput = {
-  siteId: string
-  month: number
-  year: number
 }
 
 export type MonthCloseCountOrderByAggregateInput = {

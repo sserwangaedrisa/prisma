@@ -67,13 +67,11 @@ export const singleWorkerPayment = async (req: Request, res: Response) => {
     const end = new Date(endDate);
 
     // checking for the closed month
-    const monthClose = await prisma.monthClose.findUnique({
+    const monthClose = await prisma.monthClose.findFirst({
       where: {
-        siteId_month_year: {
-          siteId: siteId,
-          month: start.getMonth() + 1,
-          year: start.getFullYear(),
-        },
+        siteId: siteId,
+        month: start.getMonth() + 1,
+        year: start.getFullYear(),
       },
     });
 

@@ -93,6 +93,9 @@ export const UserScalarFieldEnum = {
   status: 'status',
   verificationCode: 'verificationCode',
   verificationExpiry: 'verificationExpiry',
+  deactivatedAt: 'deactivatedAt',
+  deactivationReason: 'deactivationReason',
+  reactivatedAt: 'reactivatedAt',
   sites: 'sites'
 } as const
 
