@@ -74,6 +74,7 @@ interface UserValidationResult {
     email: string;
     role: string;
     wageRatings: number | null;
+    imageUrl: string | null;
   };
 }
 
@@ -184,6 +185,7 @@ export const validateUser = async (
         isActive: user.isActive,
         role: user.role,
         wageRatings: user.wageRating,
+        imageUrl: user.imageUrl || null,
       },
     };
   } catch (error) {

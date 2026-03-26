@@ -11,7 +11,7 @@ interface worker {
   email: string;
   role: string;
   wageRatings: number | null;
-  imageUrl: string;
+  imageUrl: string | null;
 }
 
 export const singleWorkerPayment = async (req: Request, res: Response) => {
@@ -71,9 +71,6 @@ export const singleWorkerPayment = async (req: Request, res: Response) => {
       where: {
         workerId: workerId,
         siteId: siteId,
-        status: {
-          not: "PAID",
-        },
         date: {
           gte: start,
           lte: end,
@@ -135,7 +132,7 @@ export const singleWorkerPayment = async (req: Request, res: Response) => {
       },
       site: {
         id: siteId,
-        name: "", // optional: fetch separately if needed
+        name: "",
       },
       period: {
         startDate,
