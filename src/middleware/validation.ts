@@ -115,6 +115,7 @@ export const validateUser = async (
         job: true,
         name: true,
         email: true,
+        imageUrl: true,
       },
     });
 
