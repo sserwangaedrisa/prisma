@@ -3,13 +3,21 @@ import { Router } from "express";
 import { authorize } from "../middleware/authorize";
 import verifyToken from "../middleware/auth";
 
-const rounter = Router();
+const router = Router();
 
-rounter.post(
+router.post(
   "/workerPayment",
   verifyToken,
   authorize(["FOREMAN", "OWNER"]),
   paymentController.singleWorkerPayment,
 );
 
-export default rounter;
+// single worker payment request route
+router.post(
+  "/worker",
+  verifyToken,
+  authorize(["FOREMAN", "OWNER"]),
+  paymentController.singleWorkerPaymentRequest,
+);
+
+export default router;

@@ -188,13 +188,11 @@ export const createSettings = async (
     }
 
     const entryDate = createdAt ? new Date(createdAt) : new Date();
-    const monthClose = await prisma.monthClose.findUnique({
+    const monthClose = await prisma.monthClose.findFirst({
       where: {
-        siteId_month_year: {
-          siteId: siteId,
-          month: entryDate.getMonth() + 1,
-          year: entryDate.getFullYear(),
-        },
+        siteId: siteId,
+        month: entryDate.getMonth() + 1,
+        year: entryDate.getFullYear(),
       },
     });
 
@@ -434,13 +432,11 @@ export const getSettingsHistory = async (
       if (startDateStr) {
         const startDate = new Date(startDateStr);
         if (!isNaN(startDate.getTime())) {
-          const monthClose = await prisma.monthClose.findUnique({
+          const monthClose = await prisma.monthClose.findFirst({
             where: {
-              siteId_month_year: {
-                siteId: siteId,
-                month: startDate.getMonth() + 1,
-                year: startDate.getFullYear(),
-              },
+              siteId: siteId,
+              month: startDate.getMonth() + 1,
+              year: startDate.getFullYear(),
             },
           });
 

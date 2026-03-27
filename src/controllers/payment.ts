@@ -168,6 +168,125 @@ export const singleWorkerPayment = async (req: Request, res: Response) => {
     });
   }
 };
+
+// payment request processing for the an individual
+
+export const singleWorkerPaymentRequest = async (
+  req: Request,
+  res: Response,
+) => {
+  const { siteId, workerId, entryIds } = req.body;
+  try {
+    const userId = req.user.id;
+
+    if (!siteId || !workerId || !entryIds) {
+      res.status(200).json({
+        success: false,
+        message: "Some feilds missing",
+      });
+      return;
+    }
+
+    const workerData = await validateUser(workerId);
+    if (!workerData.success) {
+      res.status(200).json({
+        message: workerData.message,
+        success: false,
+      });
+    }
+
+    const baseHourlyRate = workerData.data?.wageRatings ?? 0;
+
+    const totals = await prisma.workEntry.aggregate({
+      where: {
+        id: { in: entryIds },
+        status: "NOT_PAID",
+      },
+
+      _sum: {
+        hours: true,
+        overtime: true,
+      },
+    });
+
+    const totalHours = totals._sum.hours ?? 0;
+    const totalOvertime = totals._sum.overtime ?? 0;
+
+    const baseAmount = totalHours * baseHourlyRate;
+    const overtimePay = totalOvertime * baseHourlyRate;
+    const totalAmount = baseAmount + overtimePay;
+
+    if (totalAmount <= 0) {
+      res.status(200).json({
+        success: false,
+        message: "Entries are already paid",
+      });
+      return;
+    }
+
+    const payment = await prisma.payment.create({
+      data: {
+        workerId,
+        siteId,
+        month: new Date().getMonth() + 1,
+        year: new Date().getFullYear(),
+        totalHours,
+        overtime: totalOvertime,
+        baseAmount,
+        overtimePay,
+        totalAmount,
+        status: "PENDING",
+      },
+    });
+
+    const entryUpdate = await prisma.workEntry.updateMany({
+      where: {
+        id: { in: entryIds },
+      },
+      data: {
+        paymentId: payment.id,
+        status: "PENDING",
+      },
+    });
+
+    if (entryUpdate.count === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Failed to finish the request proccessing.",
+      });
+    }
+
+    await prisma.activityLog.create({
+      data: {
+        userId,
+        action: "Payment Request",
+        entity: "PAYMENT",
+        entityId: payment.id,
+      },
+    });
+
+    res.status(200).json({
+      data: {
+        workerId,
+        siteId,
+        totalHours,
+        overtime: totalOvertime,
+        baseAmount,
+        overtimePay,
+        totalAmount,
+        status: "PENDING",
+      },
+      success: true,
+      message: "Payment request submitted successfully",
+    });
+  } catch (error) {
+    console.log("error while getting payments");
+    return res.status(500).json({
+      success: false,
+    });
+  }
+};
+
 // payment for the whole site for a specific date range
 
 export const sitePayment = async (req: Request, res: Response) => {
