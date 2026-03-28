@@ -287,9 +287,172 @@ export const singleWorkerPaymentRequest = async (
   }
 };
 
-// payment for the whole site for a specific date range
+// payment for the whole site for a specific date range using nodeJs in the server ram
 
-export const sitePayment = async (req: Request, res: Response) => {
+// export const sitePayment = async (req: Request, res: Response) => {
+//   const { siteId, startDate, endDate } = req.body;
+
+//   try {
+//     if (!startDate || !endDate) {
+//       return res.status(200).json({
+//         message: "Missing required parameters: startDate, endDate",
+//         success: false,
+//       });
+//     }
+
+//     const start = new Date(startDate);
+//     const end = new Date(endDate);
+
+//     const monthValidation = await validateMonthNotLocked(siteId, start);
+//     if (!monthValidation.success) {
+//       return res.status(200).json({
+//         message: monthValidation.message,
+//         success: false,
+//       });
+//     }
+
+//     // Get all work entries with worker details
+//     const workEntries = await prisma.workEntry.findMany({
+//       where: {
+//         siteId: siteId,
+//         status: "NOT_PAID",
+//         date: {
+//           gte: start,
+//           lte: end,
+//         },
+//       },
+//       select: {
+//         id: true,
+//         date: true,
+//         hours: true,
+//         overtime: true,
+//         worker: {
+//           select: {
+//             id: true,
+//             name: true,
+//             wageRating: true,
+//             role: true,
+//             job: true,
+//             isActive: true,
+//           },
+//         },
+//         site: {
+//           select: {
+//             id: true,
+//             name: true,
+//           },
+//         },
+//       },
+//       orderBy: [{ worker: { name: "asc" } }, { date: "asc" }],
+//     });
+
+//     if (workEntries.length === 0) {
+//       return res.status(200).json({
+//         siteId,
+//         period: { startDate, endDate },
+//         workers: [],
+//         message: "No work entries found for this period",
+//       });
+//     }
+
+//     // Group by worker and calculate totals
+//     const workersMap = new Map();
+
+//     for (const entry of workEntries) {
+//       const workerId = entry.worker.id;
+//       const wageRating = entry.worker.wageRating || 0;
+//       const totalHoursForEntry = entry.hours + entry.overtime;
+//       const entryAmount = totalHoursForEntry * wageRating;
+
+//       if (!workersMap.has(workerId)) {
+//         workersMap.set(workerId, {
+//           worker: {
+//             id: entry.worker.id,
+//             name: entry.worker.name,
+//             wageRating: wageRating,
+//             role: entry.worker.role,
+//             job: entry.worker.job,
+//             isActive: entry.worker.isActive,
+//           },
+//           regularHours: 0,
+//           overtimeHours: 0,
+//           totalHours: 0,
+//           totalAmount: 0,
+//           entries: [],
+//           entryCount: 0,
+//         });
+//       }
+
+//       const workerData = workersMap.get(workerId);
+//       workerData.regularHours += entry.hours;
+//       workerData.overtimeHours += entry.overtime;
+//       workerData.totalHours += totalHoursForEntry;
+//       workerData.totalAmount += entryAmount;
+//       workerData.entryCount++;
+//       workerData.entries.push({
+//         id: entry.id,
+//         date: entry.date,
+//         hours: entry.hours,
+//         overtime: entry.overtime,
+//         totalHours: totalHoursForEntry,
+//         amount: Number(entryAmount.toFixed(2)),
+//       });
+//     }
+
+//     // Convert map to array and format
+//     const workers = Array.from(workersMap.values()).map((worker) => ({
+//       ...worker,
+//       regularHours: Number(worker.regularHours.toFixed(2)),
+//       overtimeHours: Number(worker.overtimeHours.toFixed(2)),
+//       totalHours: Number(worker.totalHours.toFixed(2)),
+//       totalAmount: Number(worker.totalAmount.toFixed(2)),
+//     }));
+
+//     // Sort by total amount (highest first)
+//     workers.sort((a, b) => b.totalAmount - a.totalAmount);
+
+//     const siteTotal = workers.reduce(
+//       (sum, worker) => sum + worker.totalAmount,
+//       0,
+//     );
+//     const totalSiteHours = workers.reduce(
+//       (sum, worker) => sum + worker.totalHours,
+//       0,
+//     );
+
+//     return res.status(200).json({
+//       success: true,
+//       site: {
+//         id: siteId,
+//       },
+//       period: {
+//         startDate,
+//         endDate,
+//       },
+//       calculation: {
+//         formula: `Total Amount = (Regular Hours + Overtime) × Worker's Wage Rating`,
+//         description:
+//           "Each worker's total is calculated independently based on their individual wage rating",
+//       },
+//       summary: {
+//         totalWorkers: workers.length,
+//         totalEntries: workEntries.length,
+//         totalHours: Number(totalSiteHours.toFixed(2)),
+//         totalAmount: Number(siteTotal.toFixed(2)),
+//       },
+//       workers,
+//     });
+//   } catch (error) {
+//     console.error("Site payment calculation error:", error);
+//     return res
+//       .status(500)
+//       .json({ message: "Failed to calculate site payments", success: false });
+//   }
+// };
+
+// payment for the whole site for a specific date range using raw quering in db. for more calculations
+
+export const sitePaymentSummary = async (req: Request, res: Response) => {
   const { siteId, startDate, endDate } = req.body;
 
   try {
@@ -303,6 +466,7 @@ export const sitePayment = async (req: Request, res: Response) => {
     const start = new Date(startDate);
     const end = new Date(endDate);
 
+    // Checking if the month is locked to prevent payments on locked periods
     const monthValidation = await validateMonthNotLocked(siteId, start);
     if (!monthValidation.success) {
       return res.status(200).json({
@@ -311,42 +475,62 @@ export const sitePayment = async (req: Request, res: Response) => {
       });
     }
 
-    // Get all work entries with worker details
-    const workEntries = await prisma.workEntry.findMany({
-      where: {
-        siteId: siteId,
-        date: {
-          gte: start,
-          lte: end,
-        },
-      },
-      select: {
-        id: true,
-        date: true,
-        hours: true,
-        overtime: true,
-        worker: {
-          select: {
-            id: true,
-            name: true,
-            wageRating: true,
-            role: true,
-            job: true,
-            isActive: true,
-          },
-        },
-        site: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-      },
-      orderBy: [{ worker: { name: "asc" } }, { date: "asc" }],
-    });
+    const result = await prisma.$queryRaw`
+      SELECT 
+        w.id as worker_id,
+        w.name as worker_name,
+        w."wageRating" as wage_rating,
+        w.role as worker_role,
+        w.job as worker_job,
+        w."isActive" as worker_is_active,
+        
+        COALESCE(SUM(we.hours), 0) as total_regular_hours,
+        COALESCE(SUM(we.overtime), 0) as total_overtime_hours,
+        COALESCE(SUM(we.hours + we.overtime), 0) as total_hours,
+        COALESCE(SUM((we.hours + we.overtime) * COALESCE(w."wageRating", 0)), 0) as total_amount,
+        COUNT(we.id) as entry_count,
 
-    if (workEntries.length === 0) {
+        -- Building the json response
+        COALESCE(
+          JSON_AGG(
+            JSON_BUILD_OBJECT(
+              'id', we.id,
+              'date', we.date,
+              'hours', we.hours,
+              'overtime', we.overtime,
+              'totalHours', we.hours + we.overtime,
+              'amount', (we.hours + we.overtime) * COALESCE(w."wageRating", 0)
+            ) ORDER BY we.date ASC
+          ) FILTER (WHERE we.id IS NOT NULL),
+          '[]'::json
+        ) as entries
+        
+      FROM "WorkEntry" we
+      
+      -- Joining User table to get worker details and wage rating
+      INNER JOIN "User" w ON we."workerId" = w.id
+      
+      WHERE 
+        we."siteId" = ${siteId}
+        AND we.status = 'NOT_PAID'
+        AND we.date BETWEEN ${start} AND ${end} 
+        AND w."isActive" = true
+      
+      GROUP BY 
+        w.id, 
+        w.name, 
+        w."wageRating", 
+        w.job, 
+        w."isActive"
+      
+      ORDER BY 
+        COALESCE(SUM((we.hours + we.overtime) * COALESCE(w."wageRating", 0)), 0) DESC
+    `;
+
+    // Handle case when no work entries found
+    if (!result || (Array.isArray(result) && result.length === 0)) {
       return res.status(200).json({
+        success: false,
         siteId,
         period: { startDate, endDate },
         workers: [],
@@ -354,89 +538,48 @@ export const sitePayment = async (req: Request, res: Response) => {
       });
     }
 
-    // Group by worker and calculate totals
-    const workersMap = new Map();
+    const workers = (result as any[]).map((worker) => ({
+      worker: {
+        id: worker.worker_id,
+        name: worker.worker_name,
+        wageRating: Number(worker.wage_rating) || 0,
+        job: worker.worker_job,
+      },
 
-    for (const entry of workEntries) {
-      const workerId = entry.worker.id;
-      const wageRating = entry.worker.wageRating || 0;
-      const totalHoursForEntry = entry.hours + entry.overtime;
-      const entryAmount = totalHoursForEntry * wageRating;
+      regularHours: Number(Number(worker.total_regular_hours).toFixed(2)),
+      overtimeHours: Number(Number(worker.total_overtime_hours).toFixed(2)),
+      totalHours: Number(Number(worker.total_hours).toFixed(2)),
 
-      if (!workersMap.has(workerId)) {
-        workersMap.set(workerId, {
-          worker: {
-            id: entry.worker.id,
-            name: entry.worker.name,
-            wageRating: wageRating,
-            role: entry.worker.role,
-            job: entry.worker.job,
-            isActive: entry.worker.isActive,
-          },
-          regularHours: 0,
-          overtimeHours: 0,
-          totalHours: 0,
-          totalAmount: 0,
-          entries: [],
-          entryCount: 0,
-        });
-      }
+      // Total payment amount for this worker
+      totalAmount: Number(Number(worker.total_amount).toFixed(2)),
 
-      const workerData = workersMap.get(workerId);
-      workerData.regularHours += entry.hours;
-      workerData.overtimeHours += entry.overtime;
-      workerData.totalHours += totalHoursForEntry;
-      workerData.totalAmount += entryAmount;
-      workerData.entryCount++;
-      workerData.entries.push({
-        id: entry.id,
-        date: entry.date,
-        hours: entry.hours,
-        overtime: entry.overtime,
-        totalHours: totalHoursForEntry,
-        amount: Number(entryAmount.toFixed(2)),
-      });
-    }
-
-    // Convert map to array and format
-    const workers = Array.from(workersMap.values()).map((worker) => ({
-      ...worker,
-      regularHours: Number(worker.regularHours.toFixed(2)),
-      overtimeHours: Number(worker.overtimeHours.toFixed(2)),
-      totalHours: Number(worker.totalHours.toFixed(2)),
-      totalAmount: Number(worker.totalAmount.toFixed(2)),
+      entryCount: Number(worker.entry_count),
     }));
 
-    // Sort by total amount (highest first)
-    workers.sort((a, b) => b.totalAmount - a.totalAmount);
+    // Calculating site-level aggregates from worker data
+    const totalSiteHours = workers.reduce((sum, w) => sum + w.totalHours, 0);
+    const siteTotal = workers.reduce((sum, w) => sum + w.totalAmount, 0);
+    const totalEntries = workers.reduce((sum, w) => sum + w.entryCount, 0);
 
-    const siteTotal = workers.reduce(
-      (sum, worker) => sum + worker.totalAmount,
-      0,
-    );
-    const totalSiteHours = workers.reduce(
-      (sum, worker) => sum + worker.totalHours,
-      0,
-    );
-
+    // Return formatted response
     return res.status(200).json({
       success: true,
       site: {
         id: siteId,
-        name: workEntries[0].site.name || siteId,
       },
       period: {
         startDate,
         endDate,
       },
       calculation: {
-        formula: `Total Amount = (Regular Hours + Overtime) × Worker's Wage Rating`,
+        formula: `Total Amount = (Regular Hours + Overtime) * Worker's Wage Rating`,
         description:
-          "Each worker's total is calculated independently based on their individual wage rating",
+          "Each worker's total is calculated independently based on their individual wage rating. " +
+          "Wage rating is stored per worker in the User table.",
       },
       summary: {
         totalWorkers: workers.length,
-        totalEntries: workEntries.length,
+        totalEntries: totalEntries,
         totalHours: Number(totalSiteHours.toFixed(2)),
         totalAmount: Number(siteTotal.toFixed(2)),
       },
@@ -444,8 +587,10 @@ export const sitePayment = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Site payment calculation error:", error);
-    return res
-      .status(500)
-      .json({ message: "Failed to calculate site payments", success: false });
+
+    return res.status(500).json({
+      message: "Failed to calculate site payments",
+      success: false,
+    });
   }
 };

@@ -20,4 +20,12 @@ router.post(
   paymentController.singleWorkerPaymentRequest,
 );
 
+// site payment summary
+router.post(
+  "/site",
+  verifyToken,
+  authorize(["FOREMAN", "OWNER"]),
+  paymentController.sitePaymentSummary,
+);
+
 export default router;
