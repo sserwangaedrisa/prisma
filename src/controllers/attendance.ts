@@ -1,5 +1,6 @@
 import e, { type Request, type Response } from "express";
 import prisma from "../../prisma/config.js";
+import { validateMonthNotLocked } from "../middleware/validation.js";
 
 type Role = "OWNER" | "FOREMAN" | "WORKER" | "LABORER";
 
@@ -99,20 +100,13 @@ export const recordAttendance = async (req: Request, res: Response) => {
     }
 
     const entryDate = date ? new Date(date) : new Date();
-    const monthClose = await prisma.monthClose.findUnique({
-      where: {
-        siteId_month_year: {
-          siteId: siteId,
-          month: entryDate.getMonth() + 1,
-          year: entryDate.getFullYear(),
-        },
-      },
-    });
 
-    if (monthClose && monthClose.status === "LOCKED") {
-      return res.status(403).json({
+    const monthClosed = await validateMonthNotLocked(siteId, entryDate);
+
+    if (!monthClosed.success) {
+      return res.status(200).json({
         success: false,
-        message: "Cannot update work entry from a locked month",
+        message: "Cannot delete work entry from a locked month",
         status: "locked month",
       });
     }
@@ -281,12 +275,10 @@ export const createWorkEntry = async (
     }
 
     const parsedHours = parseFloat(hours as string);
-    const siteWorker = await prisma.siteWorker.findUnique({
+    const siteWorker = await prisma.siteWorker.findFirst({
       where: {
-        siteId_workerId: {
-          siteId,
-          workerId,
-        },
+        siteId,
+        workerId,
       },
     });
 
@@ -501,17 +493,10 @@ export const deleteWorkEntry = async (
 
     // Check if the month is closed for this site
     const entryDate = new Date(existingEntry.date);
-    const monthClose = await prisma.monthClose.findUnique({
-      where: {
-        siteId_month_year: {
-          siteId: existingEntry.siteId,
-          month: entryDate.getMonth() + 1,
-          year: entryDate.getFullYear(),
-        },
-      },
-    });
+    const siteId = existingEntry.siteId;
+    const monthClosed = await validateMonthNotLocked(siteId, entryDate);
 
-    if (monthClose && monthClose.status === "LOCKED") {
+    if (!monthClosed.success) {
       return res.status(200).json({
         success: false,
         message: "Cannot delete work entry from a locked month",
@@ -704,12 +689,10 @@ export const bulkCreateWorkEntries = async (
         const { workerId, siteId, hours, overtime, date, notes } = entry;
 
         // Validate worker is assigned to site
-        const siteWorker = await prisma.siteWorker.findUnique({
+        const siteWorker = await prisma.siteWorker.findFirst({
           where: {
-            siteId_workerId: {
-              siteId,
-              workerId,
-            },
+            siteId,
+            workerId,
           },
         });
 

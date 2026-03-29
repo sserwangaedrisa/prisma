@@ -124,6 +124,7 @@ model Payment {
   totalHours  Float
   overtime    Float
   baseAmount  Float
+  batchId     String?       @map("batch_id")
   overtimePay Float
   totalAmount Float
   status      PaymentStatus @default(PENDING)
@@ -136,6 +137,7 @@ model Payment {
 
   @@index([workerId])
   @@index([siteId])
+  @@index([batchId])
   @@index([status])
   @@index([month, year])
 }

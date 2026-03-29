@@ -55,6 +55,7 @@ export type PaymentMinAggregateOutputType = {
   totalHours: number | null
   overtime: number | null
   baseAmount: number | null
+  batchId: string | null
   overtimePay: number | null
   totalAmount: number | null
   status: $Enums.PaymentStatus | null
@@ -72,6 +73,7 @@ export type PaymentMaxAggregateOutputType = {
   totalHours: number | null
   overtime: number | null
   baseAmount: number | null
+  batchId: string | null
   overtimePay: number | null
   totalAmount: number | null
   status: $Enums.PaymentStatus | null
@@ -89,6 +91,7 @@ export type PaymentCountAggregateOutputType = {
   totalHours: number
   overtime: number
   baseAmount: number
+  batchId: number
   overtimePay: number
   totalAmount: number
   status: number
@@ -128,6 +131,7 @@ export type PaymentMinAggregateInputType = {
   totalHours?: true
   overtime?: true
   baseAmount?: true
+  batchId?: true
   overtimePay?: true
   totalAmount?: true
   status?: true
@@ -145,6 +149,7 @@ export type PaymentMaxAggregateInputType = {
   totalHours?: true
   overtime?: true
   baseAmount?: true
+  batchId?: true
   overtimePay?: true
   totalAmount?: true
   status?: true
@@ -162,6 +167,7 @@ export type PaymentCountAggregateInputType = {
   totalHours?: true
   overtime?: true
   baseAmount?: true
+  batchId?: true
   overtimePay?: true
   totalAmount?: true
   status?: true
@@ -266,6 +272,7 @@ export type PaymentGroupByOutputType = {
   totalHours: number
   overtime: number
   baseAmount: number
+  batchId: string | null
   overtimePay: number
   totalAmount: number
   status: $Enums.PaymentStatus
@@ -306,6 +313,7 @@ export type PaymentWhereInput = {
   totalHours?: Prisma.FloatFilter<"Payment"> | number
   overtime?: Prisma.FloatFilter<"Payment"> | number
   baseAmount?: Prisma.FloatFilter<"Payment"> | number
+  batchId?: Prisma.StringNullableFilter<"Payment"> | string | null
   overtimePay?: Prisma.FloatFilter<"Payment"> | number
   totalAmount?: Prisma.FloatFilter<"Payment"> | number
   status?: Prisma.EnumPaymentStatusFilter<"Payment"> | $Enums.PaymentStatus
@@ -326,6 +334,7 @@ export type PaymentOrderByWithRelationInput = {
   totalHours?: Prisma.SortOrder
   overtime?: Prisma.SortOrder
   baseAmount?: Prisma.SortOrder
+  batchId?: Prisma.SortOrderInput | Prisma.SortOrder
   overtimePay?: Prisma.SortOrder
   totalAmount?: Prisma.SortOrder
   status?: Prisma.SortOrder
@@ -349,6 +358,7 @@ export type PaymentWhereUniqueInput = Prisma.AtLeast<{
   totalHours?: Prisma.FloatFilter<"Payment"> | number
   overtime?: Prisma.FloatFilter<"Payment"> | number
   baseAmount?: Prisma.FloatFilter<"Payment"> | number
+  batchId?: Prisma.StringNullableFilter<"Payment"> | string | null
   overtimePay?: Prisma.FloatFilter<"Payment"> | number
   totalAmount?: Prisma.FloatFilter<"Payment"> | number
   status?: Prisma.EnumPaymentStatusFilter<"Payment"> | $Enums.PaymentStatus
@@ -369,6 +379,7 @@ export type PaymentOrderByWithAggregationInput = {
   totalHours?: Prisma.SortOrder
   overtime?: Prisma.SortOrder
   baseAmount?: Prisma.SortOrder
+  batchId?: Prisma.SortOrderInput | Prisma.SortOrder
   overtimePay?: Prisma.SortOrder
   totalAmount?: Prisma.SortOrder
   status?: Prisma.SortOrder
@@ -394,6 +405,7 @@ export type PaymentScalarWhereWithAggregatesInput = {
   totalHours?: Prisma.FloatWithAggregatesFilter<"Payment"> | number
   overtime?: Prisma.FloatWithAggregatesFilter<"Payment"> | number
   baseAmount?: Prisma.FloatWithAggregatesFilter<"Payment"> | number
+  batchId?: Prisma.StringNullableWithAggregatesFilter<"Payment"> | string | null
   overtimePay?: Prisma.FloatWithAggregatesFilter<"Payment"> | number
   totalAmount?: Prisma.FloatWithAggregatesFilter<"Payment"> | number
   status?: Prisma.EnumPaymentStatusWithAggregatesFilter<"Payment"> | $Enums.PaymentStatus
@@ -409,6 +421,7 @@ export type PaymentCreateInput = {
   totalHours: number
   overtime: number
   baseAmount: number
+  batchId?: string | null
   overtimePay: number
   totalAmount: number
   status?: $Enums.PaymentStatus
@@ -429,6 +442,7 @@ export type PaymentUncheckedCreateInput = {
   totalHours: number
   overtime: number
   baseAmount: number
+  batchId?: string | null
   overtimePay: number
   totalAmount: number
   status?: $Enums.PaymentStatus
@@ -445,6 +459,7 @@ export type PaymentUpdateInput = {
   totalHours?: Prisma.FloatFieldUpdateOperationsInput | number
   overtime?: Prisma.FloatFieldUpdateOperationsInput | number
   baseAmount?: Prisma.FloatFieldUpdateOperationsInput | number
+  batchId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   overtimePay?: Prisma.FloatFieldUpdateOperationsInput | number
   totalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
   status?: Prisma.EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
@@ -465,6 +480,7 @@ export type PaymentUncheckedUpdateInput = {
   totalHours?: Prisma.FloatFieldUpdateOperationsInput | number
   overtime?: Prisma.FloatFieldUpdateOperationsInput | number
   baseAmount?: Prisma.FloatFieldUpdateOperationsInput | number
+  batchId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   overtimePay?: Prisma.FloatFieldUpdateOperationsInput | number
   totalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
   status?: Prisma.EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
@@ -483,6 +499,7 @@ export type PaymentCreateManyInput = {
   totalHours: number
   overtime: number
   baseAmount: number
+  batchId?: string | null
   overtimePay: number
   totalAmount: number
   status?: $Enums.PaymentStatus
@@ -498,6 +515,7 @@ export type PaymentUpdateManyMutationInput = {
   totalHours?: Prisma.FloatFieldUpdateOperationsInput | number
   overtime?: Prisma.FloatFieldUpdateOperationsInput | number
   baseAmount?: Prisma.FloatFieldUpdateOperationsInput | number
+  batchId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   overtimePay?: Prisma.FloatFieldUpdateOperationsInput | number
   totalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
   status?: Prisma.EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
@@ -515,6 +533,7 @@ export type PaymentUncheckedUpdateManyInput = {
   totalHours?: Prisma.FloatFieldUpdateOperationsInput | number
   overtime?: Prisma.FloatFieldUpdateOperationsInput | number
   baseAmount?: Prisma.FloatFieldUpdateOperationsInput | number
+  batchId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   overtimePay?: Prisma.FloatFieldUpdateOperationsInput | number
   totalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
   status?: Prisma.EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
@@ -547,6 +566,7 @@ export type PaymentCountOrderByAggregateInput = {
   totalHours?: Prisma.SortOrder
   overtime?: Prisma.SortOrder
   baseAmount?: Prisma.SortOrder
+  batchId?: Prisma.SortOrder
   overtimePay?: Prisma.SortOrder
   totalAmount?: Prisma.SortOrder
   status?: Prisma.SortOrder
@@ -574,6 +594,7 @@ export type PaymentMaxOrderByAggregateInput = {
   totalHours?: Prisma.SortOrder
   overtime?: Prisma.SortOrder
   baseAmount?: Prisma.SortOrder
+  batchId?: Prisma.SortOrder
   overtimePay?: Prisma.SortOrder
   totalAmount?: Prisma.SortOrder
   status?: Prisma.SortOrder
@@ -591,6 +612,7 @@ export type PaymentMinOrderByAggregateInput = {
   totalHours?: Prisma.SortOrder
   overtime?: Prisma.SortOrder
   baseAmount?: Prisma.SortOrder
+  batchId?: Prisma.SortOrder
   overtimePay?: Prisma.SortOrder
   totalAmount?: Prisma.SortOrder
   status?: Prisma.SortOrder
@@ -720,6 +742,7 @@ export type PaymentCreateWithoutWorkerInput = {
   totalHours: number
   overtime: number
   baseAmount: number
+  batchId?: string | null
   overtimePay: number
   totalAmount: number
   status?: $Enums.PaymentStatus
@@ -738,6 +761,7 @@ export type PaymentUncheckedCreateWithoutWorkerInput = {
   totalHours: number
   overtime: number
   baseAmount: number
+  batchId?: string | null
   overtimePay: number
   totalAmount: number
   status?: $Enums.PaymentStatus
@@ -785,6 +809,7 @@ export type PaymentScalarWhereInput = {
   totalHours?: Prisma.FloatFilter<"Payment"> | number
   overtime?: Prisma.FloatFilter<"Payment"> | number
   baseAmount?: Prisma.FloatFilter<"Payment"> | number
+  batchId?: Prisma.StringNullableFilter<"Payment"> | string | null
   overtimePay?: Prisma.FloatFilter<"Payment"> | number
   totalAmount?: Prisma.FloatFilter<"Payment"> | number
   status?: Prisma.EnumPaymentStatusFilter<"Payment"> | $Enums.PaymentStatus
@@ -800,6 +825,7 @@ export type PaymentCreateWithoutSiteInput = {
   totalHours: number
   overtime: number
   baseAmount: number
+  batchId?: string | null
   overtimePay: number
   totalAmount: number
   status?: $Enums.PaymentStatus
@@ -818,6 +844,7 @@ export type PaymentUncheckedCreateWithoutSiteInput = {
   totalHours: number
   overtime: number
   baseAmount: number
+  batchId?: string | null
   overtimePay: number
   totalAmount: number
   status?: $Enums.PaymentStatus
@@ -860,6 +887,7 @@ export type PaymentCreateWithoutWorkEntriesInput = {
   totalHours: number
   overtime: number
   baseAmount: number
+  batchId?: string | null
   overtimePay: number
   totalAmount: number
   status?: $Enums.PaymentStatus
@@ -879,6 +907,7 @@ export type PaymentUncheckedCreateWithoutWorkEntriesInput = {
   totalHours: number
   overtime: number
   baseAmount: number
+  batchId?: string | null
   overtimePay: number
   totalAmount: number
   status?: $Enums.PaymentStatus
@@ -910,6 +939,7 @@ export type PaymentUpdateWithoutWorkEntriesInput = {
   totalHours?: Prisma.FloatFieldUpdateOperationsInput | number
   overtime?: Prisma.FloatFieldUpdateOperationsInput | number
   baseAmount?: Prisma.FloatFieldUpdateOperationsInput | number
+  batchId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   overtimePay?: Prisma.FloatFieldUpdateOperationsInput | number
   totalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
   status?: Prisma.EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
@@ -929,6 +959,7 @@ export type PaymentUncheckedUpdateWithoutWorkEntriesInput = {
   totalHours?: Prisma.FloatFieldUpdateOperationsInput | number
   overtime?: Prisma.FloatFieldUpdateOperationsInput | number
   baseAmount?: Prisma.FloatFieldUpdateOperationsInput | number
+  batchId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   overtimePay?: Prisma.FloatFieldUpdateOperationsInput | number
   totalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
   status?: Prisma.EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
@@ -945,6 +976,7 @@ export type PaymentCreateManyWorkerInput = {
   totalHours: number
   overtime: number
   baseAmount: number
+  batchId?: string | null
   overtimePay: number
   totalAmount: number
   status?: $Enums.PaymentStatus
@@ -960,6 +992,7 @@ export type PaymentUpdateWithoutWorkerInput = {
   totalHours?: Prisma.FloatFieldUpdateOperationsInput | number
   overtime?: Prisma.FloatFieldUpdateOperationsInput | number
   baseAmount?: Prisma.FloatFieldUpdateOperationsInput | number
+  batchId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   overtimePay?: Prisma.FloatFieldUpdateOperationsInput | number
   totalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
   status?: Prisma.EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
@@ -978,6 +1011,7 @@ export type PaymentUncheckedUpdateWithoutWorkerInput = {
   totalHours?: Prisma.FloatFieldUpdateOperationsInput | number
   overtime?: Prisma.FloatFieldUpdateOperationsInput | number
   baseAmount?: Prisma.FloatFieldUpdateOperationsInput | number
+  batchId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   overtimePay?: Prisma.FloatFieldUpdateOperationsInput | number
   totalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
   status?: Prisma.EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
@@ -995,6 +1029,7 @@ export type PaymentUncheckedUpdateManyWithoutWorkerInput = {
   totalHours?: Prisma.FloatFieldUpdateOperationsInput | number
   overtime?: Prisma.FloatFieldUpdateOperationsInput | number
   baseAmount?: Prisma.FloatFieldUpdateOperationsInput | number
+  batchId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   overtimePay?: Prisma.FloatFieldUpdateOperationsInput | number
   totalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
   status?: Prisma.EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
@@ -1011,6 +1046,7 @@ export type PaymentCreateManySiteInput = {
   totalHours: number
   overtime: number
   baseAmount: number
+  batchId?: string | null
   overtimePay: number
   totalAmount: number
   status?: $Enums.PaymentStatus
@@ -1026,6 +1062,7 @@ export type PaymentUpdateWithoutSiteInput = {
   totalHours?: Prisma.FloatFieldUpdateOperationsInput | number
   overtime?: Prisma.FloatFieldUpdateOperationsInput | number
   baseAmount?: Prisma.FloatFieldUpdateOperationsInput | number
+  batchId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   overtimePay?: Prisma.FloatFieldUpdateOperationsInput | number
   totalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
   status?: Prisma.EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
@@ -1044,6 +1081,7 @@ export type PaymentUncheckedUpdateWithoutSiteInput = {
   totalHours?: Prisma.FloatFieldUpdateOperationsInput | number
   overtime?: Prisma.FloatFieldUpdateOperationsInput | number
   baseAmount?: Prisma.FloatFieldUpdateOperationsInput | number
+  batchId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   overtimePay?: Prisma.FloatFieldUpdateOperationsInput | number
   totalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
   status?: Prisma.EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
@@ -1061,6 +1099,7 @@ export type PaymentUncheckedUpdateManyWithoutSiteInput = {
   totalHours?: Prisma.FloatFieldUpdateOperationsInput | number
   overtime?: Prisma.FloatFieldUpdateOperationsInput | number
   baseAmount?: Prisma.FloatFieldUpdateOperationsInput | number
+  batchId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   overtimePay?: Prisma.FloatFieldUpdateOperationsInput | number
   totalAmount?: Prisma.FloatFieldUpdateOperationsInput | number
   status?: Prisma.EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
@@ -1109,6 +1148,7 @@ export type PaymentSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   totalHours?: boolean
   overtime?: boolean
   baseAmount?: boolean
+  batchId?: boolean
   overtimePay?: boolean
   totalAmount?: boolean
   status?: boolean
@@ -1130,6 +1170,7 @@ export type PaymentSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exten
   totalHours?: boolean
   overtime?: boolean
   baseAmount?: boolean
+  batchId?: boolean
   overtimePay?: boolean
   totalAmount?: boolean
   status?: boolean
@@ -1149,6 +1190,7 @@ export type PaymentSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
   totalHours?: boolean
   overtime?: boolean
   baseAmount?: boolean
+  batchId?: boolean
   overtimePay?: boolean
   totalAmount?: boolean
   status?: boolean
@@ -1168,6 +1210,7 @@ export type PaymentSelectScalar = {
   totalHours?: boolean
   overtime?: boolean
   baseAmount?: boolean
+  batchId?: boolean
   overtimePay?: boolean
   totalAmount?: boolean
   status?: boolean
@@ -1176,7 +1219,7 @@ export type PaymentSelectScalar = {
   createdAt?: boolean
 }
 
-export type PaymentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "workerId" | "siteId" | "month" | "year" | "totalHours" | "overtime" | "baseAmount" | "overtimePay" | "totalAmount" | "status" | "approvedAt" | "paidAt" | "createdAt", ExtArgs["result"]["payment"]>
+export type PaymentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "workerId" | "siteId" | "month" | "year" | "totalHours" | "overtime" | "baseAmount" | "batchId" | "overtimePay" | "totalAmount" | "status" | "approvedAt" | "paidAt" | "createdAt", ExtArgs["result"]["payment"]>
 export type PaymentInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   site?: boolean | Prisma.SiteDefaultArgs<ExtArgs>
   worker?: boolean | Prisma.UserDefaultArgs<ExtArgs>
@@ -1208,6 +1251,7 @@ export type $PaymentPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     totalHours: number
     overtime: number
     baseAmount: number
+    batchId: string | null
     overtimePay: number
     totalAmount: number
     status: $Enums.PaymentStatus
@@ -1648,6 +1692,7 @@ export interface PaymentFieldRefs {
   readonly totalHours: Prisma.FieldRef<"Payment", 'Float'>
   readonly overtime: Prisma.FieldRef<"Payment", 'Float'>
   readonly baseAmount: Prisma.FieldRef<"Payment", 'Float'>
+  readonly batchId: Prisma.FieldRef<"Payment", 'String'>
   readonly overtimePay: Prisma.FieldRef<"Payment", 'Float'>
   readonly totalAmount: Prisma.FieldRef<"Payment", 'Float'>
   readonly status: Prisma.FieldRef<"Payment", 'PaymentStatus'>

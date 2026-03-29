@@ -28,4 +28,12 @@ router.post(
   paymentController.sitePaymentSummary,
 );
 
+// Whole site payment request
+router.post(
+  "/sitePaymentRequest",
+  verifyToken,
+  authorize(["FOREMAN", "OWNER"]),
+  paymentController.sitePaymentRequest,
+);
+
 export default router;

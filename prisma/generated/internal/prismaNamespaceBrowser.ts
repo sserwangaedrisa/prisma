@@ -165,6 +165,7 @@ export const PaymentScalarFieldEnum = {
   totalHours: 'totalHours',
   overtime: 'overtime',
   baseAmount: 'baseAmount',
+  batchId: 'batchId',
   overtimePay: 'overtimePay',
   totalAmount: 'totalAmount',
   status: 'status',

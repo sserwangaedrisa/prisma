@@ -168,6 +168,8 @@ export const getAllSiteWorkers = asyncHandler(
               imageUrl: true,
               status: true,
               isActive: true,
+              createdAt: true,
+              updatedAt: true,
             },
           },
           assignedAt: true,
@@ -371,6 +373,8 @@ export const registerUser = asyncHandler(
     }
   },
 );
+
+// login user
 export const loginUser = asyncHandler(
   async (req: Request, res: Response): Promise<void> => {
     const { email, password } = req.body;
