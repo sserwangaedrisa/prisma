@@ -62,7 +62,8 @@ export const getSettingsByDate = async (
     }
 
     const targetDate = new Date(dateStr);
-
+    const endOfDay = new Date(targetDate);
+    endOfDay.setHours(23, 59, 59, 999);
     // Validate date
     if (isNaN(targetDate.getTime())) {
       return res.status(200).json({
@@ -77,7 +78,7 @@ export const getSettingsByDate = async (
       where: {
         siteId,
         createdAt: {
-          lte: targetDate,
+          lte: endOfDay,
         },
       },
       orderBy: {

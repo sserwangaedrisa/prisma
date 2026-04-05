@@ -21,6 +21,7 @@ import userRoute from "./routes/user.js";
 import workerRoute from "./routes/worker";
 import attendanceRoute from "./routes/attendance";
 import paymentRoute from "./routes/payment";
+import siteRoute from "./routes/site";
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
@@ -28,6 +29,7 @@ dotenv.config();
 
 // Swagger components
 import components from "./utils/swagger-components.js";
+import { sitePaymentRequest } from "./controllers/payment";
 
 const app: Application = express();
 
@@ -79,6 +81,7 @@ app.use("/worker", workerRoute);
 app.use("/attendance", attendanceRoute);
 app.use("/settings", settingsRoute);
 app.use("/payments", paymentRoute);
+app.use("/sites", siteRoute);
 app.use((_req: Request, res: Response) => {
   res.status(404).json({ message: "Not Found" });
 });
@@ -89,6 +92,10 @@ app.use((error: any, _req: Request, res: Response, _next: NextFunction) => {
     err: error.message || "Internal Server Error",
   });
 });
+
+app.use(express.json());
+
+app.use(express.urlencoded({ extended: true }));
 
 (async () => {
   try {

@@ -39,7 +39,10 @@ export type MonthStatus = (typeof MonthStatus)[keyof typeof MonthStatus]
 export const WorkEntryStatus = {
   NOT_PAID: 'NOT_PAID',
   PENDING: 'PENDING',
-  PAID: 'PAID'
+  PAID: 'PAID',
+  APPROVED: 'APPROVED',
+  REVIEW: 'REVIEW',
+  REJECTED: 'REJECTED'
 } as const
 
 export type WorkEntryStatus = (typeof WorkEntryStatus)[keyof typeof WorkEntryStatus]

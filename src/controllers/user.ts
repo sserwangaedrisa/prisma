@@ -53,17 +53,30 @@ export const getImage = async (req: Request, res: Response) => {
   }
 };
 
-export const users = asyncHandler(
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const users = await prisma.user.findMany();
+export const getForemen = async (req: Request, res: Response) => {
+  try {
+    const foremen = await prisma.user.findMany({
+      where: {
+        role: "FOREMAN",
+        isActive: true,
+        status: "ACTIVE",
+      },
+      select: {
+        id: true,
+        name: true,
+      },
+    });
 
-      res.status(200).json({ data: users });
-    } catch (error) {
-      handleError(error, res);
+    if (foremen.length === 0) {
+      res.status(200).json({ message: "No foremen found", data: [] });
+      return;
     }
-  },
-);
+
+    return res.status(200).json({ data: foremen });
+  } catch (error) {
+    handleError(error, res);
+  }
+};
 
 // getting active site workers
 export const getActiveSiteWorkers = asyncHandler(

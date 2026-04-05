@@ -42,7 +42,6 @@ interface BulkCreateBody {
   entries: BulkWorkEntry[];
 }
 
-// type MonthStatus = "OPENED" | "LOCKED";
 export const recordAttendance = async (req: Request, res: Response) => {
   const { workerId, siteId, date, hours, notes, overtime } = req.body;
   const userId = req.user.id;
@@ -129,6 +128,17 @@ export const recordAttendance = async (req: Request, res: Response) => {
       },
     });
 
+    if (
+      existingEntry?.status &&
+      ["APPROVED", "PAID", "REJECTED", "PENDING"].includes(existingEntry.status)
+    ) {
+      return res.status(200).json({
+        success: false,
+        message:
+          "WorkEntry is either 'APPROVED', 'REJECTED', 'PAID', OR 'PENDING'.",
+        status: "invalid_status",
+      });
+    }
     if (existingEntry) {
       // Update work entry
       const id = existingEntry.id;
@@ -258,13 +268,6 @@ export const createWorkEntry = async (
     const { workerId, siteId, date, hours, overtime, notes } =
       req.body as CreateWorkEntryBody;
     const userId = req.user?.id;
-
-    // if (!userId) {
-    //   return res.status(401).json({
-    //     success: false,
-    //     message: "Unauthorized",
-    //   });
-    // }
 
     // Validate required fields
     if (!workerId || !siteId || !hours) {
@@ -501,6 +504,18 @@ export const deleteWorkEntry = async (
         success: false,
         message: "Cannot delete work entry from a locked month",
         status: "locked month",
+      });
+    }
+
+    if (
+      existingEntry?.status &&
+      ["APPROVED", "PAID", "REJECTED", "PENDING"].includes(existingEntry.status)
+    ) {
+      return res.status(200).json({
+        success: false,
+        message:
+          "WorkEntry is either 'APPROVED', 'REJECTED', 'PAID', OR 'PENDING'.",
+        status: "invalid_status",
       });
     }
 

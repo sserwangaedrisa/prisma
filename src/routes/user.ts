@@ -9,8 +9,8 @@ import {
   //uploadImage,
   getActiveSiteWorkers,
   getImage,
+  getForemen,
   updateUser,
-  users,
   blockUser,
   unblockUser,
   getAllSiteWorkers,
@@ -27,8 +27,6 @@ import { Router } from "express";
 import { upload } from "../middleware/multer";
 import { ActivityLogScalarFieldEnum } from "../../prisma/generated/internal/prismaNamespace.js";
 const router = Router();
-
-router.get("/", users);
 
 // Register users
 router.post(
@@ -78,6 +76,9 @@ router.post("/resend-otp", resendOTP);
 router.post("/verifyEmail", verifyEmail);
 router.post("/login", loginUserPolicy, loginUser);
 router.patch("/resetPassword", resetPassword);
+
+// get foremen
+router.get("/foremen", verifyToken, authorize(["OWNER"]), getForemen);
 
 //router.post("/upload", upload.single("image"), uploadImage);
 router.get("/images/:id", getImage);

@@ -194,6 +194,9 @@ enum WorkEntryStatus {
   NOT_PAID      // not yet selected for payment
   PENDING       // foreman selected it
   PAID          // owner paid it
+  APPROVED      // OWNER HAS approved it for payment
+  REVIEW        // Owner has set it back to forman for review
+  REJECTED      // Owner has permanetly REJECTED the entry
 }
 
 enum UserStatus {
