@@ -135,6 +135,28 @@ export const createSite = async (req: Request, res: Response) => {
   }
 };
 
+// get site ids and names
+export const getSiteIdsAndNames = async (req: Request, res: Response) => {
+  try {
+    const sites = await prisma.site.findMany({
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+    return res.status(200).json({
+      success: true,
+      data: sites,
+    });
+  } catch (error) {
+    console.error("Error fetching site ids and names:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch site ids and names",
+    });
+  }
+};
+
 /**
  * Get all sites with filtering and pagination
  */

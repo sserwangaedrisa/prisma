@@ -18,6 +18,14 @@ router.get(
   authorize(["OWNER", "ADMIN"]),
   SiteController.getSiteById,
 );
+
+// get site ids and names
+router.get(
+  "/allSitesIdsAndNames",
+  authorize(["OWNER", "ADMIN"]),
+  SiteController.getSiteIdsAndNames,
+);
+
 router.put(
   "/sites/:id",
   authorize(["OWNER", "ADMIN"]),

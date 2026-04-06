@@ -78,6 +78,129 @@ export const getForemen = async (req: Request, res: Response) => {
   }
 };
 
+// getting all users
+export const getAllUsers = async (req: Request, res: Response) => {
+  try {
+    // Pagination parameters
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(
+      100,
+      Math.max(1, parseInt(req.query.limit as string) || 10),
+    ); // Max 100 items per request
+    const skip = (page - 1) * limit;
+
+    // Sorting parameters
+    const sortBy = (req.query.sortBy as string) || "name";
+    const sortOrder =
+      (req.query.sortOrder as string) === "desc" ? "desc" : "asc";
+
+    // Filter parameters
+    const search = req.query.search as string;
+    const role = req.query.role as string;
+    const status = req.query.status as string;
+    const isActive =
+      req.query.isActive === "true"
+        ? true
+        : req.query.isActive === "false"
+          ? false
+          : undefined;
+
+    // Build where clause
+    let whereClause: any = {};
+
+    if (search) {
+      whereClause.OR = [
+        { name: { contains: search, mode: "insensitive" } },
+        { email: { contains: search, mode: "insensitive" } },
+        { phone: { contains: search, mode: "insensitive" } },
+      ];
+    }
+
+    if (role) {
+      if (
+        ["LABORER", "FOREMAN", "OWNER", "ADMIN"].includes(role.toUpperCase())
+      ) {
+        whereClause.role = role;
+      }
+      if (
+        [
+          "USER",
+          "HELPER",
+          "MASON",
+          "STEEL_FIXER",
+          "FOREMAN",
+          "SITE_ADMIN",
+          "PAINTER",
+          "ELECTRICIAN",
+          "ADMIN",
+        ].includes(role.toUpperCase())
+      ) {
+        whereClause.job = role;
+      }
+    }
+
+    if (status) {
+      whereClause.status = status;
+    }
+
+    if (isActive !== undefined) {
+      whereClause.isActive = isActive;
+    }
+
+    // Execute parallel queries for better performance
+    const [totalUsers, users] = await Promise.all([
+      prisma.user.count({ where: whereClause }),
+      prisma.user.findMany({
+        where: whereClause,
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          phone: true,
+          role: true,
+          job: true,
+          wageRating: true,
+          imageUrl: true,
+          status: true,
+          isActive: true,
+          createdAt: true,
+        },
+        orderBy: {
+          [sortBy]: sortOrder,
+        },
+        skip: skip,
+        take: limit,
+      }),
+    ]);
+
+    // Calculate pagination metadata
+    const totalPages = Math.ceil(totalUsers / limit);
+
+    res.status(200).json({
+      message: "Users retrieved successfully",
+      success: true,
+      data: users,
+      pagination: {
+        currentPage: page,
+        totalItems: totalUsers,
+        totalPages: totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+        startIndex: skip + 1,
+        endIndex: Math.min(skip + limit, totalUsers),
+      },
+      count: users.length,
+    });
+    return;
+  } catch (error) {
+    console.error("Error while getting users:", error);
+    res.status(500).json({
+      message: "Error while getting users",
+      success: false,
+    });
+  }
+};
+
 // getting active site workers
 export const getActiveSiteWorkers = asyncHandler(
   async (req: Request, res: Response) => {
@@ -150,7 +273,7 @@ export const getActiveSiteWorkers = asyncHandler(
   },
 );
 
-// getting all site workers
+//
 export const getAllSiteWorkers = asyncHandler(
   async (req: Request, res: Response) => {
     const { siteId } = req.body;
@@ -247,22 +370,29 @@ export const registerUser = asyncHandler(
       return;
     }
 
-    const site = await prisma.site.findFirst({
-      where: { foremanId: userId },
-      select: {
-        id: true,
-      },
-    });
+    let siteId: string | string[] = "";
 
-    if (!site) {
-      res.status(200).json({
-        status: "failed",
-        message: "site not found login again to continue",
-      });
-      return;
+    if (sites) {
+      siteId = sites as string[]; // Assuming sites is an array of site IDs
     }
 
-    const siteId = site.id;
+    if (!sites) {
+      const site = await prisma.site.findFirst({
+        where: { foremanId: userId },
+        select: {
+          id: true,
+        },
+      });
+
+      if (!site) {
+        res.status(200).json({
+          status: "failed",
+          message: "site not found login again to continue",
+        });
+        return;
+      }
+      siteId = site.id;
+    }
 
     try {
       const existingUser = await prisma.user.findUnique({
@@ -349,12 +479,38 @@ export const registerUser = asyncHandler(
         select: { id: true, name: true, email: true },
       });
 
-      const siteAttachment = await prisma.siteWorker.create({
-        data: {
-          siteId: siteId,
-          workerId: user.id,
-        },
-      });
+      let siteAttachment;
+
+      console.log("siteId: ", siteId);
+      console.log("typeof siteId: ", typeof siteId);
+      console.log("user.id: ", user.id);
+
+      if (siteId) {
+        if (typeof siteId === "string") {
+          siteAttachment = await prisma.siteWorker.create({
+            data: {
+              workerId: user.id,
+              siteId: siteId,
+            },
+          });
+        } else if (Array.isArray(siteId)) {
+          const assignments = siteId.map((siteId) => ({
+            workerId: user.id,
+            siteId: siteId,
+          }));
+
+          siteAttachment = await prisma.siteWorker.createMany({
+            data: assignments,
+          });
+        }
+      }
+
+      // const siteAttachment = await prisma.siteWorker.create({
+      //   data: {
+      //     siteId: siteId,
+      //     workerId: user.id,
+      //   },
+      // });
 
       if (!siteAttachment) {
         res.status(200).json({

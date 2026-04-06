@@ -11,6 +11,7 @@ import {
   getImage,
   getForemen,
   updateUser,
+  getAllUsers,
   blockUser,
   unblockUser,
   getAllSiteWorkers,
@@ -49,6 +50,14 @@ router.post(
   verifyToken,
   authorize(["FOREMAN", "OWNER"]),
   getActiveSiteWorkers,
+);
+
+// get all users
+router.get(
+  "/allUsers",
+  verifyToken,
+  authorize(["OWNER", "ADMIN"]),
+  getAllUsers,
 );
 
 // get all site workers
