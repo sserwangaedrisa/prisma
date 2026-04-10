@@ -880,10 +880,10 @@ export const reviewPaymentBatch = async (req: Request, res: Response) => {
         UPDATE "Payment"
         SET 
           status = 'REVIEW'::"PaymentStatus",
-          "approvedAt" = NULL  -- Clear approval timestamp since it's being sent back for review
+          "approvedAt" = NULL 
         WHERE 
           "batchId" = ${batchId}::uuid
-          AND status = 'APPROVED'::"PaymentStatus"  -- Only review payments that were approved
+          AND status = 'PENDING'::"PaymentStatus"  
         RETURNING id, "totalAmount"
       ),
       updated_entries AS (
