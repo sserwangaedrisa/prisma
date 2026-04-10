@@ -757,7 +757,7 @@ export const approvePaymentBatch = async (req: Request, res: Response) => {
       ),
       updated_entries AS (
         UPDATE "WorkEntry"
-        SET status = 'PAID'::"WorkEntryStatus"
+        SET status = 'APPROVED'::"WorkEntryStatus"
         WHERE "paymentId" IN (SELECT id FROM updated_payments)
         RETURNING id
       )
@@ -806,6 +806,7 @@ export const markBatchAsPaid = async (req: Request, res: Response) => {
       Array<{
         updated_payments: number;
         total_amount: number;
+        updated_work_entries: number;
       }>
     >`
       WITH updated_payments AS (
@@ -815,12 +816,20 @@ export const markBatchAsPaid = async (req: Request, res: Response) => {
           "paidAt" = NOW()
         WHERE 
           "batchId" = ${batchId}::uuid
-          AND status = 'APPROVED'::"PaymentStatus"
         RETURNING id, "totalAmount"
+      ),
+      updated_work_entries AS (
+        UPDATE "WorkEntry"
+        SET 
+          status = 'PAID'::"WorkEntryStatus"
+        WHERE 
+          "paymentId" IN (SELECT id FROM updated_payments)
+        RETURNING id
       )
       SELECT 
         (SELECT COUNT(*) FROM updated_payments) as updated_payments,
-        COALESCE((SELECT SUM("totalAmount") FROM updated_payments), 0) as total_amount
+        COALESCE((SELECT SUM("totalAmount") FROM updated_payments), 0) as total_amount,
+        (SELECT COUNT(*) FROM updated_work_entries) as updated_work_entries
     `;
 
     const summary = result[0];
@@ -835,10 +844,11 @@ export const markBatchAsPaid = async (req: Request, res: Response) => {
 
     return res.status(200).json({
       success: true,
-      message: `Successfully marked ${summary.updated_payments} payments as PAID in batch ${batchId}`,
+      message: `Successfully marked ${summary.updated_payments} payments and ${summary.updated_work_entries} work entries as PAID`,
       summary: {
         paidPayments: Number(summary.updated_payments),
         totalAmount: Number(summary.total_amount.toFixed(2)),
+        updatedWorkEntries: Number(summary.updated_work_entries),
         transactionReference: transactionReference || null,
       },
     });
@@ -847,6 +857,80 @@ export const markBatchAsPaid = async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: "Failed to mark payments as paid",
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+};
+
+// Send a batch back for review (e.g. if owner wants changes after approval, or foreman wants changes after request)
+
+export const reviewPaymentBatch = async (req: Request, res: Response) => {
+  const { batchId } = req.params;
+  const { foremanId, reviewNotes } = req.body; // Optional review notes from owner
+
+  try {
+    const result = await prisma.$queryRaw<
+      Array<{
+        updated_payments: number;
+        updated_entries: number;
+        total_amount: number;
+      }>
+    >`
+      WITH updated_payments AS (
+        UPDATE "Payment"
+        SET 
+          status = 'REVIEW'::"PaymentStatus",
+          "approvedAt" = NULL  -- Clear approval timestamp since it's being sent back for review
+        WHERE 
+          "batchId" = ${batchId}::uuid
+          AND status = 'APPROVED'::"PaymentStatus"  -- Only review payments that were approved
+        RETURNING id, "totalAmount"
+      ),
+      updated_entries AS (
+        UPDATE "WorkEntry"
+        SET status = 'REVIEW'::"WorkEntryStatus"
+        WHERE "paymentId" IN (SELECT id FROM updated_payments)
+        RETURNING id
+      )
+      SELECT 
+        (SELECT COUNT(*) FROM updated_payments) as updated_payments,
+        (SELECT COUNT(*) FROM updated_entries) as updated_entries,
+        COALESCE((SELECT SUM("totalAmount") FROM updated_payments), 0) as total_amount
+    `;
+
+    const summary = result[0];
+
+    // Log activity with review notes if provided
+    if (foremanId) {
+      await prisma.$executeRaw`
+        INSERT INTO "ActivityLog" (id, "userId", action, entity, "entityId", "createdAt", details)
+        VALUES (
+          gen_random_uuid(), 
+          ${foremanId}::uuid, 
+          'REVIEW_BATCH', 
+          'Payment', 
+          ${batchId}, 
+          NOW(),
+          ${reviewNotes || "Payment batch sent back for review"}
+        )
+      `;
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Successfully sent ${summary.updated_payments} payments back for review in batch ${batchId}`,
+      summary: {
+        reviewedPayments: Number(summary.updated_payments),
+        updatedEntries: Number(summary.updated_entries),
+        totalAmount: Number(summary.total_amount.toFixed(2)),
+        reviewNotes: reviewNotes || null,
+      },
+    });
+  } catch (error) {
+    console.error("Error reviewing payment batch:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to send payment batch for review",
       error: error instanceof Error ? error.message : String(error),
     });
   }
