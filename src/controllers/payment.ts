@@ -1313,20 +1313,19 @@ export const getPayments = async (req: Request, res: Response) => {
     // Get payments
     const payments = await prisma.$queryRawUnsafe(
       `SELECT 
-        p.*,
-        u.name as "workerName",
-        s.name as "siteName"
-      FROM "Payment" p
-      INNER JOIN "User" u ON p."workerId" = u.id
-      INNER JOIN "Site" s ON p."siteId" = s.id
-      ${whereClause}
-      ORDER BY ${String(sortField)} ${String(sortOrder)}
-      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
+    p.*,
+    u.name as "workerName",
+    s.name as "siteName"
+  FROM "Payment" p
+  INNER JOIN "User" u ON p."workerId" = u.id
+  INNER JOIN "Site" s ON p."siteId" = s.id
+  ${whereClause}
+  ORDER BY "${String(sortField)}" ${String(sortOrder)}
+  LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
       ...params,
       Number(limit),
       offset,
     );
-
     return res.status(200).json({
       success: true,
       payments,
@@ -1678,6 +1677,258 @@ export const getAllBatches = async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: "Failed to fetch batches",
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+};
+
+// Get payment sites for filtering
+export const getPaymentSites = async (req: Request, res: Response) => {
+  const userId = req.user?.id;
+  const userRole = req.user?.role;
+
+  try {
+    let sites;
+
+    if (userRole === "OWNER") {
+      // Owner sees all their sites
+      sites = await prisma.$queryRaw`
+        SELECT DISTINCT s.id, s.name
+        FROM "Site" s
+        WHERE s."ownerId" = ${userId}::uuid
+        ORDER BY s.name
+      `;
+    } else if (userRole === "FOREMAN") {
+      // Foreman sees sites they manage
+      sites = await prisma.$queryRaw`
+        SELECT DISTINCT s.id, s.name
+        FROM "Site" s
+        WHERE s."foremanId" = ${userId}::uuid
+        ORDER BY s.name
+      `;
+    } else {
+      sites = [];
+    }
+
+    return res.status(200).json({
+      success: true,
+      sites,
+    });
+  } catch (error) {
+    console.error("Error fetching sites:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch sites",
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+};
+
+// Get payment statistics
+export const getPaymentStatistics = async (req: Request, res: Response) => {
+  const userId = req.user?.id;
+  const userRole = req.user?.role;
+
+  try {
+    let siteFilter = "";
+    const params: any[] = [];
+    let paramIndex = 1;
+
+    if (userRole === "OWNER") {
+      siteFilter = `WHERE s."ownerId" = $${paramIndex}::uuid`;
+      params.push(userId);
+      paramIndex++;
+    } else if (userRole === "FOREMAN") {
+      siteFilter = `WHERE s."foremanId" = $${paramIndex}::uuid`;
+      params.push(userId);
+      paramIndex++;
+    }
+
+    const statistics = await prisma.$queryRawUnsafe(
+      `SELECT 
+        COUNT(*) FILTER (WHERE p.status = 'PENDING') as "pendingCount",
+        COUNT(*) FILTER (WHERE p.status = 'APPROVED') as "approvedCount",
+        COUNT(*) FILTER (WHERE p.status = 'PAID') as "paidCount",
+        COUNT(*) FILTER (WHERE p.status = 'REVIEW') as "reviewCount",
+        COUNT(*) FILTER (WHERE p.status = 'REJECTED') as "rejectedCount",
+        COALESCE(SUM(p."totalAmount") FILTER (WHERE p.status = 'PENDING'), 0) as "pendingAmount",
+        COALESCE(SUM(p."totalAmount") FILTER (WHERE p.status = 'APPROVED'), 0) as "approvedAmount",
+        COALESCE(SUM(p."totalAmount") FILTER (WHERE p.status = 'PAID'), 0) as "paidAmount",
+        COUNT(DISTINCT p."batchId") as "totalBatches"
+      FROM "Payment" p
+      INNER JOIN "Site" s ON p."siteId" = s.id
+      ${siteFilter}`,
+      ...params,
+    );
+
+    return res.status(200).json({
+      success: true,
+      statistics: statistics[0],
+    });
+  } catch (error) {
+    console.error("Error fetching payment statistics:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch statistics",
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+};
+
+// Export payments to CSV
+export const exportPayments = async (req: Request, res: Response) => {
+  const { status, siteId, startDate, endDate } = req.query;
+
+  try {
+    let whereClause = "WHERE 1=1";
+    const params: any[] = [];
+    let paramIndex = 1;
+
+    if (status && status !== "all") {
+      whereClause += ` AND p.status = $${paramIndex}::"PaymentStatus"`;
+      params.push(status);
+      paramIndex++;
+    }
+
+    if (siteId) {
+      whereClause += ` AND p."siteId" = $${paramIndex}::uuid`;
+      params.push(siteId);
+      paramIndex++;
+    }
+
+    if (startDate) {
+      whereClause += ` AND p."createdAt" >= $${paramIndex}::timestamp`;
+      params.push(startDate);
+      paramIndex++;
+    }
+
+    if (endDate) {
+      whereClause += ` AND p."createdAt" <= $${paramIndex}::timestamp`;
+      params.push(endDate);
+      paramIndex++;
+    }
+
+    const payments = await prisma.$queryRawUnsafe(
+      `SELECT 
+        p.id,
+        u.name as "Worker Name",
+        s.name as "Site Name",
+        p.month,
+        p.year,
+        p."totalHours" as "Total Hours",
+        p."totalAmount" as "Total Amount",
+        p.status as "Status",
+        p."createdAt" as "Created At",
+        p."approvedAt" as "Approved At",
+        p."paidAt" as "Paid At",
+        p."batchId" as "Batch ID"
+      FROM "Payment" p
+      INNER JOIN "User" u ON p."workerId" = u.id
+      INNER JOIN "Site" s ON p."siteId" = s.id
+      ${whereClause}
+      ORDER BY p."createdAt" DESC`,
+      ...params,
+    );
+
+    // Convert to CSV
+    const csvRows = [];
+    const headers = Object.keys(payments[0] || {});
+    csvRows.push(headers.join(","));
+
+    for (const payment of payments as any[]) {
+      const values = headers.map((header) => {
+        const value = payment[header];
+        if (value === null || value === undefined) return "";
+        if (typeof value === "string" && value.includes(","))
+          return `"${value}"`;
+        if (value instanceof Date) return value.toISOString();
+        return value;
+      });
+      csvRows.push(values.join(","));
+    }
+
+    const csvContent = csvRows.join("\n");
+
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=payments_export_${Date.now()}.csv`,
+    );
+    return res.status(200).send(csvContent);
+  } catch (error) {
+    console.error("Error exporting payments:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to export payments",
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+};
+
+// Get payment summary by date range
+export const getPaymentSummary = async (req: Request, res: Response) => {
+  const { startDate, endDate, siteId } = req.query;
+  const userId = req.user?.id;
+  const userRole = req.user?.role;
+
+  try {
+    let whereClause = "WHERE 1=1";
+    const params: any[] = [];
+    let paramIndex = 1;
+
+    if (startDate) {
+      whereClause += ` AND p."createdAt" >= $${paramIndex}::timestamp`;
+      params.push(startDate);
+      paramIndex++;
+    }
+
+    if (endDate) {
+      whereClause += ` AND p."createdAt" <= $${paramIndex}::timestamp`;
+      params.push(endDate);
+      paramIndex++;
+    }
+
+    if (siteId) {
+      whereClause += ` AND p."siteId" = $${paramIndex}::uuid`;
+      params.push(siteId);
+      paramIndex++;
+    }
+
+    if (userRole === "OWNER") {
+      whereClause += ` AND s."ownerId" = $${paramIndex}::uuid`;
+      params.push(userId);
+      paramIndex++;
+    } else if (userRole === "FOREMAN") {
+      whereClause += ` AND s."foremanId" = $${paramIndex}::uuid`;
+      params.push(userId);
+      paramIndex++;
+    }
+
+    const summary = await prisma.$queryRawUnsafe(
+      `SELECT 
+        DATE(p."createdAt") as date,
+        COUNT(*) as "totalPayments",
+        SUM(p."totalAmount") as "totalAmount",
+        COUNT(*) FILTER (WHERE p.status = 'PENDING') as "pendingCount",
+        COUNT(*) FILTER (WHERE p.status = 'APPROVED') as "approvedCount",
+        COUNT(*) FILTER (WHERE p.status = 'PAID') as "paidCount"
+      FROM "Payment" p
+      INNER JOIN "Site" s ON p."siteId" = s.id
+      ${whereClause}
+      GROUP BY DATE(p."createdAt")
+      ORDER BY DATE(p."createdAt") DESC`,
+      ...params,
+    );
+
+    return res.status(200).json({
+      success: true,
+      summary,
+    });
+  } catch (error) {
+    console.error("Error fetching payment summary:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch payment summary",
       error: error instanceof Error ? error.message : String(error),
     });
   }
