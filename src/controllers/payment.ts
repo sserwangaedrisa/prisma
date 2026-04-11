@@ -1178,3 +1178,507 @@ export const cancelBatch = async (req: Request, res: Response) => {
     });
   }
 };
+
+// Cancel/Delete a single payment request (only if still PENDING)
+export const cancelSinglePayment = async (req: Request, res: Response) => {
+  const { paymentId } = req.params;
+  const { userId } = req.body;
+
+  try {
+    // Check if payment is already approved or paid
+    const paymentStatus = await prisma.$queryRaw<Array<{ status: string }>>`
+      SELECT status
+      FROM "Payment"
+      WHERE id = ${paymentId}::text::uuid
+    `;
+
+    if (
+      !paymentStatus[0] ||
+      paymentStatus[0].status === "APPROVED" ||
+      paymentStatus[0].status === "PAID"
+    ) {
+      return res.status(200).json({
+        success: false,
+        message: "Cannot cancel payment. It has already been approved or paid.",
+      });
+    }
+
+    // Unlink work entries
+    await prisma.$executeRaw`
+      UPDATE "WorkEntry"
+      SET 
+        "paymentId" = NULL,  
+        status = 'NOT_PAID'::"WorkEntryStatus"
+      WHERE "paymentId" = ${paymentId}::text::uuid
+    `;
+
+    // Delete payment
+    const result = await prisma.$executeRaw`
+      DELETE FROM "Payment"
+      WHERE id = ${paymentId}::text::uuid
+    `;
+
+    // Log activity
+    if (userId) {
+      await prisma.$executeRaw`
+        INSERT INTO "ActivityLog" (id, "userId", action, entity, "entityId", "createdAt")
+        VALUES (gen_random_uuid(), ${userId}::uuid, 'CANCEL_PAYMENT', 'Payment', ${paymentId}, NOW())
+      `;
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Successfully cancelled payment ${paymentId}`,
+      deletedCount: result,
+    });
+  } catch (error) {
+    console.error("Error cancelling payment:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to cancel payment",
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+};
+
+// Get all payments with pagination, filtering, sorting
+export const getPayments = async (req: Request, res: Response) => {
+  const {
+    page = 1,
+    limit = 20,
+    sortField = "createdAt",
+    sortOrder = "desc",
+    status,
+    siteId,
+    batchId,
+    startDate,
+    endDate,
+    search,
+  } = req.query;
+
+  try {
+    let whereClause = "WHERE 1=1";
+    const params: any[] = [];
+    let paramIndex = 1;
+
+    if (status && status !== "all") {
+      whereClause += ` AND p.status = $${paramIndex}::"PaymentStatus"`;
+      params.push(status);
+      paramIndex++;
+    }
+
+    if (siteId) {
+      whereClause += ` AND p."siteId" = $${paramIndex}::uuid`;
+      params.push(siteId);
+      paramIndex++;
+    }
+
+    if (batchId) {
+      whereClause += ` AND p."batchId" = $${paramIndex}::uuid`;
+      params.push(batchId);
+      paramIndex++;
+    }
+
+    if (startDate) {
+      whereClause += ` AND p."createdAt" >= $${paramIndex}::timestamp`;
+      params.push(startDate);
+      paramIndex++;
+    }
+
+    if (endDate) {
+      whereClause += ` AND p."createdAt" <= $${paramIndex}::timestamp`;
+      params.push(endDate);
+      paramIndex++;
+    }
+
+    if (search) {
+      whereClause += ` AND (u.name ILIKE $${paramIndex} OR s.name ILIKE $${paramIndex})`;
+      params.push(`%${search}%`);
+      paramIndex++;
+    }
+
+    // Get total count
+    const countResult = await prisma.$queryRawUnsafe<Array<{ count: number }>>(
+      `SELECT COUNT(*) as count FROM "Payment" p 
+       INNER JOIN "User" u ON p."workerId" = u.id 
+       INNER JOIN "Site" s ON p."siteId" = s.id
+       ${whereClause}`,
+      ...params,
+    );
+
+    const total = Number(countResult[0]?.count || 0);
+    const totalPages = Math.ceil(total / Number(limit));
+    const offset = (Number(page) - 1) * Number(limit);
+
+    // Get payments
+    const payments = await prisma.$queryRawUnsafe(
+      `SELECT 
+        p.*,
+        u.name as "workerName",
+        s.name as "siteName"
+      FROM "Payment" p
+      INNER JOIN "User" u ON p."workerId" = u.id
+      INNER JOIN "Site" s ON p."siteId" = s.id
+      ${whereClause}
+      ORDER BY ${String(sortField)} ${String(sortOrder)}
+      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
+      ...params,
+      Number(limit),
+      offset,
+    );
+
+    return res.status(200).json({
+      success: true,
+      payments,
+      pagination: {
+        page: Number(page),
+        limit: Number(limit),
+        total,
+        totalPages,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching payments:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch payments",
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+};
+
+// Approve multiple payments
+export const approvePaymentsBatch = async (req: Request, res: Response) => {
+  const { paymentIds } = req.body;
+  const { userId } = req.body;
+
+  if (!paymentIds || !Array.isArray(paymentIds) || paymentIds.length === 0) {
+    return res.status(400).json({
+      success: false,
+      message: "Payment IDs are required",
+    });
+  }
+
+  try {
+    const result = await prisma.$queryRaw`
+      UPDATE "Payment"
+      SET 
+        status = 'APPROVED'::"PaymentStatus",
+        "approvedAt" = NOW()
+      WHERE 
+        id = ANY(${paymentIds}::uuid[])
+        AND status = 'PENDING'::"PaymentStatus"
+      RETURNING id
+    `;
+
+    // Log activity
+    if (userId) {
+      await prisma.$executeRaw`
+        INSERT INTO "ActivityLog" (id, "userId", action, entity, "entityId", "createdAt")
+        VALUES (gen_random_uuid(), ${userId}::uuid, 'APPROVE_PAYMENTS', 'Payment', NULL, NOW())
+      `;
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Successfully approved ${(result as any[]).length} payments`,
+      approvedCount: (result as any[]).length,
+    });
+  } catch (error) {
+    console.error("Error approving payments:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to approve payments",
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+};
+
+// Mark multiple payments as paid
+export const markMultipleAsPaid = async (req: Request, res: Response) => {
+  const { paymentIds, transactionReference } = req.body;
+  const { userId } = req.body;
+
+  if (!paymentIds || !Array.isArray(paymentIds) || paymentIds.length === 0) {
+    return res.status(400).json({
+      success: false,
+      message: "Payment IDs are required",
+    });
+  }
+
+  try {
+    const result = await prisma.$queryRaw`
+      UPDATE "Payment"
+      SET 
+        status = 'PAID'::"PaymentStatus",
+        "paidAt" = NOW()
+      WHERE 
+        id = ANY(${paymentIds}::uuid[])
+        AND status IN ('PENDING'::"PaymentStatus", 'APPROVED'::"PaymentStatus")
+      RETURNING id
+    `;
+
+    // Log activity
+    if (userId) {
+      await prisma.$executeRaw`
+        INSERT INTO "ActivityLog" (id, "userId", action, entity, "entityId", "createdAt", details)
+        VALUES (gen_random_uuid(), ${userId}::uuid, 'PAY_PAYMENTS', 'Payment', NULL, NOW(), ${transactionReference || null})
+      `;
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Successfully marked ${(result as any[]).length} payments as paid`,
+      paidCount: (result as any[]).length,
+      transactionReference: transactionReference || null,
+    });
+  } catch (error) {
+    console.error("Error marking payments as paid:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to mark payments as paid",
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+};
+
+// Approve single payment
+export const approveSinglePayment = async (req: Request, res: Response) => {
+  const { paymentId } = req.params;
+  const { userId } = req.body;
+
+  try {
+    const result = await prisma.$queryRaw`
+      UPDATE "Payment"
+      SET 
+        status = 'APPROVED'::"PaymentStatus",
+        "approvedAt" = NOW()
+      WHERE 
+        id = ${paymentId}::uuid
+        AND status = 'PENDING'::"PaymentStatus"
+      RETURNING id
+    `;
+
+    if ((result as any[]).length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Payment not found or already approved",
+      });
+    }
+
+    // Log activity
+    if (userId) {
+      await prisma.$executeRaw`
+        INSERT INTO "ActivityLog" (id, "userId", action, entity, "entityId", "createdAt")
+        VALUES (gen_random_uuid(), ${userId}::uuid, 'APPROVE_PAYMENT', 'Payment', ${paymentId}, NOW())
+      `;
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Payment approved successfully",
+    });
+  } catch (error) {
+    console.error("Error approving payment:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to approve payment",
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+};
+
+// Mark single payment as paid
+export const markSingleAsPaid = async (req: Request, res: Response) => {
+  const { paymentId } = req.params;
+  const { userId, transactionReference } = req.body;
+
+  try {
+    const result = await prisma.$queryRaw`
+      UPDATE "Payment"
+      SET 
+        status = 'PAID'::"PaymentStatus",
+        "paidAt" = NOW()
+      WHERE 
+        id = ${paymentId}::uuid
+        AND status IN ('PENDING'::"PaymentStatus", 'APPROVED'::"PaymentStatus")
+      RETURNING id
+    `;
+
+    if ((result as any[]).length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Payment not found or already paid",
+      });
+    }
+
+    // Log activity
+    if (userId) {
+      await prisma.$executeRaw`
+        INSERT INTO "ActivityLog" (id, "userId", action, entity, "entityId", "createdAt", details)
+        VALUES (gen_random_uuid(), ${userId}::uuid, 'PAY_PAYMENT', 'Payment', ${paymentId}, NOW(), ${transactionReference || null})
+      `;
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Payment marked as paid successfully",
+      transactionReference: transactionReference || null,
+    });
+  } catch (error) {
+    console.error("Error marking payment as paid:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to mark payment as paid",
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+};
+
+// Send single payment for review
+export const reviewSinglePayment = async (req: Request, res: Response) => {
+  const { paymentId } = req.params;
+  const { userId, reviewNotes } = req.body;
+
+  try {
+    const result = await prisma.$queryRaw`
+      UPDATE "Payment"
+      SET 
+        status = 'REVIEW'::"PaymentStatus",
+        "approvedAt" = NULL
+      WHERE 
+        id = ${paymentId}::uuid
+        AND status = 'PENDING'::"PaymentStatus"
+      RETURNING id
+    `;
+
+    if ((result as any[]).length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Payment not found or not in pending status",
+      });
+    }
+
+    // Log activity
+    if (userId) {
+      await prisma.$executeRaw`
+        INSERT INTO "ActivityLog" (id, "userId", action, entity, "entityId", "createdAt", details)
+        VALUES (gen_random_uuid(), ${userId}::uuid, 'REVIEW_PAYMENT', 'Payment', ${paymentId}, NOW(), ${reviewNotes || null})
+      `;
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Payment sent for review successfully",
+    });
+  } catch (error) {
+    console.error("Error sending payment for review:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to send payment for review",
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+};
+
+// Reject single payment
+export const rejectSinglePayment = async (req: Request, res: Response) => {
+  const { paymentId } = req.params;
+  const { userId, reason } = req.body;
+
+  try {
+    const result = await prisma.$queryRaw`
+      UPDATE "Payment"
+      SET 
+        status = 'REJECTED'::"PaymentStatus",
+        "approvedAt" = NULL
+      WHERE 
+        id = ${paymentId}::uuid
+        AND status = 'PENDING'::"PaymentStatus"
+      RETURNING id
+    `;
+
+    if ((result as any[]).length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Payment not found or not in pending status",
+      });
+    }
+
+    // Log activity
+    if (userId) {
+      await prisma.$executeRaw`
+        INSERT INTO "ActivityLog" (id, "userId", action, entity, "entityId", "createdAt", details)
+        VALUES (gen_random_uuid(), ${userId}::uuid, 'REJECT_PAYMENT', 'Payment', ${paymentId}, NOW(), ${reason || null})
+      `;
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Payment rejected successfully",
+    });
+  } catch (error) {
+    console.error("Error rejecting payment:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to reject payment",
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+};
+
+// Get all batches (with optional site filter)
+export const getAllBatches = async (req: Request, res: Response) => {
+  const { siteId } = req.query;
+
+  try {
+    let whereClause = "";
+    const params: any[] = [];
+    let paramIndex = 1;
+
+    if (siteId) {
+      whereClause = `WHERE p."siteId" = $${paramIndex}::uuid`;
+      params.push(siteId);
+      paramIndex++;
+    }
+
+    const batches = await prisma.$queryRawUnsafe(
+      `SELECT 
+        p."batchId" as "batchId",
+        MIN(p."createdAt") as "createdAt",
+        s.name as "siteName",
+        COUNT(*) as "totalPayments",
+        SUM(p."totalAmount") as "totalAmount",
+        CASE 
+          WHEN COUNT(*) FILTER (WHERE p.status = 'PAID') = COUNT(*) THEN 'PAID'
+          WHEN COUNT(*) FILTER (WHERE p.status = 'APPROVED') > 0 THEN 'PARTIALLY_APPROVED'
+          WHEN COUNT(*) FILTER (WHERE p.status = 'PENDING') = COUNT(*) THEN 'PENDING'
+          ELSE 'MIXED'
+        END as status,
+        JSONB_BUILD_OBJECT(
+          'pending', COUNT(*) FILTER (WHERE p.status = 'PENDING'),
+          'approved', COUNT(*) FILTER (WHERE p.status = 'APPROVED'),
+          'paid', COUNT(*) FILTER (WHERE p.status = 'PAID')
+        ) as breakdown
+      FROM "Payment" p
+      INNER JOIN "Site" s ON p."siteId" = s.id
+      ${whereClause}
+      AND p."batchId" IS NOT NULL
+      GROUP BY p."batchId", s.name
+      ORDER BY MIN(p."createdAt") DESC`,
+      ...params,
+    );
+
+    return res.status(200).json({
+      success: true,
+      batches,
+    });
+  } catch (error) {
+    console.error("Error fetching batches:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch batches",
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+};
