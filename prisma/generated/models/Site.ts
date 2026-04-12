@@ -44,6 +44,7 @@ export type SiteMinAggregateOutputType = {
   dutyHours: number | null
   createdAt: Date | null
   updatedAt: Date | null
+  status: $Enums.SiteStatus | null
 }
 
 export type SiteMaxAggregateOutputType = {
@@ -56,6 +57,7 @@ export type SiteMaxAggregateOutputType = {
   dutyHours: number | null
   createdAt: Date | null
   updatedAt: Date | null
+  status: $Enums.SiteStatus | null
 }
 
 export type SiteCountAggregateOutputType = {
@@ -68,6 +70,7 @@ export type SiteCountAggregateOutputType = {
   dutyHours: number
   createdAt: number
   updatedAt: number
+  status: number
   _all: number
 }
 
@@ -90,6 +93,7 @@ export type SiteMinAggregateInputType = {
   dutyHours?: true
   createdAt?: true
   updatedAt?: true
+  status?: true
 }
 
 export type SiteMaxAggregateInputType = {
@@ -102,6 +106,7 @@ export type SiteMaxAggregateInputType = {
   dutyHours?: true
   createdAt?: true
   updatedAt?: true
+  status?: true
 }
 
 export type SiteCountAggregateInputType = {
@@ -114,6 +119,7 @@ export type SiteCountAggregateInputType = {
   dutyHours?: true
   createdAt?: true
   updatedAt?: true
+  status?: true
   _all?: true
 }
 
@@ -213,6 +219,7 @@ export type SiteGroupByOutputType = {
   dutyHours: number | null
   createdAt: Date
   updatedAt: Date
+  status: $Enums.SiteStatus
   _count: SiteCountAggregateOutputType | null
   _avg: SiteAvgAggregateOutputType | null
   _sum: SiteSumAggregateOutputType | null
@@ -248,6 +255,7 @@ export type SiteWhereInput = {
   dutyHours?: Prisma.FloatNullableFilter<"Site"> | number | null
   createdAt?: Prisma.DateTimeFilter<"Site"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Site"> | Date | string
+  status?: Prisma.EnumSiteStatusFilter<"Site"> | $Enums.SiteStatus
   monthCloses?: Prisma.MonthCloseListRelationFilter
   payments?: Prisma.PaymentListRelationFilter
   foreman?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
@@ -267,6 +275,7 @@ export type SiteOrderByWithRelationInput = {
   dutyHours?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  status?: Prisma.SortOrder
   monthCloses?: Prisma.MonthCloseOrderByRelationAggregateInput
   payments?: Prisma.PaymentOrderByRelationAggregateInput
   foreman?: Prisma.UserOrderByWithRelationInput
@@ -289,6 +298,7 @@ export type SiteWhereUniqueInput = Prisma.AtLeast<{
   dutyHours?: Prisma.FloatNullableFilter<"Site"> | number | null
   createdAt?: Prisma.DateTimeFilter<"Site"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Site"> | Date | string
+  status?: Prisma.EnumSiteStatusFilter<"Site"> | $Enums.SiteStatus
   monthCloses?: Prisma.MonthCloseListRelationFilter
   payments?: Prisma.PaymentListRelationFilter
   foreman?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
@@ -308,6 +318,7 @@ export type SiteOrderByWithAggregationInput = {
   dutyHours?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  status?: Prisma.SortOrder
   _count?: Prisma.SiteCountOrderByAggregateInput
   _avg?: Prisma.SiteAvgOrderByAggregateInput
   _max?: Prisma.SiteMaxOrderByAggregateInput
@@ -328,6 +339,7 @@ export type SiteScalarWhereWithAggregatesInput = {
   dutyHours?: Prisma.FloatNullableWithAggregatesFilter<"Site"> | number | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Site"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Site"> | Date | string
+  status?: Prisma.EnumSiteStatusWithAggregatesFilter<"Site"> | $Enums.SiteStatus
 }
 
 export type SiteCreateInput = {
@@ -338,6 +350,7 @@ export type SiteCreateInput = {
   dutyHours?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  status?: $Enums.SiteStatus
   monthCloses?: Prisma.MonthCloseCreateNestedManyWithoutSiteInput
   payments?: Prisma.PaymentCreateNestedManyWithoutSiteInput
   foreman?: Prisma.UserCreateNestedOneWithoutForemanSitesInput
@@ -357,6 +370,7 @@ export type SiteUncheckedCreateInput = {
   dutyHours?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  status?: $Enums.SiteStatus
   monthCloses?: Prisma.MonthCloseUncheckedCreateNestedManyWithoutSiteInput
   payments?: Prisma.PaymentUncheckedCreateNestedManyWithoutSiteInput
   workers?: Prisma.SiteWorkerUncheckedCreateNestedManyWithoutSiteInput
@@ -372,6 +386,7 @@ export type SiteUpdateInput = {
   dutyHours?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  status?: Prisma.EnumSiteStatusFieldUpdateOperationsInput | $Enums.SiteStatus
   monthCloses?: Prisma.MonthCloseUpdateManyWithoutSiteNestedInput
   payments?: Prisma.PaymentUpdateManyWithoutSiteNestedInput
   foreman?: Prisma.UserUpdateOneWithoutForemanSitesNestedInput
@@ -391,6 +406,7 @@ export type SiteUncheckedUpdateInput = {
   dutyHours?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  status?: Prisma.EnumSiteStatusFieldUpdateOperationsInput | $Enums.SiteStatus
   monthCloses?: Prisma.MonthCloseUncheckedUpdateManyWithoutSiteNestedInput
   payments?: Prisma.PaymentUncheckedUpdateManyWithoutSiteNestedInput
   workers?: Prisma.SiteWorkerUncheckedUpdateManyWithoutSiteNestedInput
@@ -408,6 +424,7 @@ export type SiteCreateManyInput = {
   dutyHours?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  status?: $Enums.SiteStatus
 }
 
 export type SiteUpdateManyMutationInput = {
@@ -418,6 +435,7 @@ export type SiteUpdateManyMutationInput = {
   dutyHours?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  status?: Prisma.EnumSiteStatusFieldUpdateOperationsInput | $Enums.SiteStatus
 }
 
 export type SiteUncheckedUpdateManyInput = {
@@ -430,6 +448,7 @@ export type SiteUncheckedUpdateManyInput = {
   dutyHours?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  status?: Prisma.EnumSiteStatusFieldUpdateOperationsInput | $Enums.SiteStatus
 }
 
 export type SiteListRelationFilter = {
@@ -452,6 +471,7 @@ export type SiteCountOrderByAggregateInput = {
   dutyHours?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  status?: Prisma.SortOrder
 }
 
 export type SiteAvgOrderByAggregateInput = {
@@ -468,6 +488,7 @@ export type SiteMaxOrderByAggregateInput = {
   dutyHours?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  status?: Prisma.SortOrder
 }
 
 export type SiteMinOrderByAggregateInput = {
@@ -480,6 +501,7 @@ export type SiteMinOrderByAggregateInput = {
   dutyHours?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  status?: Prisma.SortOrder
 }
 
 export type SiteSumOrderByAggregateInput = {
@@ -575,6 +597,10 @@ export type SiteUncheckedUpdateManyWithoutOwnerNestedInput = {
   deleteMany?: Prisma.SiteScalarWhereInput | Prisma.SiteScalarWhereInput[]
 }
 
+export type EnumSiteStatusFieldUpdateOperationsInput = {
+  set?: $Enums.SiteStatus
+}
+
 export type SiteCreateNestedOneWithoutWorkersInput = {
   create?: Prisma.XOR<Prisma.SiteCreateWithoutWorkersInput, Prisma.SiteUncheckedCreateWithoutWorkersInput>
   connectOrCreate?: Prisma.SiteCreateOrConnectWithoutWorkersInput
@@ -653,6 +679,7 @@ export type SiteCreateWithoutForemanInput = {
   dutyHours?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  status?: $Enums.SiteStatus
   monthCloses?: Prisma.MonthCloseCreateNestedManyWithoutSiteInput
   payments?: Prisma.PaymentCreateNestedManyWithoutSiteInput
   owner?: Prisma.UserCreateNestedOneWithoutOwnedSitesInput
@@ -670,6 +697,7 @@ export type SiteUncheckedCreateWithoutForemanInput = {
   dutyHours?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  status?: $Enums.SiteStatus
   monthCloses?: Prisma.MonthCloseUncheckedCreateNestedManyWithoutSiteInput
   payments?: Prisma.PaymentUncheckedCreateNestedManyWithoutSiteInput
   workers?: Prisma.SiteWorkerUncheckedCreateNestedManyWithoutSiteInput
@@ -695,6 +723,7 @@ export type SiteCreateWithoutOwnerInput = {
   dutyHours?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  status?: $Enums.SiteStatus
   monthCloses?: Prisma.MonthCloseCreateNestedManyWithoutSiteInput
   payments?: Prisma.PaymentCreateNestedManyWithoutSiteInput
   foreman?: Prisma.UserCreateNestedOneWithoutForemanSitesInput
@@ -712,6 +741,7 @@ export type SiteUncheckedCreateWithoutOwnerInput = {
   dutyHours?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  status?: $Enums.SiteStatus
   monthCloses?: Prisma.MonthCloseUncheckedCreateNestedManyWithoutSiteInput
   payments?: Prisma.PaymentUncheckedCreateNestedManyWithoutSiteInput
   workers?: Prisma.SiteWorkerUncheckedCreateNestedManyWithoutSiteInput
@@ -758,6 +788,7 @@ export type SiteScalarWhereInput = {
   dutyHours?: Prisma.FloatNullableFilter<"Site"> | number | null
   createdAt?: Prisma.DateTimeFilter<"Site"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Site"> | Date | string
+  status?: Prisma.EnumSiteStatusFilter<"Site"> | $Enums.SiteStatus
 }
 
 export type SiteUpsertWithWhereUniqueWithoutOwnerInput = {
@@ -784,6 +815,7 @@ export type SiteCreateWithoutWorkersInput = {
   dutyHours?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  status?: $Enums.SiteStatus
   monthCloses?: Prisma.MonthCloseCreateNestedManyWithoutSiteInput
   payments?: Prisma.PaymentCreateNestedManyWithoutSiteInput
   foreman?: Prisma.UserCreateNestedOneWithoutForemanSitesInput
@@ -802,6 +834,7 @@ export type SiteUncheckedCreateWithoutWorkersInput = {
   dutyHours?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  status?: $Enums.SiteStatus
   monthCloses?: Prisma.MonthCloseUncheckedCreateNestedManyWithoutSiteInput
   payments?: Prisma.PaymentUncheckedCreateNestedManyWithoutSiteInput
   workEntries?: Prisma.WorkEntryUncheckedCreateNestedManyWithoutSiteInput
@@ -832,6 +865,7 @@ export type SiteUpdateWithoutWorkersInput = {
   dutyHours?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  status?: Prisma.EnumSiteStatusFieldUpdateOperationsInput | $Enums.SiteStatus
   monthCloses?: Prisma.MonthCloseUpdateManyWithoutSiteNestedInput
   payments?: Prisma.PaymentUpdateManyWithoutSiteNestedInput
   foreman?: Prisma.UserUpdateOneWithoutForemanSitesNestedInput
@@ -850,6 +884,7 @@ export type SiteUncheckedUpdateWithoutWorkersInput = {
   dutyHours?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  status?: Prisma.EnumSiteStatusFieldUpdateOperationsInput | $Enums.SiteStatus
   monthCloses?: Prisma.MonthCloseUncheckedUpdateManyWithoutSiteNestedInput
   payments?: Prisma.PaymentUncheckedUpdateManyWithoutSiteNestedInput
   workEntries?: Prisma.WorkEntryUncheckedUpdateManyWithoutSiteNestedInput
@@ -864,6 +899,7 @@ export type SiteCreateWithoutWorkEntriesInput = {
   dutyHours?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  status?: $Enums.SiteStatus
   monthCloses?: Prisma.MonthCloseCreateNestedManyWithoutSiteInput
   payments?: Prisma.PaymentCreateNestedManyWithoutSiteInput
   foreman?: Prisma.UserCreateNestedOneWithoutForemanSitesInput
@@ -882,6 +918,7 @@ export type SiteUncheckedCreateWithoutWorkEntriesInput = {
   dutyHours?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  status?: $Enums.SiteStatus
   monthCloses?: Prisma.MonthCloseUncheckedCreateNestedManyWithoutSiteInput
   payments?: Prisma.PaymentUncheckedCreateNestedManyWithoutSiteInput
   workers?: Prisma.SiteWorkerUncheckedCreateNestedManyWithoutSiteInput
@@ -912,6 +949,7 @@ export type SiteUpdateWithoutWorkEntriesInput = {
   dutyHours?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  status?: Prisma.EnumSiteStatusFieldUpdateOperationsInput | $Enums.SiteStatus
   monthCloses?: Prisma.MonthCloseUpdateManyWithoutSiteNestedInput
   payments?: Prisma.PaymentUpdateManyWithoutSiteNestedInput
   foreman?: Prisma.UserUpdateOneWithoutForemanSitesNestedInput
@@ -930,6 +968,7 @@ export type SiteUncheckedUpdateWithoutWorkEntriesInput = {
   dutyHours?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  status?: Prisma.EnumSiteStatusFieldUpdateOperationsInput | $Enums.SiteStatus
   monthCloses?: Prisma.MonthCloseUncheckedUpdateManyWithoutSiteNestedInput
   payments?: Prisma.PaymentUncheckedUpdateManyWithoutSiteNestedInput
   workers?: Prisma.SiteWorkerUncheckedUpdateManyWithoutSiteNestedInput
@@ -944,6 +983,7 @@ export type SiteCreateWithoutMonthClosesInput = {
   dutyHours?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  status?: $Enums.SiteStatus
   payments?: Prisma.PaymentCreateNestedManyWithoutSiteInput
   foreman?: Prisma.UserCreateNestedOneWithoutForemanSitesInput
   owner?: Prisma.UserCreateNestedOneWithoutOwnedSitesInput
@@ -962,6 +1002,7 @@ export type SiteUncheckedCreateWithoutMonthClosesInput = {
   dutyHours?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  status?: $Enums.SiteStatus
   payments?: Prisma.PaymentUncheckedCreateNestedManyWithoutSiteInput
   workers?: Prisma.SiteWorkerUncheckedCreateNestedManyWithoutSiteInput
   workEntries?: Prisma.WorkEntryUncheckedCreateNestedManyWithoutSiteInput
@@ -992,6 +1033,7 @@ export type SiteUpdateWithoutMonthClosesInput = {
   dutyHours?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  status?: Prisma.EnumSiteStatusFieldUpdateOperationsInput | $Enums.SiteStatus
   payments?: Prisma.PaymentUpdateManyWithoutSiteNestedInput
   foreman?: Prisma.UserUpdateOneWithoutForemanSitesNestedInput
   owner?: Prisma.UserUpdateOneWithoutOwnedSitesNestedInput
@@ -1010,6 +1052,7 @@ export type SiteUncheckedUpdateWithoutMonthClosesInput = {
   dutyHours?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  status?: Prisma.EnumSiteStatusFieldUpdateOperationsInput | $Enums.SiteStatus
   payments?: Prisma.PaymentUncheckedUpdateManyWithoutSiteNestedInput
   workers?: Prisma.SiteWorkerUncheckedUpdateManyWithoutSiteNestedInput
   workEntries?: Prisma.WorkEntryUncheckedUpdateManyWithoutSiteNestedInput
@@ -1024,6 +1067,7 @@ export type SiteCreateWithoutPaymentsInput = {
   dutyHours?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  status?: $Enums.SiteStatus
   monthCloses?: Prisma.MonthCloseCreateNestedManyWithoutSiteInput
   foreman?: Prisma.UserCreateNestedOneWithoutForemanSitesInput
   owner?: Prisma.UserCreateNestedOneWithoutOwnedSitesInput
@@ -1042,6 +1086,7 @@ export type SiteUncheckedCreateWithoutPaymentsInput = {
   dutyHours?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  status?: $Enums.SiteStatus
   monthCloses?: Prisma.MonthCloseUncheckedCreateNestedManyWithoutSiteInput
   workers?: Prisma.SiteWorkerUncheckedCreateNestedManyWithoutSiteInput
   workEntries?: Prisma.WorkEntryUncheckedCreateNestedManyWithoutSiteInput
@@ -1072,6 +1117,7 @@ export type SiteUpdateWithoutPaymentsInput = {
   dutyHours?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  status?: Prisma.EnumSiteStatusFieldUpdateOperationsInput | $Enums.SiteStatus
   monthCloses?: Prisma.MonthCloseUpdateManyWithoutSiteNestedInput
   foreman?: Prisma.UserUpdateOneWithoutForemanSitesNestedInput
   owner?: Prisma.UserUpdateOneWithoutOwnedSitesNestedInput
@@ -1090,6 +1136,7 @@ export type SiteUncheckedUpdateWithoutPaymentsInput = {
   dutyHours?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  status?: Prisma.EnumSiteStatusFieldUpdateOperationsInput | $Enums.SiteStatus
   monthCloses?: Prisma.MonthCloseUncheckedUpdateManyWithoutSiteNestedInput
   workers?: Prisma.SiteWorkerUncheckedUpdateManyWithoutSiteNestedInput
   workEntries?: Prisma.WorkEntryUncheckedUpdateManyWithoutSiteNestedInput
@@ -1104,6 +1151,7 @@ export type SiteCreateWithoutSettingsInput = {
   dutyHours?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  status?: $Enums.SiteStatus
   monthCloses?: Prisma.MonthCloseCreateNestedManyWithoutSiteInput
   payments?: Prisma.PaymentCreateNestedManyWithoutSiteInput
   foreman?: Prisma.UserCreateNestedOneWithoutForemanSitesInput
@@ -1122,6 +1170,7 @@ export type SiteUncheckedCreateWithoutSettingsInput = {
   dutyHours?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  status?: $Enums.SiteStatus
   monthCloses?: Prisma.MonthCloseUncheckedCreateNestedManyWithoutSiteInput
   payments?: Prisma.PaymentUncheckedCreateNestedManyWithoutSiteInput
   workers?: Prisma.SiteWorkerUncheckedCreateNestedManyWithoutSiteInput
@@ -1152,6 +1201,7 @@ export type SiteUpdateWithoutSettingsInput = {
   dutyHours?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  status?: Prisma.EnumSiteStatusFieldUpdateOperationsInput | $Enums.SiteStatus
   monthCloses?: Prisma.MonthCloseUpdateManyWithoutSiteNestedInput
   payments?: Prisma.PaymentUpdateManyWithoutSiteNestedInput
   foreman?: Prisma.UserUpdateOneWithoutForemanSitesNestedInput
@@ -1170,6 +1220,7 @@ export type SiteUncheckedUpdateWithoutSettingsInput = {
   dutyHours?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  status?: Prisma.EnumSiteStatusFieldUpdateOperationsInput | $Enums.SiteStatus
   monthCloses?: Prisma.MonthCloseUncheckedUpdateManyWithoutSiteNestedInput
   payments?: Prisma.PaymentUncheckedUpdateManyWithoutSiteNestedInput
   workers?: Prisma.SiteWorkerUncheckedUpdateManyWithoutSiteNestedInput
@@ -1185,6 +1236,7 @@ export type SiteCreateManyForemanInput = {
   dutyHours?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  status?: $Enums.SiteStatus
 }
 
 export type SiteCreateManyOwnerInput = {
@@ -1196,6 +1248,7 @@ export type SiteCreateManyOwnerInput = {
   dutyHours?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  status?: $Enums.SiteStatus
 }
 
 export type SiteUpdateWithoutForemanInput = {
@@ -1206,6 +1259,7 @@ export type SiteUpdateWithoutForemanInput = {
   dutyHours?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  status?: Prisma.EnumSiteStatusFieldUpdateOperationsInput | $Enums.SiteStatus
   monthCloses?: Prisma.MonthCloseUpdateManyWithoutSiteNestedInput
   payments?: Prisma.PaymentUpdateManyWithoutSiteNestedInput
   owner?: Prisma.UserUpdateOneWithoutOwnedSitesNestedInput
@@ -1223,6 +1277,7 @@ export type SiteUncheckedUpdateWithoutForemanInput = {
   dutyHours?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  status?: Prisma.EnumSiteStatusFieldUpdateOperationsInput | $Enums.SiteStatus
   monthCloses?: Prisma.MonthCloseUncheckedUpdateManyWithoutSiteNestedInput
   payments?: Prisma.PaymentUncheckedUpdateManyWithoutSiteNestedInput
   workers?: Prisma.SiteWorkerUncheckedUpdateManyWithoutSiteNestedInput
@@ -1239,6 +1294,7 @@ export type SiteUncheckedUpdateManyWithoutForemanInput = {
   dutyHours?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  status?: Prisma.EnumSiteStatusFieldUpdateOperationsInput | $Enums.SiteStatus
 }
 
 export type SiteUpdateWithoutOwnerInput = {
@@ -1249,6 +1305,7 @@ export type SiteUpdateWithoutOwnerInput = {
   dutyHours?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  status?: Prisma.EnumSiteStatusFieldUpdateOperationsInput | $Enums.SiteStatus
   monthCloses?: Prisma.MonthCloseUpdateManyWithoutSiteNestedInput
   payments?: Prisma.PaymentUpdateManyWithoutSiteNestedInput
   foreman?: Prisma.UserUpdateOneWithoutForemanSitesNestedInput
@@ -1266,6 +1323,7 @@ export type SiteUncheckedUpdateWithoutOwnerInput = {
   dutyHours?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  status?: Prisma.EnumSiteStatusFieldUpdateOperationsInput | $Enums.SiteStatus
   monthCloses?: Prisma.MonthCloseUncheckedUpdateManyWithoutSiteNestedInput
   payments?: Prisma.PaymentUncheckedUpdateManyWithoutSiteNestedInput
   workers?: Prisma.SiteWorkerUncheckedUpdateManyWithoutSiteNestedInput
@@ -1282,6 +1340,7 @@ export type SiteUncheckedUpdateManyWithoutOwnerInput = {
   dutyHours?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  status?: Prisma.EnumSiteStatusFieldUpdateOperationsInput | $Enums.SiteStatus
 }
 
 
@@ -1361,6 +1420,7 @@ export type SiteSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   dutyHours?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  status?: boolean
   monthCloses?: boolean | Prisma.Site$monthClosesArgs<ExtArgs>
   payments?: boolean | Prisma.Site$paymentsArgs<ExtArgs>
   foreman?: boolean | Prisma.Site$foremanArgs<ExtArgs>
@@ -1381,6 +1441,7 @@ export type SiteSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   dutyHours?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  status?: boolean
   foreman?: boolean | Prisma.Site$foremanArgs<ExtArgs>
   owner?: boolean | Prisma.Site$ownerArgs<ExtArgs>
 }, ExtArgs["result"]["site"]>
@@ -1395,6 +1456,7 @@ export type SiteSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   dutyHours?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  status?: boolean
   foreman?: boolean | Prisma.Site$foremanArgs<ExtArgs>
   owner?: boolean | Prisma.Site$ownerArgs<ExtArgs>
 }, ExtArgs["result"]["site"]>
@@ -1409,9 +1471,10 @@ export type SiteSelectScalar = {
   dutyHours?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  status?: boolean
 }
 
-export type SiteOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "location" | "description" | "ownerId" | "foremanId" | "dutyHours" | "createdAt" | "updatedAt", ExtArgs["result"]["site"]>
+export type SiteOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "location" | "description" | "ownerId" | "foremanId" | "dutyHours" | "createdAt" | "updatedAt" | "status", ExtArgs["result"]["site"]>
 export type SiteInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   monthCloses?: boolean | Prisma.Site$monthClosesArgs<ExtArgs>
   payments?: boolean | Prisma.Site$paymentsArgs<ExtArgs>
@@ -1452,6 +1515,7 @@ export type $SitePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     dutyHours: number | null
     createdAt: Date
     updatedAt: Date
+    status: $Enums.SiteStatus
   }, ExtArgs["result"]["site"]>
   composites: {}
 }
@@ -1891,6 +1955,7 @@ export interface SiteFieldRefs {
   readonly dutyHours: Prisma.FieldRef<"Site", 'Float'>
   readonly createdAt: Prisma.FieldRef<"Site", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Site", 'DateTime'>
+  readonly status: Prisma.FieldRef<"Site", 'SiteStatus'>
 }
     
 

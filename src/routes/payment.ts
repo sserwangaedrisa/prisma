@@ -88,7 +88,7 @@ router.post(
 );
 
 // Get all batches (with optional site filter)
-router.get(
+router.post(
   "/batches",
   verifyToken,
   authorize(["FOREMAN", "OWNER"]),

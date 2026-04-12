@@ -111,7 +111,8 @@ export const SiteScalarFieldEnum = {
   foremanId: 'foremanId',
   dutyHours: 'dutyHours',
   createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
+  updatedAt: 'updatedAt',
+  status: 'status'
 } as const
 
 export type SiteScalarFieldEnum = (typeof SiteScalarFieldEnum)[keyof typeof SiteScalarFieldEnum]

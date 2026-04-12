@@ -1,7 +1,7 @@
 import prisma from "../../prisma/config";
 import type { Request, Response } from "express";
 import { validateUser, validateMonthNotLocked } from "../middleware/validation";
-import { Prisma } from "../../prisma/generated/client";
+import { PaymentStatus, Prisma } from "../../prisma/generated/client";
 
 interface worker {
   id: string;
@@ -287,171 +287,6 @@ export const singleWorkerPaymentRequest = async (
     });
   }
 };
-
-// payment for the whole site for a specific date range using nodeJs in the server ram
-
-// export const sitePayment = async (req: Request, res: Response) => {
-//   const { siteId, startDate, endDate } = req.body;
-
-//   try {
-//     if (!startDate || !endDate) {
-//       return res.status(200).json({
-//         message: "Missing required parameters: startDate, endDate",
-//         success: false,
-//       });
-//     }
-
-//     const start = new Date(startDate);
-//     const end = new Date(endDate);
-
-//     const monthValidation = await validateMonthNotLocked(siteId, start);
-//     if (!monthValidation.success) {
-//       return res.status(200).json({
-//         message: monthValidation.message,
-//         success: false,
-//       });
-//     }
-
-//     // Get all work entries with worker details
-//     const workEntries = await prisma.workEntry.findMany({
-//       where: {
-//         siteId: siteId,
-//         status: "NOT_PAID",
-//         date: {
-//           gte: start,
-//           lte: end,
-//         },
-//       },
-//       select: {
-//         id: true,
-//         date: true,
-//         hours: true,
-//         overtime: true,
-//         worker: {
-//           select: {
-//             id: true,
-//             name: true,
-//             wageRating: true,
-//             role: true,
-//             job: true,
-//             isActive: true,
-//           },
-//         },
-//         site: {
-//           select: {
-//             id: true,
-//             name: true,
-//           },
-//         },
-//       },
-//       orderBy: [{ worker: { name: "asc" } }, { date: "asc" }],
-//     });
-
-//     if (workEntries.length === 0) {
-//       return res.status(200).json({
-//         siteId,
-//         period: { startDate, endDate },
-//         workers: [],
-//         message: "No work entries found for this period",
-//       });
-//     }
-
-//     // Group by worker and calculate totals
-//     const workersMap = new Map();
-
-//     for (const entry of workEntries) {
-//       const workerId = entry.worker.id;
-//       const wageRating = entry.worker.wageRating || 0;
-//       const totalHoursForEntry = entry.hours + entry.overtime;
-//       const entryAmount = totalHoursForEntry * wageRating;
-
-//       if (!workersMap.has(workerId)) {
-//         workersMap.set(workerId, {
-//           worker: {
-//             id: entry.worker.id,
-//             name: entry.worker.name,
-//             wageRating: wageRating,
-//             role: entry.worker.role,
-//             job: entry.worker.job,
-//             isActive: entry.worker.isActive,
-//           },
-//           regularHours: 0,
-//           overtimeHours: 0,
-//           totalHours: 0,
-//           totalAmount: 0,
-//           entries: [],
-//           entryCount: 0,
-//         });
-//       }
-
-//       const workerData = workersMap.get(workerId);
-//       workerData.regularHours += entry.hours;
-//       workerData.overtimeHours += entry.overtime;
-//       workerData.totalHours += totalHoursForEntry;
-//       workerData.totalAmount += entryAmount;
-//       workerData.entryCount++;
-//       workerData.entries.push({
-//         id: entry.id,
-//         date: entry.date,
-//         hours: entry.hours,
-//         overtime: entry.overtime,
-//         totalHours: totalHoursForEntry,
-//         amount: Number(entryAmount.toFixed(2)),
-//       });
-//     }
-
-//     // Convert map to array and format
-//     const workers = Array.from(workersMap.values()).map((worker) => ({
-//       ...worker,
-//       regularHours: Number(worker.regularHours.toFixed(2)),
-//       overtimeHours: Number(worker.overtimeHours.toFixed(2)),
-//       totalHours: Number(worker.totalHours.toFixed(2)),
-//       totalAmount: Number(worker.totalAmount.toFixed(2)),
-//     }));
-
-//     // Sort by total amount (highest first)
-//     workers.sort((a, b) => b.totalAmount - a.totalAmount);
-
-//     const siteTotal = workers.reduce(
-//       (sum, worker) => sum + worker.totalAmount,
-//       0,
-//     );
-//     const totalSiteHours = workers.reduce(
-//       (sum, worker) => sum + worker.totalHours,
-//       0,
-//     );
-
-//     return res.status(200).json({
-//       success: true,
-//       site: {
-//         id: siteId,
-//       },
-//       period: {
-//         startDate,
-//         endDate,
-//       },
-//       calculation: {
-//         formula: `Total Amount = (Regular Hours + Overtime) × Worker's Wage Rating`,
-//         description:
-//           "Each worker's total is calculated independently based on their individual wage rating",
-//       },
-//       summary: {
-//         totalWorkers: workers.length,
-//         totalEntries: workEntries.length,
-//         totalHours: Number(totalSiteHours.toFixed(2)),
-//         totalAmount: Number(siteTotal.toFixed(2)),
-//       },
-//       workers,
-//     });
-//   } catch (error) {
-//     console.error("Site payment calculation error:", error);
-//     return res
-//       .status(500)
-//       .json({ message: "Failed to calculate site payments", success: false });
-//   }
-// };
-
-// payment for the whole site for a specific date range using raw quering in db. for more calculations
 
 export const sitePaymentSummary = async (req: Request, res: Response) => {
   const { siteId, startDate, endDate } = req.body;
@@ -951,6 +786,8 @@ export const getSiteBatches = async (req: Request, res: Response) => {
         pending_count: number;
         approved_count: number;
         paid_count: number;
+        rejected_count: number;
+        review_count: number;
       }>
     >`
       SELECT 
@@ -962,11 +799,17 @@ export const getSiteBatches = async (req: Request, res: Response) => {
           WHEN COUNT(*) FILTER (WHERE status = 'PAID') = COUNT(*) THEN 'PAID'
           WHEN COUNT(*) FILTER (WHERE status = 'APPROVED') > 0 THEN 'PARTIALLY_APPROVED'
           WHEN COUNT(*) FILTER (WHERE status = 'PENDING') = COUNT(*) THEN 'PENDING'
+          WHEN COUNT(*) FILTER (WHERE status = 'REJECTED') = COUNT(*) THEN 'REJECTED'
+          WHEN COUNT(*) FILTER (WHERE status = 'REVIEW') = COUNT(*) THEN 'REVIEW'
+
           ELSE 'MIXED'
         END as status,
         COUNT(*) FILTER (WHERE status = 'PENDING') as pending_count,
         COUNT(*) FILTER (WHERE status = 'APPROVED') as approved_count,
         COUNT(*) FILTER (WHERE status = 'PAID') as paid_count
+        COUNT(*) FILTER (WHERE status = 'REJECTED') as rejected_count
+        COUNT(*) FILTER (WHERE status = 'REVIEW') as review_count
+
       FROM "Payment"
       WHERE "siteId" = ${siteId}::uuid
         AND "batchId" IS NOT NULL
@@ -988,6 +831,8 @@ export const getSiteBatches = async (req: Request, res: Response) => {
           pending: Number(b.pending_count),
           approved: Number(b.approved_count),
           paid: Number(b.paid_count),
+          rejected: Number(b.rejected_count),
+          review: Number(b.review_count),
         },
       })),
     });
@@ -1257,6 +1102,22 @@ export const getPayments = async (req: Request, res: Response) => {
   } = req.query;
 
   try {
+    const allowedSortFields = [
+      "createdAt",
+      "totalAmount",
+      "status",
+      "workerName",
+      "siteName",
+      "month",
+      "year",
+    ] as const;
+    const validSortField = allowedSortFields.includes(sortField as any)
+      ? (sortField as (typeof allowedSortFields)[number])
+      : "createdAt";
+
+    const validSortOrder =
+      sortOrder === "asc" || sortOrder === "desc" ? sortOrder : "desc";
+
     let whereClause = "WHERE 1=1";
     const params: any[] = [];
     let paramIndex = 1;
@@ -1268,13 +1129,13 @@ export const getPayments = async (req: Request, res: Response) => {
     }
 
     if (siteId) {
-      whereClause += ` AND p."siteId" = $${paramIndex}::uuid`;
+      whereClause += ` AND p."siteId" = $${paramIndex}::text`;
       params.push(siteId);
       paramIndex++;
     }
 
     if (batchId) {
-      whereClause += ` AND p."batchId" = $${paramIndex}::uuid`;
+      whereClause += ` AND p."batch_id" = $${paramIndex}::text`;
       params.push(batchId);
       paramIndex++;
     }
@@ -1310,7 +1171,44 @@ export const getPayments = async (req: Request, res: Response) => {
     const totalPages = Math.ceil(total / Number(limit));
     const offset = (Number(page) - 1) * Number(limit);
 
+    type PaymentStatus =
+      | "PENDING"
+      | "APPROVED"
+      | "PAID"
+      | "REVIEW"
+      | "REJECTED";
+
     // Get payments
+    // const payments = await prisma.payment.findMany({
+    //   where: {
+    //     status:
+    //       status && status !== "all" ? (status as PaymentStatus) : undefined,
+    //     siteId: (siteId as string) || undefined,
+    //     batchId: (batchId as string) || undefined,
+    //     createdAt: {
+    //       gte: startDate ? new Date(startDate as string) : undefined,
+    //       lte: endDate ? new Date(endDate as string) : undefined,
+    //     },
+    //     worker: {
+    //       name: search
+    //         ? { contains: search as string, mode: "insensitive" }
+    //         : undefined,
+    //     },
+    //     site: {
+    //       name: search
+    //         ? { contains: search as string, mode: "insensitive" }
+    //         : undefined,
+    //     },
+    //   },
+    //   include: {
+    //     worker: { select: { name: true } },
+    //     site: { select: { name: true } },
+    //   },
+    //   orderBy: { [validSortField]: validSortOrder },
+    //   skip: (Number(page) - 1) * Number(limit),
+    //   take: Number(limit),
+    // });
+
     const payments = await prisma.$queryRawUnsafe(
       `SELECT 
     p.*,
@@ -1320,7 +1218,7 @@ export const getPayments = async (req: Request, res: Response) => {
   INNER JOIN "User" u ON p."workerId" = u.id
   INNER JOIN "Site" s ON p."siteId" = s.id
   ${whereClause}
-  ORDER BY "${String(sortField)}" ${String(sortOrder)}
+  ORDER BY "${String(validSortField)}" ${String(validSortOrder)}
   LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
       ...params,
       Number(limit),
@@ -1453,7 +1351,7 @@ export const approveSinglePayment = async (req: Request, res: Response) => {
         status = 'APPROVED'::"PaymentStatus",
         "approvedAt" = NOW()
       WHERE 
-        id = ${paymentId}::uuid
+        id = ${paymentId}::text
         AND status = 'PENDING'::"PaymentStatus"
       RETURNING id
     `;
@@ -1462,6 +1360,26 @@ export const approveSinglePayment = async (req: Request, res: Response) => {
       return res.status(404).json({
         success: false,
         message: "Payment not found or already approved",
+      });
+    }
+
+    const updatedWorkEntries = await prisma.$queryRaw`
+        UPDATE "WorkEntry"
+        SET 
+          status = 'APPROVED'::"WorkEntryStatus"
+        WHERE 
+          "paymentId" = ${paymentId}::text 
+        RETURNING id
+      `;
+
+    if ((updatedWorkEntries as any[]).length === 0) {
+      console.warn(
+        `No work entries found for payment ${paymentId} when marking as paid`,
+      );
+      return res.status(200).json({
+        success: false,
+        message:
+          "Payment marked as paid, but no associated work entries were found to update",
       });
     }
 
@@ -1490,7 +1408,7 @@ export const approveSinglePayment = async (req: Request, res: Response) => {
 // Mark single payment as paid
 export const markSingleAsPaid = async (req: Request, res: Response) => {
   const { paymentId } = req.params;
-  const { userId, transactionReference } = req.body;
+  const { userId } = req.body;
 
   try {
     const result = await prisma.$queryRaw`
@@ -1499,7 +1417,7 @@ export const markSingleAsPaid = async (req: Request, res: Response) => {
         status = 'PAID'::"PaymentStatus",
         "paidAt" = NOW()
       WHERE 
-        id = ${paymentId}::uuid
+        id = ${paymentId}::text
         AND status IN ('PENDING'::"PaymentStatus", 'APPROVED'::"PaymentStatus")
       RETURNING id
     `;
@@ -1511,18 +1429,37 @@ export const markSingleAsPaid = async (req: Request, res: Response) => {
       });
     }
 
+    const updatedWorkEntries = await prisma.$queryRaw`
+        UPDATE "WorkEntry"
+        SET 
+          status = 'PAID'::"WorkEntryStatus"
+        WHERE 
+          "paymentId" = ${paymentId}::text 
+        RETURNING id
+      `;
+
+    if ((updatedWorkEntries as any[]).length === 0) {
+      console.warn(
+        `No work entries found for payment ${paymentId} when marking as paid`,
+      );
+      return res.status(200).json({
+        success: false,
+        message:
+          "Payment marked as paid, but no associated work entries were found to update",
+      });
+    }
+
     // Log activity
     if (userId) {
       await prisma.$executeRaw`
-        INSERT INTO "ActivityLog" (id, "userId", action, entity, "entityId", "createdAt", details)
-        VALUES (gen_random_uuid(), ${userId}::uuid, 'PAY_PAYMENT', 'Payment', ${paymentId}, NOW(), ${transactionReference || null})
+        INSERT INTO "ActivityLog" (id, "userId", action, entity, "entityId", "createdAt")
+        VALUES (gen_random_uuid(), ${userId}::uuid, 'PAY_PAYMENT', 'Payment', ${paymentId}, NOW())
       `;
     }
 
     return res.status(200).json({
       success: true,
       message: "Payment marked as paid successfully",
-      transactionReference: transactionReference || null,
     });
   } catch (error) {
     console.error("Error marking payment as paid:", error);
@@ -1628,30 +1565,84 @@ export const rejectSinglePayment = async (req: Request, res: Response) => {
 
 // Get all batches (with optional site filter)
 export const getAllBatches = async (req: Request, res: Response) => {
-  const { siteId } = req.query;
+  const {
+    page = 1,
+    limit = 20,
+    sortField = "createdAt",
+    sortOrder = "desc",
+    status,
+    siteId,
+    batchId,
+    startDate,
+    endDate,
+    search,
+  } = req.query;
 
   try {
-    let whereClause = "";
+    const allowedSortFields = [
+      "createdAt",
+      "totalAmount",
+      "totalPayments",
+      "siteName",
+      "status",
+    ] as const;
+    const validSortField = allowedSortFields.includes(sortField as any)
+      ? (sortField as (typeof allowedSortFields)[number])
+      : "createdAt";
+
+    const validSortOrder =
+      sortOrder === "asc" || sortOrder === "desc" ? sortOrder : "desc";
+
+    // Build WHERE clause for individual payments
+    let whereClause = 'WHERE p."batch_id" IS NOT NULL';
     const params: any[] = [];
     let paramIndex = 1;
 
     if (siteId) {
-      whereClause = `WHERE p."siteId" = $${paramIndex}::uuid`;
+      whereClause += ` AND p."siteId" = $${paramIndex}::uuid`;
       params.push(siteId);
       paramIndex++;
     }
 
-    const batches = await prisma.$queryRawUnsafe(
-      `SELECT 
-        p."batchId" as "batchId",
+    if (batchId) {
+      whereClause += ` AND p."batch_id" = $${paramIndex}::uuid`;
+      params.push(batchId);
+      paramIndex++;
+    }
+
+    if (startDate) {
+      whereClause += ` AND p."createdAt" >= $${paramIndex}::timestamp`;
+      params.push(startDate);
+      paramIndex++;
+    }
+
+    if (endDate) {
+      whereClause += ` AND p."createdAt" <= $${paramIndex}::timestamp`;
+      params.push(endDate);
+      paramIndex++;
+    }
+
+    if (search) {
+      whereClause += ` AND s.name ILIKE $${paramIndex}`;
+      params.push(`%${search}%`);
+      paramIndex++;
+    }
+
+    // Base batch aggregation query
+    let batchQuery = `
+      SELECT 
+        p."batch_id" as "batchId",
         MIN(p."createdAt") as "createdAt",
         s.name as "siteName",
-        COUNT(*) as "totalPayments",
-        SUM(p."totalAmount") as "totalAmount",
+        COUNT(*)::int as "totalPayments",
+        SUM(p."totalAmount")::float as "totalAmount",
         CASE 
           WHEN COUNT(*) FILTER (WHERE p.status = 'PAID') = COUNT(*) THEN 'PAID'
-          WHEN COUNT(*) FILTER (WHERE p.status = 'APPROVED') > 0 THEN 'PARTIALLY_APPROVED'
+          WHEN COUNT(*) FILTER (WHERE p.status = 'APPROVED') > 0 
+           AND COUNT(*) FILTER (WHERE p.status = 'PENDING') = 0 THEN 'PARTIALLY_APPROVED'
           WHEN COUNT(*) FILTER (WHERE p.status = 'PENDING') = COUNT(*) THEN 'PENDING'
+          WHEN COUNT(*) FILTER (WHERE p.status = 'APPROVED') > 0 
+           AND COUNT(*) FILTER (WHERE p.status = 'PENDING') > 0 THEN 'MIXED'
           ELSE 'MIXED'
         END as status,
         JSONB_BUILD_OBJECT(
@@ -1662,15 +1653,68 @@ export const getAllBatches = async (req: Request, res: Response) => {
       FROM "Payment" p
       INNER JOIN "Site" s ON p."siteId" = s.id
       ${whereClause}
-      AND p."batchId" IS NOT NULL
-      GROUP BY p."batchId", s.name
-      ORDER BY MIN(p."createdAt") DESC`,
+      GROUP BY p."batch_id", s.name
+    `;
+
+    // Apply status filter on the derived batch status
+    if (status && status !== "all") {
+      batchQuery = `
+        WITH batch_groups AS (${batchQuery})
+        SELECT * FROM batch_groups
+        WHERE status = $${paramIndex}
+      `;
+      params.push(status);
+      paramIndex++;
+    }
+
+    // Get total count - convert BigInt to number
+    const countResult = await prisma.$queryRawUnsafe<
+      Array<{ count: bigint | number }>
+    >(
+      `SELECT COUNT(*)::int as count FROM (${batchQuery}) as batches`,
       ...params,
     );
+
+    const total = Number(countResult[0]?.count || 0);
+    const totalPages = Math.ceil(total / Number(limit));
+    const offset = (Number(page) - 1) * Number(limit);
+
+    // Get batches with pagination
+    const batchesRaw = await prisma.$queryRawUnsafe<any[]>(
+      `${batchQuery}
+      ORDER BY "${String(validSortField)}" ${String(validSortOrder)}
+      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
+      ...params,
+      Number(limit),
+      offset,
+    );
+
+    // Convert BigInt values to numbers in the results
+    const batches = batchesRaw.map((batch) => ({
+      ...batch,
+      totalPayments: Number(batch.totalPayments),
+      totalAmount:
+        typeof batch.totalAmount === "bigint"
+          ? Number(batch.totalAmount)
+          : batch.totalAmount,
+      breakdown: batch.breakdown
+        ? {
+            pending: Number(batch.breakdown.pending),
+            approved: Number(batch.breakdown.approved),
+            paid: Number(batch.breakdown.paid),
+          }
+        : batch.breakdown,
+    }));
 
     return res.status(200).json({
       success: true,
       batches,
+      pagination: {
+        page: Number(page),
+        limit: Number(limit),
+        total,
+        totalPages,
+      },
     });
   } catch (error) {
     console.error("Error fetching batches:", error);

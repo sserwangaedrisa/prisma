@@ -139,6 +139,7 @@ export const createSite = async (req: Request, res: Response) => {
 export const getSiteIdsAndNames = async (req: Request, res: Response) => {
   try {
     const sites = await prisma.site.findMany({
+      where: { status: "ACTIVE" },
       select: {
         id: true,
         name: true,
@@ -146,7 +147,7 @@ export const getSiteIdsAndNames = async (req: Request, res: Response) => {
     });
     return res.status(200).json({
       success: true,
-      data: sites,
+      sites: sites,
     });
   } catch (error) {
     console.error("Error fetching site ids and names:", error);

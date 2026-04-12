@@ -22,6 +22,8 @@ export type Role = (typeof Role)[keyof typeof Role]
 export const PaymentStatus = {
   PENDING: 'PENDING',
   APPROVED: 'APPROVED',
+  REVIEW: 'REVIEW',
+  REJECTED: 'REJECTED',
   PAID: 'PAID'
 } as const
 
@@ -57,6 +59,14 @@ export const UserStatus = {
 } as const
 
 export type UserStatus = (typeof UserStatus)[keyof typeof UserStatus]
+
+
+export const SiteStatus = {
+  ACTIVE: 'ACTIVE',
+  INACTIVE: 'INACTIVE'
+} as const
+
+export type SiteStatus = (typeof SiteStatus)[keyof typeof SiteStatus]
 
 
 export const Job = {

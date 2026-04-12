@@ -20,7 +20,7 @@ router.get(
 );
 
 // get site ids and names
-router.get(
+router.post(
   "/allSitesIdsAndNames",
   authorize(["OWNER", "ADMIN"]),
   SiteController.getSiteIdsAndNames,

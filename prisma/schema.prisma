@@ -52,6 +52,7 @@ model Site {
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   monthCloses MonthClose[]
+  status      SiteStatus   @default(ACTIVE)
   payments    Payment[]
   foreman     User?        @relation("ForemanSites", fields: [foremanId], references: [id])
   owner       User?        @relation("OwnerSites", fields: [ownerId], references: [id])
@@ -181,6 +182,8 @@ enum Role {
 enum PaymentStatus {
   PENDING
   APPROVED
+  REVIEW
+  REJECTED
   PAID
 }
 
@@ -195,8 +198,8 @@ enum WorkEntryStatus {
   PENDING       // foreman selected it
   PAID          // owner paid it
   APPROVED      // OWNER HAS approved it for payment
-  REVIEW        // Owner has set it back to forman for review
-  REJECTED      // Owner has permanetly REJECTED the entry
+  REVIEW        // FOREMAN HAS sent it to the owner for review
+  REJECTED      // Owner has sent it to foreman for review
 }
 
 enum UserStatus {
@@ -205,6 +208,11 @@ enum UserStatus {
   SUSPENDED
   BLOCKED
   DELETED
+}
+
+enum SiteStatus {
+  ACTIVE
+  INACTIVE
 }
 
 enum Job {
