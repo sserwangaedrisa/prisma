@@ -1257,22 +1257,46 @@ export const approvePaymentsBatch = async (req: Request, res: Response) => {
   }
 
   try {
-    const result = await prisma.$queryRaw`
+    const result: any[] = await prisma.$queryRaw`
       UPDATE "Payment"
       SET 
         status = 'APPROVED'::"PaymentStatus",
         "approvedAt" = NOW()
       WHERE 
-        id = ANY(${paymentIds}::uuid[])
-        AND status = 'PENDING'::"PaymentStatus"
+        id = ANY(${paymentIds}::text[])
+        AND status != 'PAID'::"PaymentStatus"
       RETURNING id
     `;
+    const paymentIdsToUpdate = result.map((r) => r.id);
+    if (result.length === 0) {
+      return res.status(200).json({
+        success: false,
+        message:
+          "No payments were approved. They may have already been approved or paid.",
+      });
+    }
+    if (result.length > 0) {
+      const updatedWorkEntries = await prisma.$queryRaw<Array<{ id: string }>>`
+          UPDATE "WorkEntry"
+          SET status = 'APPROVED'::"WorkEntryStatus"
+          WHERE "paymentId" = ANY(${paymentIdsToUpdate}::text[])
+          RETURNING id
+        `;
+      if (updatedWorkEntries.length === 0) {
+        return res.status(200).json({
+          success: false,
+          message:
+            "Payments approved, but no associated work entries were found to update",
+        });
+      }
+    }
 
-    // Log activity
+    const approvedPayments = String(paymentIds);
+
     if (userId) {
       await prisma.$executeRaw`
         INSERT INTO "ActivityLog" (id, "userId", action, entity, "entityId", "createdAt")
-        VALUES (gen_random_uuid(), ${userId}::uuid, 'APPROVE_PAYMENTS', 'Payment', NULL, NOW())
+        VALUES (gen_random_uuid(), ${userId}::uuid, 'APPROVE_PAYMENTS', 'Payment', ${approvedPayments}, NOW())
       `;
     }
 
@@ -1293,7 +1317,7 @@ export const approvePaymentsBatch = async (req: Request, res: Response) => {
 
 // Mark multiple payments as paid
 export const markMultipleAsPaid = async (req: Request, res: Response) => {
-  const { paymentIds, transactionReference } = req.body;
+  const { paymentIds } = req.body;
   const { userId } = req.body;
 
   if (!paymentIds || !Array.isArray(paymentIds) || paymentIds.length === 0) {
@@ -1304,30 +1328,56 @@ export const markMultipleAsPaid = async (req: Request, res: Response) => {
   }
 
   try {
-    const result = await prisma.$queryRaw`
+    const result: any[] = await prisma.$queryRaw`
       UPDATE "Payment"
       SET 
         status = 'PAID'::"PaymentStatus",
         "paidAt" = NOW()
       WHERE 
-        id = ANY(${paymentIds}::uuid[])
-        AND status IN ('PENDING'::"PaymentStatus", 'APPROVED'::"PaymentStatus")
+        id = ANY(${paymentIds}::text[])
+        AND status != 'PAID'::"PaymentStatus"
       RETURNING id
     `;
+
+    if (result.length === 0) {
+      return res.status(200).json({
+        success: false,
+        message:
+          "No payments were approved. They may have already been approved or paid.",
+      });
+    }
+    const paymentIdsToUpdate = result.map((r) => r.id);
+    if (result.length > 0) {
+      const updatedWorkEntries: { id: string }[] = await prisma.$queryRaw`
+          UPDATE "WorkEntry"
+          SET status = 'APPROVED'::"WorkEntryStatus"
+          WHERE "paymentId" = ANY(${paymentIdsToUpdate}::text[])
+          RETURNING id
+        `;
+      console.log("updatedWorkEntries:", updatedWorkEntries);
+
+      if (updatedWorkEntries.length === 0) {
+        return res.status(200).json({
+          success: false,
+          message:
+            "Payments approved, but no associated work entries were found to update",
+        });
+      }
+    }
+
+    const PaidPayments = String(paymentIds);
 
     // Log activity
     if (userId) {
       await prisma.$executeRaw`
-        INSERT INTO "ActivityLog" (id, "userId", action, entity, "entityId", "createdAt", details)
-        VALUES (gen_random_uuid(), ${userId}::uuid, 'PAY_PAYMENTS', 'Payment', NULL, NOW(), ${transactionReference || null})
+        INSERT INTO "ActivityLog" (id, "userId", action, entity, "entityId", "createdAt")
+        VALUES (gen_random_uuid(), ${userId}::uuid, 'PAY_PAYMENTS', 'Payment', ${PaidPayments}, NOW())
       `;
     }
 
     return res.status(200).json({
       success: true,
       message: `Successfully marked ${(result as any[]).length} payments as paid`,
-      paidCount: (result as any[]).length,
-      transactionReference: transactionReference || null,
     });
   } catch (error) {
     console.error("Error marking payments as paid:", error);

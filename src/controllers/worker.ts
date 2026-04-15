@@ -31,8 +31,8 @@ export const getSiteDetails = async (req: Request, res: Response) => {
     s.description as site_description,
     s.location as site_location,
     s."createdAt" as site_created_at,
-    ARRAY_AGG(DISTINCT p.id::text) FILTER (WHERE p.batch_id IS NULL) as singleWorkerPayments,
-    ARRAY_AGG(DISTINCT p.batch_id::text) FILTER (WHERE p.batch_id IS NOT NULL) as batchPayments
+    ARRAY_AGG(DISTINCT p.id::text) FILTER (WHERE p.batch_id IS NULL and p.status != 'PAID'::"PaymentStatus") as singleWorkerPayments,
+    ARRAY_AGG(DISTINCT p.batch_id::text) FILTER (WHERE p.batch_id IS NOT NULL AND p.status != 'PAID'::"PaymentStatus") as batchPayments
   FROM "Site" s
   LEFT JOIN "Payment" p 
     ON p."siteId"::text = s.id::text
