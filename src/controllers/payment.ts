@@ -570,7 +570,7 @@ export const sitePaymentRequest = async (req: Request, res: Response) => {
 // Approve a specific batch of payments
 export const approvePaymentBatch = async (req: Request, res: Response) => {
   const { batchId } = req.params;
-  const { foremanId } = req.body;
+  const userId = req.user.id;
 
   try {
     const result = await prisma.$queryRaw<
@@ -585,10 +585,10 @@ export const approvePaymentBatch = async (req: Request, res: Response) => {
         SET 
           status = 'APPROVED'::"PaymentStatus",
           "approvedAt" = NOW()
-        WHERE 
-          "batchId" = ${batchId}::uuid
-          AND status = 'PENDING'::"PaymentStatus"
-        RETURNING id, "totalAmount"
+      WHERE 
+        "batchId" = ${batchId}::uuid
+        AND status NOT IN ('PAID'::"PaymentStatus", 'APPROVED'::"PaymentStatus")
+      RETURNING id, "totalAmount"
       ),
       updated_entries AS (
         UPDATE "WorkEntry"
@@ -605,10 +605,10 @@ export const approvePaymentBatch = async (req: Request, res: Response) => {
     const summary = result[0];
 
     // Log activity
-    if (foremanId) {
+    if (userId) {
       await prisma.$executeRaw`
         INSERT INTO "ActivityLog" (id, "userId", action, entity, "entityId", "createdAt")
-        VALUES (gen_random_uuid(), ${foremanId}::uuid, 'APPROVE_BATCH', 'Payment', ${batchId}, NOW())
+        VALUES (gen_random_uuid(), ${userId}::uuid, 'APPROVE_BATCH', 'Payment', ${batchId}, NOW())
       `;
     }
 
@@ -650,7 +650,7 @@ export const markBatchAsPaid = async (req: Request, res: Response) => {
           status = 'PAID'::"PaymentStatus",
           "paidAt" = NOW()
         WHERE 
-          "batchId" = ${batchId}::uuid
+          "batchId" = ${batchId}::text
         RETURNING id, "totalAmount"
       ),
       updated_work_entries AS (
@@ -697,11 +697,12 @@ export const markBatchAsPaid = async (req: Request, res: Response) => {
   }
 };
 
-// Send a batch back for review (e.g. if owner wants changes after approval, or foreman wants changes after request)
+// Send a batch back for review FROM THE FOREMAN TO THE OWNER
 
 export const reviewPaymentBatch = async (req: Request, res: Response) => {
   const { batchId } = req.params;
-  const { foremanId, reviewNotes } = req.body; // Optional review notes from owner
+  const { foremanId, reviewNotes } = req.body;
+  const userId = req.user.id;
 
   try {
     const result = await prisma.$queryRaw<
@@ -717,8 +718,8 @@ export const reviewPaymentBatch = async (req: Request, res: Response) => {
           status = 'REVIEW'::"PaymentStatus",
           "approvedAt" = NULL 
         WHERE 
-          "batchId" = ${batchId}::uuid
-          AND status = 'PENDING'::"PaymentStatus"  
+          "batchId" = ${batchId}::text
+        AND status IN ('APPROVED'::"PaymentStatus", 'REJECTED'::"PaymentStatus")
         RETURNING id, "totalAmount"
       ),
       updated_entries AS (
@@ -736,17 +737,16 @@ export const reviewPaymentBatch = async (req: Request, res: Response) => {
     const summary = result[0];
 
     // Log activity with review notes if provided
-    if (foremanId) {
+    if (userId) {
       await prisma.$executeRaw`
-        INSERT INTO "ActivityLog" (id, "userId", action, entity, "entityId", "createdAt", details)
+        INSERT INTO "ActivityLog" (id, "userId", action, entity, "entityId", "createdAt")
         VALUES (
           gen_random_uuid(), 
-          ${foremanId}::uuid, 
+          ${userId}::uuid, 
           'REVIEW_BATCH', 
           'Payment', 
           ${batchId}, 
           NOW(),
-          ${reviewNotes || "Payment batch sent back for review"}
         )
       `;
     }
@@ -961,18 +961,18 @@ export const getBatchDetails = async (req: Request, res: Response) => {
   }
 };
 
-// Cancel/Delete a batch (only if all payments are still PENDING)
+// Cancel/Delete a batch
 export const cancelBatch = async (req: Request, res: Response) => {
   const { batchId } = req.params;
   const { userId } = req.body;
 
   try {
-    // Check if any payments are already approved or paid
+    // Checking if any payments are already approved or paid
     const nonPending = await prisma.$queryRaw<Array<{ count: number }>>`
       SELECT COUNT(*) as count
       FROM "Payment"
-      WHERE "batchId" = ${batchId}::uuid
-        AND status != 'PENDING'::"PaymentStatus"
+      WHERE "batchId" = ${batchId}::text
+        AND status not in  ('PENDING'::"PaymentStatus", 'REJECTED'::"PaymentStatus")
     `;
 
     if (nonPending[0]?.count > 0) {
@@ -988,17 +988,18 @@ export const cancelBatch = async (req: Request, res: Response) => {
       UPDATE "WorkEntry"
       SET 
         "paymentId" = NULL,
+        "batchId" = NULL,
         status = 'NOT_PAID'::"WorkEntryStatus"
       WHERE "paymentId" IN (
         SELECT id FROM "Payment"
-        WHERE "batchId" = ${batchId}::uuid
+        WHERE "batchId" = ${batchId}::text
       )
     `;
 
     // Delete payments
     const result = await prisma.$executeRaw`
       DELETE FROM "Payment"
-      WHERE "batchId" = ${batchId}::uuid
+      WHERE "batchId" = ${batchId}::text
     `;
 
     // Log activity
@@ -1027,14 +1028,14 @@ export const cancelBatch = async (req: Request, res: Response) => {
 // Cancel/Delete a single payment request (only if still PENDING)
 export const cancelSinglePayment = async (req: Request, res: Response) => {
   const { paymentId } = req.params;
-  const { userId } = req.body;
+  const userId = req.user.id;
 
   try {
     // Check if payment is already approved or paid
     const paymentStatus = await prisma.$queryRaw<Array<{ status: string }>>`
       SELECT status
       FROM "Payment"
-      WHERE id = ${paymentId}::text::uuid
+      WHERE id = ${paymentId}::text
     `;
 
     if (
@@ -1350,17 +1351,16 @@ export const markMultipleAsPaid = async (req: Request, res: Response) => {
     if (result.length > 0) {
       const updatedWorkEntries: { id: string }[] = await prisma.$queryRaw`
           UPDATE "WorkEntry"
-          SET status = 'APPROVED'::"WorkEntryStatus"
+          SET status = 'PAID'::"WorkEntryStatus"
           WHERE "paymentId" = ANY(${paymentIdsToUpdate}::text[])
           RETURNING id
         `;
-      console.log("updatedWorkEntries:", updatedWorkEntries);
 
       if (updatedWorkEntries.length === 0) {
         return res.status(200).json({
           success: false,
           message:
-            "Payments approved, but no associated work entries were found to update",
+            "Payments marked as paid, but no associated work entries were found to update",
         });
       }
     }
@@ -1521,10 +1521,11 @@ export const markSingleAsPaid = async (req: Request, res: Response) => {
   }
 };
 
-// Send single payment for review
+// Send single payment for review by the foreman to the owner
 export const reviewSinglePayment = async (req: Request, res: Response) => {
   const { paymentId } = req.params;
-  const { userId, reviewNotes } = req.body;
+  const { reviewNotes } = req.body;
+  const userId = req.user.id;
 
   try {
     const result = await prisma.$queryRaw`
@@ -1534,7 +1535,7 @@ export const reviewSinglePayment = async (req: Request, res: Response) => {
         "approvedAt" = NULL
       WHERE 
         id = ${paymentId}::uuid
-        AND status = 'PENDING'::"PaymentStatus"
+        AND status in ('APPROVED'::"PaymentStatus", 'REJECTED'::"PaymentStatus")
       RETURNING id
     `;
 
@@ -1548,8 +1549,8 @@ export const reviewSinglePayment = async (req: Request, res: Response) => {
     // Log activity
     if (userId) {
       await prisma.$executeRaw`
-        INSERT INTO "ActivityLog" (id, "userId", action, entity, "entityId", "createdAt", details)
-        VALUES (gen_random_uuid(), ${userId}::uuid, 'REVIEW_PAYMENT', 'Payment', ${paymentId}, NOW(), ${reviewNotes || null})
+        INSERT INTO "ActivityLog" (id, "userId", action, entity, "entityId", "createdAt")
+        VALUES (gen_random_uuid(), ${userId}::uuid, 'REVIEW_PAYMENT', 'Payment', ${paymentId}, NOW())
       `;
     }
 
@@ -1567,11 +1568,158 @@ export const reviewSinglePayment = async (req: Request, res: Response) => {
   }
 };
 
-// Reject single payment
+//sending a batch for review by the foreman to the owner/admin
+export const reviewMultiplePayments = async (req: Request, res: Response) => {
+  const { paymentIds } = req.body;
+  const { userId } = req.body;
+
+  if (!paymentIds || !Array.isArray(paymentIds) || paymentIds.length === 0) {
+    return res.status(400).json({
+      success: false,
+      message: "Payment IDs are required",
+    });
+  }
+
+  try {
+    const result: any[] = await prisma.$queryRaw`
+      UPDATE "Payment"
+      SET 
+        status = 'APPROVED'::"PaymentStatus",
+        "approvedAt" = NOW()
+      WHERE 
+        id = ANY(${paymentIds}::text[])
+        AND status not in ('PAID'::"PaymentStatus", 'REVIEW'::"PaymentStatus")
+      RETURNING id
+    `;
+    const paymentIdsToUpdate = result.map((r) => r.id);
+    if (result.length === 0) {
+      return res.status(200).json({
+        success: false,
+        message:
+          "No payments were sent for review. They may have already been approved or paid.",
+      });
+    }
+    if (result.length > 0) {
+      const updatedWorkEntries = await prisma.$queryRaw<Array<{ id: string }>>`
+          UPDATE "WorkEntry"
+          SET status = 'REVIEW'::"WorkEntryStatus"
+          WHERE "paymentId" = ANY(${paymentIdsToUpdate}::text[])
+          RETURNING id
+        `;
+      if (updatedWorkEntries.length === 0) {
+        return res.status(200).json({
+          success: false,
+          message:
+            "Payments Where sent for review, but no associated work entries were found to update",
+        });
+      }
+    }
+
+    const PaymentsForReview = String(paymentIds);
+
+    if (userId) {
+      await prisma.$executeRaw`
+        INSERT INTO "ActivityLog" (id, "userId", action, entity, "entityId", "createdAt")
+        VALUES (gen_random_uuid(), ${userId}::uuid, 'APPROVE_PAYMENTS', 'Payment', ${PaymentsForReview}, NOW())
+      `;
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Successfully approved ${(result as any[]).length} payments`,
+      approvedCount: (result as any[]).length,
+    });
+  } catch (error) {
+    console.error("Error approving payments:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to approve payments",
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+};
+
+// Rejecting the selected payments
+export const rejectingMultiplePayments = async (
+  req: Request,
+  res: Response,
+) => {
+  const { paymentIds } = req.body;
+  const { userId } = req.body;
+
+  if (!paymentIds || !Array.isArray(paymentIds) || paymentIds.length === 0) {
+    return res.status(400).json({
+      success: false,
+      message: "Payment IDs are required",
+    });
+  }
+
+  try {
+    const result: any[] = await prisma.$queryRaw`
+      UPDATE "Payment"
+      SET 
+        status = 'REJECTED'::"PaymentStatus",
+        "paidAt" = NOW()
+      WHERE 
+        id = ANY(${paymentIds}::text[])
+        AND status NOT IN ('PAID'::"PaymentStatus", 'APPROVED'::"PaymentStatus", 'REJECTED'::"PaymentStatus")
+      RETURNING id
+    `;
+
+    if (result.length === 0) {
+      return res.status(200).json({
+        success: false,
+        message:
+          "No payments were Rejected. They may have already been approved or paid.",
+      });
+    }
+    const paymentIdsToUpdate = result.map((r) => r.id);
+    if (result.length > 0) {
+      const updatedWorkEntries: { id: string }[] = await prisma.$queryRaw`
+          UPDATE "WorkEntry"
+          SET status = 'PAID'::"WorkEntryStatus"
+          WHERE "paymentId" = ANY(${paymentIdsToUpdate}::text[])
+          RETURNING id
+        `;
+
+      if (updatedWorkEntries.length === 0) {
+        return res.status(200).json({
+          success: false,
+          message:
+            "Payments marked as REJECTED, but no associated work entries were found to update",
+        });
+      }
+    }
+
+    const Rejected = String(paymentIds);
+
+    // Log activity
+    if (userId) {
+      await prisma.$executeRaw`
+        INSERT INTO "ActivityLog" (id, "userId", action, entity, "entityId", "createdAt")
+        VALUES (gen_random_uuid(), ${userId}::uuid, 'PAY_PAYMENTS', 'Payment', ${Rejected}, NOW())
+      `;
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Successfully marked ${(result as any[]).length} payments as paid`,
+    });
+  } catch (error) {
+    console.error("Error marking payments as paid:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to mark payments as paid",
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+};
+
+// Reject single payment (sending it back to foreman for review)
 export const rejectSinglePayment = async (req: Request, res: Response) => {
   const { paymentId } = req.params;
-  const { userId, reason } = req.body;
-
+  const { reason } = req.body;
+  const userId = req.user.id;
   try {
     const result = await prisma.$queryRaw`
       UPDATE "Payment"
@@ -1579,23 +1727,23 @@ export const rejectSinglePayment = async (req: Request, res: Response) => {
         status = 'REJECTED'::"PaymentStatus",
         "approvedAt" = NULL
       WHERE 
-        id = ${paymentId}::uuid
-        AND status = 'PENDING'::"PaymentStatus"
+        id = ${paymentId}::text
+        AND status = ANY(ARRAY['PENDING','APPROVED','REVIEW']::"PaymentStatus"[]) 
       RETURNING id
     `;
 
     if ((result as any[]).length === 0) {
       return res.status(404).json({
         success: false,
-        message: "Payment not found or not in pending status",
+        message: "Payment not found or payment status is already updated",
       });
     }
 
     // Log activity
     if (userId) {
       await prisma.$executeRaw`
-        INSERT INTO "ActivityLog" (id, "userId", action, entity, "entityId", "createdAt", details)
-        VALUES (gen_random_uuid(), ${userId}::uuid, 'REJECT_PAYMENT', 'Payment', ${paymentId}, NOW(), ${reason || null})
+        INSERT INTO "ActivityLog" (id, "userId", action, entity, "entityId", "createdAt")
+        VALUES (gen_random_uuid(), ${userId}::uuid, 'REJECT_PAYMENT', 'Payment', ${paymentId}, NOW())
       `;
     }
 

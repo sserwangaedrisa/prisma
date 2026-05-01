@@ -129,15 +129,15 @@ router.post(
   paymentController.markSingleAsPaid,
 );
 
-// Send a single payment for review
+// Send a single payment for review by the foreman to the owner
 router.post(
   "/:paymentId/review",
   verifyToken,
-  authorize(["OWNER"]),
+  authorize(["FOREMAN"]),
   paymentController.reviewSinglePayment,
 );
 
-// Reject a single payment
+// Reject a single payment BY THE owner
 router.post(
   "/:paymentId/reject",
   verifyToken,
@@ -146,7 +146,7 @@ router.post(
 );
 
 // Cancel a single payment (only if pending)
-router.delete(
+router.post(
   "/:paymentId",
   verifyToken,
   authorize(["FOREMAN", "OWNER"]),
@@ -187,15 +187,31 @@ router.post(
   paymentController.markBatchAsPaid,
 );
 
-// Send an entire batch back for review
+// Send an entire batch back for review by the forman to the owner
 router.post(
   "/batches/:batchId/review",
   verifyToken,
-  authorize(["OWNER"]),
+  authorize(["FOREMAN"]),
   paymentController.reviewPaymentBatch,
 );
 
-// Cancel/delete an entire batch (only if all payments are pending)
+// send multiple payments for review
+router.post(
+  "/batches/:multiple/review",
+  verifyToken,
+  authorize(["FOREMAN"]),
+  paymentController.reviewMultiplePayments,
+);
+
+// Rejecting multiple payments i.e. sending the payments to the foreman for review
+router.post(
+  "/batches/:multiple/reject",
+  verifyToken,
+  authorize(["OWNER"]),
+  paymentController.rejectingMultiplePayments,
+);
+
+// Cancel/delete an entire batch
 router.delete(
   "/batches/:batchId",
   verifyToken,
