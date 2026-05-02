@@ -1091,7 +1091,7 @@ export const cancelSinglePayment = async (req: Request, res: Response) => {
 export const getPayments = async (req: Request, res: Response) => {
   const {
     page = 1,
-    limit = 20,
+    limit = 10,
     sortField = "createdAt",
     sortOrder = "desc",
     status,
@@ -1179,41 +1179,11 @@ export const getPayments = async (req: Request, res: Response) => {
       | "REVIEW"
       | "REJECTED";
 
-    // Get payments
-    // const payments = await prisma.payment.findMany({
-    //   where: {
-    //     status:
-    //       status && status !== "all" ? (status as PaymentStatus) : undefined,
-    //     siteId: (siteId as string) || undefined,
-    //     batchId: (batchId as string) || undefined,
-    //     createdAt: {
-    //       gte: startDate ? new Date(startDate as string) : undefined,
-    //       lte: endDate ? new Date(endDate as string) : undefined,
-    //     },
-    //     worker: {
-    //       name: search
-    //         ? { contains: search as string, mode: "insensitive" }
-    //         : undefined,
-    //     },
-    //     site: {
-    //       name: search
-    //         ? { contains: search as string, mode: "insensitive" }
-    //         : undefined,
-    //     },
-    //   },
-    //   include: {
-    //     worker: { select: { name: true } },
-    //     site: { select: { name: true } },
-    //   },
-    //   orderBy: { [validSortField]: validSortOrder },
-    //   skip: (Number(page) - 1) * Number(limit),
-    //   take: Number(limit),
-    // });
-
     const payments = await prisma.$queryRawUnsafe(
       `SELECT 
     p.*,
     u.name as "workerName",
+    U."imageUrl" as "workerImage",
     s.name as "siteName"
   FROM "Payment" p
   INNER JOIN "User" u ON p."workerId" = u.id
