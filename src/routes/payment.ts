@@ -1,43 +1,3 @@
-// import * as paymentController from "../controllers/payment";
-// import { Router } from "express";
-// import { authorize } from "../middleware/authorize";
-// import verifyToken from "../middleware/auth";
-
-// const router = Router();
-
-// router.post(
-//   "/workerPayment",
-//   verifyToken,
-//   authorize(["FOREMAN", "OWNER"]),
-//   paymentController.singleWorkerPayment,
-// );
-
-// // single worker payment request route
-// router.post(
-//   "/worker",
-//   verifyToken,
-//   authorize(["FOREMAN", "OWNER"]),
-//   paymentController.singleWorkerPaymentRequest,
-// );
-
-// // site payment summary
-// router.post(
-//   "/site",
-//   verifyToken,
-//   authorize(["FOREMAN", "OWNER"]),
-//   paymentController.sitePaymentSummary,
-// );
-
-// // Whole site payment request
-// router.post(
-//   "/sitePaymentRequest",
-//   verifyToken,
-//   authorize(["FOREMAN", "OWNER"]),
-//   paymentController.sitePaymentRequest,
-// );
-
-// export default router;
-
 import * as paymentController from "../controllers/payment";
 import { Router } from "express";
 import { authorize } from "../middleware/authorize";
@@ -76,8 +36,6 @@ router.post(
   authorize(["FOREMAN", "OWNER"]),
   paymentController.sitePaymentRequest,
 );
-
-// ==================== NEW PAYMENT ROUTES ====================
 
 // Get all payments with pagination, filtering, sorting
 router.post(
@@ -147,7 +105,7 @@ router.post(
 
 // Cancel a single payment (only if pending)
 router.post(
-  "/:paymentId",
+  "/:paymentId/delete",
   verifyToken,
   authorize(["FOREMAN", "OWNER"]),
   paymentController.cancelSinglePayment,

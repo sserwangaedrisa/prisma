@@ -1,3 +1,4 @@
+process.env.TZ = "Asia/Dubai";
 import "dotenv/config";
 import { PrismaClient } from "../prisma/generated/client";
 import { PrismaPg } from "@prisma/adapter-pg";
@@ -39,6 +40,8 @@ const server = http.createServer(app);
 
 const PORT = process.env.PORT || 8000;
 
+process.env.TZ = "Asia/Dubai";
+
 // ===== Middleware =====
 app.use(
   cors({
@@ -62,10 +65,12 @@ const swaggerOptions = {
     },
     components,
   },
-  apis: ["./src/routes/*.ts"], // pointing to TS routes
+  apis: ["./src/routes/*.ts"],
 };
 const swaggerDocs = swaggerJsDocs(swaggerOptions);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+
+console.log("Time now: ", new Date().toString());
 
 app.use("/healthz", (_req: Request, res: Response) => {
   res.status(200).json({ message: "API is working" });

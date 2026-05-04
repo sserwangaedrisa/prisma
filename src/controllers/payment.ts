@@ -1055,20 +1055,20 @@ export const cancelSinglePayment = async (req: Request, res: Response) => {
       SET 
         "paymentId" = NULL,  
         status = 'NOT_PAID'::"WorkEntryStatus"
-      WHERE "paymentId" = ${paymentId}::text::uuid
+      WHERE "paymentId" = ${paymentId}::text
     `;
 
     // Delete payment
     const result = await prisma.$executeRaw`
       DELETE FROM "Payment"
-      WHERE id = ${paymentId}::text::uuid
+      WHERE id = ${paymentId}::text
     `;
 
     // Log activity
     if (userId) {
       await prisma.$executeRaw`
         INSERT INTO "ActivityLog" (id, "userId", action, entity, "entityId", "createdAt")
-        VALUES (gen_random_uuid(), ${userId}::uuid, 'CANCEL_PAYMENT', 'Payment', ${paymentId}, NOW())
+        VALUES (gen_random_uuid(), ${userId}::uuid, 'CANCEL_PAYMENT', 'Payment', ${paymentId}, ${new Date()})
       `;
     }
 
