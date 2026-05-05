@@ -15,13 +15,177 @@ interface worker {
   imageUrl: string | null;
 }
 
+// export const singleWorkerPayment = async (req: Request, res: Response) => {
+//   try {
+//     const { workerId, siteId, startDate, endDate, paymentId } = req.body;
+
+//     if (!siteId || !startDate || !endDate) {
+//       return res.status(200).json({
+//         message: "Missing required parameters: siteId, startDate, endDate",
+//         success: false,
+//       });
+//     }
+
+//     const workerData = await validateUser(workerId);
+//     if (!workerData || !workerData.success) {
+//       return res.status(200).json({
+//         success: false,
+//         message: workerData.message,
+//       });
+//     }
+
+//     const worker: worker = workerData.data as worker;
+//     const wageRating = worker?.wageRatings || 0;
+
+//     const start = new Date(startDate);
+//     const end = new Date(endDate);
+
+//     //  Enforce max 1 month range
+//     const diffInMs = end.getTime() - start.getTime();
+//     const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
+
+//     if (diffInDays > 31) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Date range should not exceed one month",
+//       });
+//     }
+
+//     // checking for the closed month
+//     const monthClose = await prisma.monthClose.findFirst({
+//       where: {
+//         siteId: siteId,
+//         month: start.getMonth() + 1,
+//         year: start.getFullYear(),
+//       },
+//     });
+
+//     if (monthClose && monthClose.status === "LOCKED") {
+//       return res.status(403).json({
+//         success: false,
+//         message: "locked month",
+//         status: "locked month",
+//       });
+//     }
+
+//     const workEntries = await prisma.workEntry.findMany({
+//       where: {
+//         workerId: workerId,
+//         siteId: siteId,
+//         paymentId: paymentId ? paymentId : undefined,
+//         date: paymentId
+//           ? undefined
+//           : {
+//               gte: start,
+//               lte: end,
+//             },
+//       },
+//       orderBy: {
+//         date: "asc",
+//       },
+//       take: 31,
+//     });
+
+//     const aggregateData = await prisma.workEntry.aggregate({
+//       where: {
+//         workerId: workerId,
+//         siteId: siteId,
+//         status: paymentId
+//           ? undefined
+//           : {
+//               not: "PAID",
+//             },
+//         date: paymentId
+//           ? undefined
+//           : {
+//               gte: start,
+//               lte: end,
+//             },
+//       },
+//       _sum: {
+//         hours: true,
+//         overtime: true,
+//       },
+//       _count: {
+//         id: true,
+//       },
+//     });
+
+//     const totalRegularHours = aggregateData._sum.hours || 0;
+//     const totalOvertimeHours = aggregateData._sum.overtime || 0;
+//     const totalHours = totalRegularHours + totalOvertimeHours;
+//     const entryCount = aggregateData._count.id;
+
+//     if (entryCount === 0) {
+//       return res.status(200).json({
+//         workerId,
+//         siteId,
+//         period: paymentId ? undefined : { startDate, endDate },
+//         hasEntries: false,
+//         message: "No work entries found for this period",
+//       });
+//     }
+
+//     const totalAmount = totalHours * wageRating;
+
+//     const response = {
+//       worker: {
+//         id: worker?.id,
+//         name: worker?.name,
+//         email: worker?.email,
+//         wageRating: wageRating,
+//         role: worker?.role,
+//         job: worker?.job,
+//         imageUrl: worker?.imageUrl,
+//       },
+//       site: {
+//         id: siteId,
+//         name: "",
+//       },
+//       period: {
+//         startDate,
+//         endDate,
+//       },
+//       calculation: {
+//         formula: `Total Amount = (Total Hours + Overtime) × Wage Rating`,
+//         wageRating: wageRating,
+//         ratePerHour: wageRating,
+//       },
+//       summary: {
+//         totalRegularHours: Number(totalRegularHours.toFixed(2)),
+//         totalOvertimeHours: Number(totalOvertimeHours.toFixed(2)),
+//         totalHours: Number(totalHours.toFixed(2)),
+//         totalAmount: Number(totalAmount.toFixed(2)),
+//       },
+//       metadata: {
+//         entryCount: entryCount,
+//       },
+//       entries: workEntries,
+//     };
+
+//     return res.status(200).json({
+//       data: response,
+//       success: true,
+//       message: "entries retrieved successfully",
+//     });
+//   } catch (error) {
+//     console.error("Payment calculation error:", error);
+//     return res.status(500).json({
+//       message: "Failed to calculate payment",
+//       status: 500,
+//     });
+//   }
+// };
+
+// payment request processing for the an individual
+
 export const singleWorkerPayment = async (req: Request, res: Response) => {
   try {
-    const { workerId, siteId, startDate, endDate } = req.body;
+    const { workerId, siteId, startDate, endDate, paymentId } = req.body;
 
-    if (!siteId || !startDate || !endDate) {
+    if (!siteId || (!paymentId && (!startDate || !endDate))) {
       return res.status(200).json({
-        message: "Missing required parameters: siteId, startDate, endDate",
+        message: "Missing required parameters",
         success: false,
       });
     }
@@ -37,63 +201,78 @@ export const singleWorkerPayment = async (req: Request, res: Response) => {
     const worker: worker = workerData.data as worker;
     const wageRating = worker?.wageRatings || 0;
 
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+    const start = startDate ? new Date(startDate) : null;
+    const end = endDate ? new Date(endDate) : null;
 
-    //  Enforce max 1 month range
-    const diffInMs = end.getTime() - start.getTime();
-    const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
+    // Enforce max 1 month only when no paymentId
+    if (!paymentId && start && end) {
+      const diffInMs = end.getTime() - start.getTime();
+      const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
 
-    if (diffInDays > 31) {
-      return res.status(400).json({
-        success: false,
-        message: "Date range should not exceed one month",
-      });
+      if (diffInDays > 31) {
+        return res.status(400).json({
+          success: false,
+          message: "Date range should not exceed one month",
+        });
+      }
     }
 
-    // checking for the closed month
-    const monthClose = await prisma.monthClose.findFirst({
-      where: {
-        siteId: siteId,
-        month: start.getMonth() + 1,
-        year: start.getFullYear(),
-      },
-    });
-
-    if (monthClose && monthClose.status === "LOCKED") {
-      return res.status(403).json({
-        success: false,
-        message: "locked month",
-        status: "locked month",
-      });
-    }
-
-    const workEntries = await prisma.workEntry.findMany({
-      where: {
-        workerId: workerId,
-        siteId: siteId,
-        date: {
-          gte: start,
-          lte: end,
+    // Month lock check (only when using date)
+    if (!paymentId && start) {
+      const monthClose = await prisma.monthClose.findFirst({
+        where: {
+          siteId,
+          month: start.getMonth() + 1,
+          year: start.getFullYear(),
         },
-      },
-      orderBy: {
-        date: "asc",
-      },
+      });
+
+      if (monthClose && monthClose.status === "LOCKED") {
+        return res.status(403).json({
+          success: false,
+          message: "locked month",
+          status: "locked month",
+        });
+      }
+    }
+
+    // Shared WHERE condition
+    const whereCondition = {
+      workerId,
+      siteId,
+      paymentId: paymentId || undefined,
+      ...(paymentId
+        ? {}
+        : {
+            date: {
+              gte: start!,
+              lte: end!,
+            },
+          }),
+    };
+
+    // Entries
+    const workEntries = await prisma.workEntry.findMany({
+      where: whereCondition,
+      orderBy: { date: "asc" },
       take: 31,
     });
+    let paymentMonthStart = null;
+    let paymentMonthEnd = null;
+    if (paymentId) {
+      const date = workEntries[0]?.date;
+      paymentMonthStart = new Date(date.getFullYear(), date.getMonth(), 1);
+      paymentMonthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+    }
 
     const aggregateData = await prisma.workEntry.aggregate({
       where: {
-        workerId: workerId,
-        siteId: siteId,
-        status: {
-          not: "PAID",
-        },
-        date: {
-          gte: start,
-          lte: end,
-        },
+        ...whereCondition,
+        ...(paymentId
+          ? {}
+          : {
+              status: { not: "PAID" },
+            }),
       },
       _sum: {
         hours: true,
@@ -102,6 +281,50 @@ export const singleWorkerPayment = async (req: Request, res: Response) => {
       _count: {
         id: true,
       },
+    });
+
+    //  Grouping by status
+    const groupedStatus = await prisma.workEntry.groupBy({
+      by: ["status"],
+      where: whereCondition,
+      _sum: {
+        hours: true,
+        overtime: true,
+      },
+      _count: {
+        id: true,
+      },
+    });
+
+    const statusSummary: any = {
+      PENDING: { hours: 0, overtime: 0, total: 0, amount: 0, count: 0 },
+      PAID: { hours: 0, overtime: 0, total: 0, amount: 0, count: 0 },
+      REJECTED: { hours: 0, overtime: 0, total: 0, amount: 0, count: 0 },
+      REVIEW: { hours: 0, overtime: 0, total: 0, amount: 0, count: 0 },
+    };
+
+    // Initializing the totals
+    let TOTALREGULARHOURS = 0;
+    let TOTALOVERTIMEHOURS = 0;
+    let TOTALHOURS = 0;
+    let ENTRYCOUNT = 0;
+
+    groupedStatus.forEach((item) => {
+      const hours = item._sum.hours || 0;
+      const overtime = item._sum.overtime || 0;
+      const total = hours + overtime;
+      TOTALREGULARHOURS += hours;
+      TOTALOVERTIMEHOURS += overtime;
+      TOTALHOURS += total;
+      ENTRYCOUNT += item._count.id;
+
+      statusSummary[item.status] = {
+        hours,
+        overtime,
+        total,
+        amount: total * wageRating,
+        count: item._count.id,
+      };
     });
 
     const totalRegularHours = aggregateData._sum.hours || 0;
@@ -113,7 +336,7 @@ export const singleWorkerPayment = async (req: Request, res: Response) => {
       return res.status(200).json({
         workerId,
         siteId,
-        period: { startDate, endDate },
+        period: paymentId ? undefined : { startDate, endDate },
         hasEntries: false,
         message: "No work entries found for this period",
       });
@@ -126,7 +349,7 @@ export const singleWorkerPayment = async (req: Request, res: Response) => {
         id: worker?.id,
         name: worker?.name,
         email: worker?.email,
-        wageRating: wageRating,
+        wageRating,
         role: worker?.role,
         job: worker?.job,
         imageUrl: worker?.imageUrl,
@@ -135,24 +358,33 @@ export const singleWorkerPayment = async (req: Request, res: Response) => {
         id: siteId,
         name: "",
       },
-      period: {
-        startDate,
-        endDate,
-      },
+      period: paymentId
+        ? { startDate: paymentMonthStart, endDate: paymentMonthEnd }
+        : { startDate, endDate },
+
       calculation: {
         formula: `Total Amount = (Total Hours + Overtime) × Wage Rating`,
-        wageRating: wageRating,
+        wageRating,
         ratePerHour: wageRating,
       },
+
       summary: {
         totalRegularHours: Number(totalRegularHours.toFixed(2)),
         totalOvertimeHours: Number(totalOvertimeHours.toFixed(2)),
         totalHours: Number(totalHours.toFixed(2)),
         totalAmount: Number(totalAmount.toFixed(2)),
+        TOTALREGULARHOURS: Number(TOTALREGULARHOURS.toFixed(2)),
+        TOTALOVERTIMEHOURS: Number(TOTALOVERTIMEHOURS.toFixed(2)),
+        TOTALHOURS: Number(TOTALHOURS.toFixed(2)),
+        ENTRYCOUNT: Number(ENTRYCOUNT),
       },
+
+      statusSummary,
+
       metadata: {
-        entryCount: entryCount,
+        entryCount,
       },
+
       entries: workEntries,
     };
 
@@ -169,9 +401,6 @@ export const singleWorkerPayment = async (req: Request, res: Response) => {
     });
   }
 };
-
-// payment request processing for the an individual
-
 export const singleWorkerPaymentRequest = async (
   req: Request,
   res: Response,
