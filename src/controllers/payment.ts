@@ -204,7 +204,7 @@ export const singleWorkerPayment = async (req: Request, res: Response) => {
     const start = startDate ? new Date(startDate) : null;
     const end = endDate ? new Date(endDate) : null;
 
-    // Enforce max 1 month only when no paymentId
+    // Enforcing max 1 month only when no paymentId
     if (!paymentId && start && end) {
       const diffInMs = end.getTime() - start.getTime();
       const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
@@ -218,23 +218,23 @@ export const singleWorkerPayment = async (req: Request, res: Response) => {
     }
 
     // Month lock check (only when using date)
-    if (!paymentId && start) {
-      const monthClose = await prisma.monthClose.findFirst({
-        where: {
-          siteId,
-          month: start.getMonth() + 1,
-          year: start.getFullYear(),
-        },
-      });
+    // if (!paymentId && start) {
+    //   const monthClose = await prisma.monthClose.findFirst({
+    //     where: {
+    //       siteId,
+    //       month: start.getMonth() + 1,
+    //       year: start.getFullYear(),
+    //     },
+    //   });
 
-      if (monthClose && monthClose.status === "LOCKED") {
-        return res.status(403).json({
-          success: false,
-          message: "locked month",
-          status: "locked month",
-        });
-      }
-    }
+    //   if (monthClose && monthClose.status === "LOCKED") {
+    //     return res.status(403).json({
+    //       success: false,
+    //       message: "locked month",
+    //       status: "locked month",
+    //     });
+    //   }
+    // }
 
     // Shared WHERE condition
     const whereCondition = {
@@ -265,24 +265,6 @@ export const singleWorkerPayment = async (req: Request, res: Response) => {
       paymentMonthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0);
     }
 
-    const aggregateData = await prisma.workEntry.aggregate({
-      where: {
-        ...whereCondition,
-        ...(paymentId
-          ? {}
-          : {
-              status: { not: "PAID" },
-            }),
-      },
-      _sum: {
-        hours: true,
-        overtime: true,
-      },
-      _count: {
-        id: true,
-      },
-    });
-
     //  Grouping by status
     const groupedStatus = await prisma.workEntry.groupBy({
       by: ["status"],
@@ -301,6 +283,7 @@ export const singleWorkerPayment = async (req: Request, res: Response) => {
       PAID: { hours: 0, overtime: 0, total: 0, amount: 0, count: 0 },
       REJECTED: { hours: 0, overtime: 0, total: 0, amount: 0, count: 0 },
       REVIEW: { hours: 0, overtime: 0, total: 0, amount: 0, count: 0 },
+      NOT_PAID: { hours: 0, overtime: 0, total: 0, amount: 0, count: 0 },
     };
 
     // Initializing the totals
@@ -327,10 +310,10 @@ export const singleWorkerPayment = async (req: Request, res: Response) => {
       };
     });
 
-    const totalRegularHours = aggregateData._sum.hours || 0;
-    const totalOvertimeHours = aggregateData._sum.overtime || 0;
-    const totalHours = totalRegularHours + totalOvertimeHours;
-    const entryCount = aggregateData._count.id;
+    const totalRegularHours = TOTALREGULARHOURS || 0;
+    const totalOvertimeHours = TOTALOVERTIMEHOURS || 0;
+    const totalHours = TOTALHOURS || 0;
+    const entryCount = ENTRYCOUNT;
 
     if (entryCount === 0) {
       return res.status(200).json({
@@ -1594,6 +1577,24 @@ export const approveSinglePayment = async (req: Request, res: Response) => {
   const { userId } = req.body;
 
   try {
+    const updatedWorkEntries = await prisma.$queryRaw`
+        UPDATE "WorkEntry"
+        SET 
+          status = 'APPROVED'::"WorkEntryStatus"
+        WHERE 
+          "paymentId" = ${paymentId}::text 
+        RETURNING id
+      `;
+    if ((updatedWorkEntries as any[]).length === 0) {
+      console.warn(
+        `No work entries found for payment ${paymentId} when marking as paid`,
+      );
+      return res.status(200).json({
+        success: false,
+        message: "No associated work entries were found to update",
+      });
+    }
+
     const result = await prisma.$queryRaw`
       UPDATE "Payment"
       SET 
@@ -1609,26 +1610,6 @@ export const approveSinglePayment = async (req: Request, res: Response) => {
       return res.status(404).json({
         success: false,
         message: "Payment not found or already approved",
-      });
-    }
-
-    const updatedWorkEntries = await prisma.$queryRaw`
-        UPDATE "WorkEntry"
-        SET 
-          status = 'APPROVED'::"WorkEntryStatus"
-        WHERE 
-          "paymentId" = ${paymentId}::text 
-        RETURNING id
-      `;
-
-    if ((updatedWorkEntries as any[]).length === 0) {
-      console.warn(
-        `No work entries found for payment ${paymentId} when marking as paid`,
-      );
-      return res.status(200).json({
-        success: false,
-        message:
-          "Payment marked as paid, but no associated work entries were found to update",
       });
     }
 
@@ -1660,6 +1641,24 @@ export const markSingleAsPaid = async (req: Request, res: Response) => {
   const { userId } = req.body;
 
   try {
+    const updatedWorkEntries = await prisma.$queryRaw`
+        UPDATE "WorkEntry"
+        SET 
+          status = 'PAID'::"WorkEntryStatus"
+        WHERE 
+          "paymentId" = ${paymentId}::text 
+        RETURNING id
+      `;
+    if ((updatedWorkEntries as any[]).length === 0) {
+      console.warn(
+        `No work entries found for payment ${paymentId} when marking as paid`,
+      );
+      return res.status(200).json({
+        success: false,
+        message: "No associated work entries were found to update",
+      });
+    }
+
     const result = await prisma.$queryRaw`
       UPDATE "Payment"
       SET 
@@ -1675,26 +1674,6 @@ export const markSingleAsPaid = async (req: Request, res: Response) => {
       return res.status(404).json({
         success: false,
         message: "Payment not found or already paid",
-      });
-    }
-
-    const updatedWorkEntries = await prisma.$queryRaw`
-        UPDATE "WorkEntry"
-        SET 
-          status = 'PAID'::"WorkEntryStatus"
-        WHERE 
-          "paymentId" = ${paymentId}::text 
-        RETURNING id
-      `;
-
-    if ((updatedWorkEntries as any[]).length === 0) {
-      console.warn(
-        `No work entries found for payment ${paymentId} when marking as paid`,
-      );
-      return res.status(200).json({
-        success: false,
-        message:
-          "Payment marked as paid, but no associated work entries were found to update",
       });
     }
 
