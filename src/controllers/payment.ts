@@ -2353,3 +2353,140 @@ export const getPaymentSummary = async (req: Request, res: Response) => {
     });
   }
 };
+
+// Updating a workentry statuses after before payment is done ' for purpose of reviewing and making things right before payment is done
+export const updateWorkEntriesStatus = async (req: Request, res: Response) => {
+  const { status } = req.params;
+  const { entryIds } = req.body;
+
+  // 1. Validate inputs
+  if (!entryIds || !Array.isArray(entryIds) || entryIds.length === 0) {
+    return res.status(400).json({
+      success: false,
+      message: "entryIds must be a non‑empty array",
+      data: null,
+    });
+  }
+
+  const statusMap = {
+    pending: "PENDING",
+    rejected: "REJECTED",
+    review: "REVIEW",
+    approve: "APPROVED",
+    "not paid": "NOT_PAID",
+  };
+
+  const newStatus = statusMap[status?.toLowerCase()];
+  if (!newStatus) {
+    return res.status(400).json({
+      success: false,
+      message: `Invalid status. Allowed: pending, rejected, review, approve, not paid`,
+      data: null,
+    });
+  }
+
+  try {
+    const result = await prisma.$transaction(async (tx) => {
+      // 2. Update work entries and get affected payment IDs
+      const updatedWorkEntriesRaw: { id: string; paymentId: string | null }[] =
+        await tx.$queryRaw`
+        UPDATE "WorkEntry"
+        SET status = ${newStatus}::"WorkEntryStatus"
+        WHERE id = ANY(${entryIds}::uuid[])
+        RETURNING id, "paymentId"
+      `;
+
+      if (!updatedWorkEntriesRaw.length) {
+        throw new Error("No work entries found for the given IDs");
+      }
+
+      const affectedPaymentIds = [
+        ...new Set(
+          updatedWorkEntriesRaw
+            .map((row) => row.paymentId)
+            .filter((id) => id !== null),
+        ),
+      ];
+
+      // 3. Recalculate each affected payment
+      const updatedPayments = [];
+      for (const paymentId of affectedPaymentIds) {
+        const agg = await tx.$queryRaw`
+          SELECT 
+            COALESCE(SUM(hours), 0) as totalHours,
+            COALESCE(SUM(overtime), 0) as totalOvertime
+          FROM "WorkEntry"
+          WHERE "paymentId" = ${paymentId}::uuid
+        `;
+
+        const { totalhours, totalovertime } = agg[0];
+        const totalHours = parseFloat(totalhours);
+        const totalOvertime = parseFloat(totalovertime);
+
+        // 3b. Get site settings (latest hourly rates)
+        const settings = await tx.$queryRaw`
+          SELECT s."baseHourlyRate", s."overtimeRate"
+          FROM "Payment" p
+          JOIN "Site" si ON p."siteId" = si.id
+          JOIN "Settings" s ON s."siteId" = si.id
+          WHERE p.id = ${paymentId}::uuid
+          ORDER BY s."createdAt" DESC
+          LIMIT 1
+        `;
+
+        if (!settings.length) {
+          // If no settings exist, fallback to default rates (0)
+          console.warn(
+            `No settings found for payment ${paymentId}, using 0 rates`,
+          );
+        }
+
+        const baseHourlyRate = settings[0]?.baseHourlyRate || 0;
+        const overtimeRate = settings[0]?.overtimeRate || 0;
+
+        const baseAmount = totalHours * baseHourlyRate;
+        const overtimePay = totalOvertime * overtimeRate;
+        const totalAmount = baseAmount + overtimePay;
+
+        // 3c. Update the payment record
+        const updatedPayment = await tx.$executeRaw`
+          UPDATE "Payment"
+          SET 
+            "totalHours" = ${totalHours},
+            overtime = ${totalOvertime},
+            "baseAmount" = ${baseAmount},
+            "overtimePay" = ${overtimePay},
+            "totalAmount" = ${totalAmount}
+          WHERE id = ${paymentId}::uuid
+        `;
+
+        updatedPayments.push({
+          paymentId,
+          totalHours,
+          totalOvertime,
+          baseAmount,
+          overtimePay,
+          totalAmount,
+        });
+      }
+
+      return {
+        updatedWorkEntries: updatedWorkEntriesRaw.map((row) => row.id),
+        updatedPayments,
+      };
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: `Successfully updated ${result.updatedWorkEntries.length} work entry(ies) status to ${status}.`,
+      data: result,
+    });
+  } catch (error) {
+    console.error("Error updating work entries status:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to update work entries",
+      data: null,
+    });
+  }
+};
