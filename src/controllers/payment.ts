@@ -2417,43 +2417,252 @@ export const updateWorkEntriesStatus = async (req: Request, res: Response) => {
 
       const updatedPayments = [];
 
-      for (const paymentId of affectedPaymentIds) {
-        const agg: {
-          totalhours: string;
-          totalovertime: string;
-        }[] = await tx.$queryRaw`
-          SELECT 
-            COALESCE(SUM(hours), 0) as totalHours,
-            COALESCE(SUM(overtime), 0) as totalOvertime
-          FROM "WorkEntry"
-          WHERE "paymentId" = ${paymentId}::text
-        `;
+      if (status === "PAID" || status === "NOT_PAID") {
+        for (const paymentId of affectedPaymentIds) {
+          // Getting status distribution + totals in ONE query
+          const paymentStats: {
+            totalentries: string;
+            pendingcount: string;
+            reviewcount: string;
+            approvedcount: string;
+            rejectedcount: string;
+            paidcount: string;
+            notpaidcount: string;
+            totalhours: string;
+            totalovertime: string;
+          }[] = await tx.$queryRaw`
+    SELECT
+      COUNT(*) as "totalentries",
 
-        const { totalhours, totalovertime } = agg[0];
+      COUNT(*) FILTER (
+        WHERE status = 'PENDING'::"WorkEntryStatus"
+      ) as "pendingcount",
 
-        const totalHours = parseFloat(totalhours);
-        const totalOvertime = parseFloat(totalovertime);
+      COUNT(*) FILTER (
+        WHERE status = 'REVIEW'::"WorkEntryStatus"
+      ) as "reviewcount",
 
-        const baseHourlyRate = verifiedWorker.data?.wageRatings || 0;
+      COUNT(*) FILTER (
+        WHERE status = 'APPROVED'::"WorkEntryStatus"
+      ) as "approvedcount",
 
-        const baseAmount = totalHours * baseHourlyRate;
-        const overtimePay = totalOvertime * baseHourlyRate;
-        const totalAmount = baseAmount + overtimePay;
+      COUNT(*) FILTER (
+        WHERE status = 'REJECTED'::"WorkEntryStatus"
+      ) as "rejectedcount",
 
-        await tx.$executeRaw`
-          UPDATE "Payment"
-          SET 
-            "totalHours" = ${totalHours},
-            overtime = ${totalOvertime},
-            "baseAmount" = ${baseAmount},
-            "overtimePay" = ${overtimePay},
-            "totalAmount" = ${totalAmount}
-          WHERE id = ${paymentId}::uuid
-        `;
+      COUNT(*) FILTER (
+        WHERE status = 'PAID'::"WorkEntryStatus"
+      ) as "paidcount",
 
-        updatedPayments.push({
-          paymentId,
-        });
+      COUNT(*) FILTER (
+        WHERE status = 'NOT_PAID'::"WorkEntryStatus"
+      ) as "notpaidcount",
+
+      COALESCE(SUM(hours), 0) as "totalhours",
+
+      COALESCE(SUM(overtime), 0) as "totalovertime"
+
+    FROM "WorkEntry"
+    WHERE "paymentId" = ${paymentId}::text
+  `;
+
+          const stats = paymentStats[0];
+
+          const totalEntries = Number(stats.totalentries);
+
+          const pendingCount = Number(stats.pendingcount);
+          const reviewCount = Number(stats.reviewcount);
+          const approvedCount = Number(stats.approvedcount);
+          const rejectedCount = Number(stats.rejectedcount);
+          const paidCount = Number(stats.paidcount);
+          const notPaidCount = Number(stats.notpaidcount);
+
+          const totalHours = Number(stats.totalhours);
+          const totalOvertime = Number(stats.totalovertime);
+
+          // CASE 1:
+          // if  ALL entries became NOT_PAID  DELETE payment
+          if (notPaidCount === totalEntries) {
+            await tx.payment.delete({
+              where: {
+                id: paymentId,
+              },
+            });
+
+            continue;
+          }
+
+          // Determing payment status ONLY if ALL entries match
+          let paymentStatus: PaymentStatus | null = null;
+
+          if (pendingCount === totalEntries) {
+            paymentStatus = "PENDING";
+          } else if (reviewCount === totalEntries) {
+            paymentStatus = "REVIEW";
+          } else if (approvedCount === totalEntries) {
+            paymentStatus = "APPROVED";
+          } else if (rejectedCount === totalEntries) {
+            paymentStatus = "REJECTED";
+          } else if (paidCount === totalEntries) {
+            paymentStatus = "PAID";
+          }
+
+          const baseHourlyRate = verifiedWorker.data?.wageRatings || 0;
+
+          const baseAmount = totalHours * baseHourlyRate;
+
+          const overtimePay = totalOvertime * baseHourlyRate;
+
+          const totalAmount = baseAmount + overtimePay;
+
+          // Updating payment
+          await tx.payment.update({
+            where: {
+              id: paymentId,
+            },
+            data: {
+              totalHours,
+              overtime: totalOvertime,
+              baseAmount,
+              overtimePay,
+              totalAmount,
+
+              ...(paymentStatus && {
+                status: paymentStatus,
+              }),
+
+              ...(paymentStatus === "PAID" && {
+                paidAt: new Date(),
+              }),
+
+              ...(paymentStatus === "APPROVED" && {
+                approvedAt: new Date(),
+              }),
+            },
+          });
+
+          updatedPayments.push({
+            paymentId,
+            paymentStatus,
+          });
+        }
+      } else {
+        affectedPaymentIds.map((paymentId) => updatedPayments.push(paymentId));
+        for (const paymentId of affectedPaymentIds) {
+          // Getting status distribution + totals in ONE query
+
+          const paymentStats: {
+            totalentries: string;
+            pendingcount: string;
+            reviewcount: string;
+            approvedcount: string;
+            rejectedcount: string;
+            paidcount: string;
+            notpaidcount: string;
+            totalhours: string;
+            totalovertime: string;
+          }[] = await tx.$queryRaw`
+            SELECT
+              COUNT(*) as "totalentries",
+
+              COUNT(*) FILTER (
+                WHERE status = 'PENDING'::"WorkEntryStatus"
+              ) as "pendingcount",
+
+              COUNT(*) FILTER (
+                WHERE status = 'REVIEW'::"WorkEntryStatus"
+              ) as "reviewcount",
+
+              COUNT(*) FILTER (
+                WHERE status = 'APPROVED'::"WorkEntryStatus"
+              ) as "approvedcount",
+
+              COUNT(*) FILTER (
+                WHERE status = 'REJECTED'::"WorkEntryStatus"
+              ) as "rejectedcount",
+
+              COUNT(*) FILTER (
+                WHERE status = 'PAID'::"WorkEntryStatus"
+              ) as "paidcount",
+
+              COUNT(*) FILTER (
+                WHERE status = 'NOT_PAID'::"WorkEntryStatus"
+              ) as "notpaidcount",
+
+              COALESCE(SUM(hours), 0) as "totalhours",
+
+              COALESCE(SUM(overtime), 0) as "totalovertime"
+
+            FROM "WorkEntry"
+            WHERE "paymentId" = ${paymentId}::text
+          `;
+
+          const stats = paymentStats[0];
+
+          const totalEntries = Number(stats.totalentries);
+
+          const pendingCount = Number(stats.pendingcount);
+          const reviewCount = Number(stats.reviewcount);
+          const approvedCount = Number(stats.approvedcount);
+          const rejectedCount = Number(stats.rejectedcount);
+          const paidCount = Number(stats.paidcount);
+          const notPaidCount = Number(stats.notpaidcount);
+
+          const totalHours = Number(stats.totalhours);
+          const totalOvertime = Number(stats.totalovertime);
+
+          // CASE 1: ALL entries became NOT_PAID DELETE payment
+          if (notPaidCount === totalEntries) {
+            await tx.payment.delete({
+              where: {
+                id: paymentId,
+              },
+            });
+
+            continue;
+          }
+
+          // Determining payment status ONLY if ALL entries match
+
+          let paymentStatus: PaymentStatus | null = null;
+
+          if (pendingCount === totalEntries) {
+            paymentStatus = "PENDING";
+          } else if (reviewCount === totalEntries) {
+            paymentStatus = "REVIEW";
+          } else if (approvedCount === totalEntries) {
+            paymentStatus = "APPROVED";
+          } else if (rejectedCount === totalEntries) {
+            paymentStatus = "REJECTED";
+          } else if (paidCount === totalEntries) {
+            paymentStatus = "PAID";
+          }
+
+          // Updating payment
+          await tx.payment.update({
+            where: {
+              id: paymentId,
+            },
+            data: {
+              ...(paymentStatus && {
+                status: paymentStatus,
+              }),
+
+              ...(paymentStatus === "PAID" && {
+                paidAt: new Date(),
+              }),
+
+              ...(paymentStatus === "APPROVED" && {
+                approvedAt: new Date(),
+              }),
+            },
+          });
+
+          updatedPayments.push({
+            paymentId,
+            paymentStatus,
+          });
+        }
       }
 
       return {

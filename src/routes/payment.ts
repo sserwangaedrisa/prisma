@@ -69,6 +69,14 @@ router.get(
   paymentController.getSiteBatches,
 );
 
+// update work enties statuses
+router.post(
+  `/updateWorkEntries/:status`,
+  verifyToken,
+  authorize(["FOREMAN", "OWNER"]),
+  paymentController.updateWorkEntriesStatus,
+);
+
 // ==================== SINGLE PAYMENT ACTIONS ====================
 
 // Approve a single payment
