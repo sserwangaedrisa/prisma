@@ -150,7 +150,7 @@ export const validateUser = async (
       case "DELETED":
         return {
           success: false,
-          message: "Account has been deleted.",
+          message: " Account has been deleted.",
         };
 
       case "ACTIVE":
