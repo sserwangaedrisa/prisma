@@ -245,7 +245,6 @@ export const getActiveSiteWorkers = asyncHandler(
         },
       });
 
-      // ✅ Arrays are never null, check length instead
       if (activeWorkersForSite.length === 0) {
         res.status(200).json({
           message: "No active workers found for this site",
@@ -260,6 +259,143 @@ export const getActiveSiteWorkers = asyncHandler(
         success: true,
         data: activeWorkersForSite,
         count: activeWorkersForSite.length,
+      });
+      return;
+    } catch (error) {
+      console.error("Error while getting site workers:", error);
+      res.status(500).json({
+        message: "Error while getting site workers",
+        success: false,
+      });
+      return;
+    }
+  },
+);
+
+// Get all site workers with pagenation and filtering
+export const getPaginatedSiteWorkers = asyncHandler(
+  async (req: Request, res: Response) => {
+    // Extract query parameters (frontend sends ?siteId=...&page=...&limit=...&search=...&sortBy=...&order=...)
+    const {
+      siteId,
+      page = "1",
+      limit = "20",
+      search = "",
+      sortBy = "name",
+      order = "asc",
+    } = req.query;
+
+    if (!siteId) {
+      res.status(400).json({
+        message: "Site ID is required",
+        success: false,
+      });
+      return;
+    }
+
+    const pageNum = parseInt(page as string, 10);
+    const limitNum = parseInt(limit as string, 10);
+    const skip = (pageNum - 1) * limitNum;
+
+    // Building search filter if search term provided
+    const searchFilter = search
+      ? {
+          OR: [
+            {
+              worker: {
+                is: {
+                  name: {
+                    contains: search as string,
+                    mode: "insensitive",
+                  },
+                },
+              },
+            },
+            {
+              worker: {
+                is: {
+                  email: {
+                    contains: search as string,
+                    mode: "insensitive",
+                  },
+                },
+              },
+            },
+            {
+              worker: {
+                is: {
+                  phone: {
+                    contains: search as string,
+                    mode: "insensitive",
+                  },
+                },
+              },
+            },
+          ],
+        }
+      : {};
+    try {
+      const total = await prisma.siteWorker.count({
+        where: {
+          siteId: siteId as string,
+          worker: {
+            isActive: true,
+          },
+          ...searchFilter,
+        },
+      });
+
+      const orderDirection = order === "desc" ? "desc" : "asc";
+      let orderBy: any = {};
+
+      if (sortBy === "name") {
+        orderBy = { worker: { name: orderDirection } };
+      } else if (sortBy === "email") {
+        orderBy = { worker: { email: orderDirection } };
+      } else if (sortBy === "assignedAt") {
+        orderBy = { assignedAt: orderDirection };
+      } else {
+        orderBy = { worker: { name: "asc" } };
+      }
+
+      const siteWorkers = await prisma.siteWorker.findMany({
+        where: {
+          siteId: siteId as string,
+          worker: {
+            isActive: true,
+          },
+          ...searchFilter,
+        },
+        select: {
+          assignedAt: true,
+          worker: {
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              phone: true,
+              role: true,
+              job: true,
+              wageRating: true,
+              imageUrl: true,
+              status: true,
+            },
+          },
+        },
+        orderBy,
+        skip,
+        take: limitNum,
+      });
+
+      res.status(200).json({
+        message: "Workers retrieved successfully",
+        success: true,
+        data: {
+          workers: siteWorkers,
+          total,
+          page: pageNum,
+          limit: limitNum,
+        },
       });
       return;
     } catch (error) {

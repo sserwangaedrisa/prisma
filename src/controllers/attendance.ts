@@ -677,113 +677,113 @@ export const bulkCreateWorkEntries = async (
   res: Response,
 ): Promise<Response> => {
   try {
-    const { entries } = req.body as BulkCreateBody;
+    const { workersIds, siteId, hours, overtime, notes, date } = req.body;
     const userId = req.user?.id;
 
     if (!userId) {
       return res.status(401).json({
         success: false,
-        message: "Unauthorized",
+        message: "Unauthorized login again to continue",
       });
     }
 
-    if (!Array.isArray(entries) || entries.length === 0) {
+    // Validating required fields
+    if (!Array.isArray(workersIds) || workersIds.length === 0) {
       return res.status(400).json({
         success: false,
-        message: "Entries array is required and cannot be empty",
+        message: "workersIds array is required and cannot be empty",
+      });
+    }
+    if (!siteId || typeof siteId !== "string") {
+      return res.status(400).json({
+        success: false,
+        message: "siteId is required",
+      });
+    }
+    if (hours === undefined || isNaN(parseFloat(hours))) {
+      return res.status(400).json({
+        success: false,
+        message: "valid hours number is required",
+      });
+    }
+    if (overtime === undefined || isNaN(parseFloat(overtime))) {
+      return res.status(400).json({
+        success: false,
+        message: "valid overtime number is required",
       });
     }
 
-    const createdEntries = [];
-    const errors: Array<{ workerId?: string; message: string; entry?: any }> =
-      [];
+    const entryDate = date ? new Date(date) : new Date();
+    const startOfDay = new Date(entryDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(entryDate);
+    endOfDay.setHours(23, 59, 59, 999);
 
-    // Process each entry
-    for (const entry of entries) {
-      try {
-        const { workerId, siteId, hours, overtime, date, notes } = entry;
+    const hoursNum = parseFloat(hours);
+    const overtimeNum = parseFloat(overtime);
 
-        // Validate worker is assigned to site
-        const siteWorker = await prisma.siteWorker.findFirst({
-          where: {
-            siteId,
-            workerId,
-          },
+    // Transaction:To create or update all entries atomically
+    await prisma.$transaction(async (tx) => {
+      for (const workerId of workersIds) {
+        // 1. Verifying worker is assigned to the site
+        const siteWorker = await tx.siteWorker.findFirst({
+          where: { siteId, workerId },
         });
-
         if (!siteWorker) {
-          errors.push({
-            workerId,
-            message: "Worker not assigned to this site",
-          });
-          continue;
+          throw new Error(
+            `Worker ${workerId} is not assigned to site ${siteId}`,
+          );
         }
 
-        // Check for duplicate
-        const entryDate = date ? new Date(date) : new Date();
-        const startOfDay = new Date(entryDate);
-        startOfDay.setHours(0, 0, 0, 0);
-
-        const endOfDay = new Date(entryDate);
-        endOfDay.setHours(23, 59, 59, 999);
-
-        const existingEntry = await prisma.workEntry.findFirst({
+        // 2. Check for existing entry on the same day
+        const existingEntry = await tx.workEntry.findFirst({
           where: {
             workerId,
             siteId,
-            date: {
-              gte: startOfDay,
-              lte: endOfDay,
-            },
+            date: { gte: startOfDay, lte: endOfDay },
           },
         });
 
         if (existingEntry) {
-          errors.push({
-            workerId,
-            message: "Entry already exists for this day",
+          // Updating existing entry
+          await tx.workEntry.update({
+            where: { id: existingEntry.id },
+            data: {
+              hours: hoursNum,
+              overtime: overtimeNum,
+              notes,
+            },
           });
-          continue;
+        } else {
+          // Creating new entry
+          await tx.workEntry.create({
+            data: {
+              workerId,
+              siteId,
+              date: entryDate,
+              hours: hoursNum,
+              overtime: overtimeNum,
+              notes,
+            },
+          });
         }
-
-        // Create entry
-        const workEntry = await prisma.workEntry.create({
-          data: {
-            workerId,
-            siteId,
-            date: entryDate,
-            hours: parseFloat(hours as string),
-            overtime: overtime ? parseFloat(overtime as string) : 0,
-            notes,
-          },
-        });
-
-        createdEntries.push(workEntry);
-      } catch (error) {
-        errors.push({
-          entry,
-          message: error instanceof Error ? error.message : "Unknown error",
-        });
       }
-    }
 
-    // Log activity
-    if (createdEntries.length > 0) {
-      await prisma.activityLog.create({
+      // 3. Log activity once for the whole bulk operation
+      await tx.activityLog.create({
         data: {
           userId,
           action: "BULK_CREATE",
           entity: "WORK_ENTRY",
-          entityId: "bulk",
+          entityId: userId,
         },
       });
-    }
+    });
 
     return res.status(201).json({
       success: true,
-      message: `Created ${createdEntries.length} entries with ${errors.length} errors`,
-      data: createdEntries,
-      errors: errors.length > 0 ? errors : undefined,
+      message: `Successfully created/updated ${workersIds.length} work entries`,
+      count: workersIds.length,
     });
   } catch (error) {
     console.error("Error bulk creating work entries:", error);
