@@ -13,11 +13,23 @@ router.post(
   attendanceController.recordAttendance,
 );
 router.post("/todayAttendace", attendanceController.todayAttendace);
+// Bulk create work entries for a site on a specific date
+router.post(
+  "/bulk",
+  verifyToken,
+  authorize(["FOREMAN", "OWNER"]),
+  attendanceController.bulkCreateWorkEntries,
+);
 
-router.post("/bulk", attendanceController.bulkCreateWorkEntries);
+// Delete a work entry (or multiple entries for a worker on a specific date)
+router.post(
+  "/deleteBulk",
+  verifyToken,
+  authorize(["FOREMAN", "OWNER"]),
+  attendanceController.bulkDeleteWorkEntries,
+);
 
 // CRUD operations
-// router.put("/:id", attendanceController.updateWorkEntry);
 router.post(
   "/delete",
   verifyToken,

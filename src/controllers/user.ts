@@ -275,7 +275,6 @@ export const getActiveSiteWorkers = asyncHandler(
 // Get all site workers with pagenation and filtering
 export const getPaginatedSiteWorkers = asyncHandler(
   async (req: Request, res: Response) => {
-    // Extract query parameters (frontend sends ?siteId=...&page=...&limit=...&search=...&sortBy=...&order=...)
     const {
       siteId,
       page = "1",
@@ -283,6 +282,7 @@ export const getPaginatedSiteWorkers = asyncHandler(
       search = "",
       sortBy = "name",
       order = "asc",
+      date,
     } = req.query;
 
     if (!siteId) {
@@ -296,78 +296,87 @@ export const getPaginatedSiteWorkers = asyncHandler(
     const pageNum = parseInt(page as string, 10);
     const limitNum = parseInt(limit as string, 10);
     const skip = (pageNum - 1) * limitNum;
+    const orderDirection = order === "desc" ? "desc" : "asc";
 
-    // Building search filter if search term provided
-    const searchFilter = search
-      ? {
-          OR: [
-            {
-              worker: {
-                is: {
-                  name: {
-                    contains: search as string,
-                    mode: "insensitive",
-                  },
-                },
-              },
-            },
-            {
-              worker: {
-                is: {
-                  email: {
-                    contains: search as string,
-                    mode: "insensitive",
-                  },
-                },
-              },
-            },
-            {
-              worker: {
-                is: {
-                  phone: {
-                    contains: search as string,
-                    mode: "insensitive",
-                  },
-                },
-              },
-            },
-          ],
-        }
-      : {};
+    // Building sorting object
+    let orderBy: any = {};
+    if (sortBy === "name") {
+      orderBy = { worker: { name: orderDirection } };
+    } else if (sortBy === "email") {
+      orderBy = { worker: { email: orderDirection } };
+    } else if (sortBy === "assignedAt") {
+      orderBy = { assignedAt: orderDirection };
+    } else {
+      orderBy = { worker: { name: "asc" } };
+    }
+
+    const buildSearchFilter = (searchTerm: string) => {
+      if (!searchTerm) return {};
+      return {
+        OR: [
+          { worker: { name: { contains: searchTerm, mode: "insensitive" } } },
+          { worker: { email: { contains: searchTerm, mode: "insensitive" } } },
+          { worker: { phone: { contains: searchTerm, mode: "insensitive" } } },
+        ],
+      };
+    };
+
     try {
-      const total = await prisma.siteWorker.count({
-        where: {
-          siteId: siteId as string,
-          worker: {
-            isActive: true,
+      let workerIdsWithEntry: string[] | null = null;
+      if (date) {
+        const targetDate = new Date(date as string);
+        const startOfDay = new Date(targetDate);
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(targetDate);
+        endOfDay.setHours(23, 59, 59, 999);
+
+        const entries = await prisma.workEntry.findMany({
+          where: {
+            siteId: siteId as string,
+            date: { gte: startOfDay, lte: endOfDay },
           },
-          ...searchFilter,
-        },
-      });
+          select: { workerId: true },
+          distinct: ["workerId"],
+        });
+        workerIdsWithEntry = entries.map((e) => e.workerId);
 
-      const orderDirection = order === "desc" ? "desc" : "asc";
-      let orderBy: any = {};
-
-      if (sortBy === "name") {
-        orderBy = { worker: { name: orderDirection } };
-      } else if (sortBy === "email") {
-        orderBy = { worker: { email: orderDirection } };
-      } else if (sortBy === "assignedAt") {
-        orderBy = { assignedAt: orderDirection };
-      } else {
-        orderBy = { worker: { name: "asc" } };
+        if (workerIdsWithEntry.length === 0) {
+          res.status(200).json({
+            message: "Workers retrieved successfully",
+            success: true,
+            data: {
+              workers: [],
+              total: 0,
+              page: pageNum,
+              limit: limitNum,
+            },
+          });
+          return;
+        }
       }
 
+      //  Building the base where clause for SiteWorker
+      const baseWhere: any = {
+        siteId: siteId as string,
+        worker: { isActive: true },
+      };
+
+      // Adding date filter if provided
+      if (workerIdsWithEntry) {
+        baseWhere.workerId = { in: workerIdsWithEntry };
+      }
+
+      // Adding search filter
+      const searchFilter = buildSearchFilter(search as string);
+      Object.assign(baseWhere, searchFilter);
+
+      // Counting total matching workers
+      const total = await prisma.siteWorker.count({ where: baseWhere });
+
+      // Fetch paginated workers
       const siteWorkers = await prisma.siteWorker.findMany({
-        where: {
-          siteId: siteId as string,
-          worker: {
-            isActive: true,
-          },
-          ...searchFilter,
-        },
+        where: baseWhere,
         select: {
-          assignedAt: true,
           worker: {
             select: {
               id: true,
@@ -408,7 +417,6 @@ export const getPaginatedSiteWorkers = asyncHandler(
     }
   },
 );
-
 //
 export const getAllSiteWorkers = asyncHandler(
   async (req: Request, res: Response) => {

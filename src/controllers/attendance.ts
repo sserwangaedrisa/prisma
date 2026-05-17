@@ -678,6 +678,7 @@ export const bulkCreateWorkEntries = async (
 ): Promise<Response> => {
   try {
     const { workersIds, siteId, hours, overtime, notes, date } = req.body;
+
     const userId = req.user?.id;
 
     if (!userId) {
@@ -687,98 +688,121 @@ export const bulkCreateWorkEntries = async (
       });
     }
 
-    // Validating required fields
     if (!Array.isArray(workersIds) || workersIds.length === 0) {
       return res.status(400).json({
         success: false,
-        message: "workersIds array is required and cannot be empty",
-      });
-    }
-    if (!siteId || typeof siteId !== "string") {
-      return res.status(400).json({
-        success: false,
-        message: "siteId is required",
-      });
-    }
-    if (hours === undefined || isNaN(parseFloat(hours))) {
-      return res.status(400).json({
-        success: false,
-        message: "valid hours number is required",
-      });
-    }
-    if (overtime === undefined || isNaN(parseFloat(overtime))) {
-      return res.status(400).json({
-        success: false,
-        message: "valid overtime number is required",
+        message: "workersIds array is required",
       });
     }
 
+    const hoursNum = Number(hours);
+    const overtimeNum = Number(overtime);
+
     const entryDate = date ? new Date(date) : new Date();
+
     const startOfDay = new Date(entryDate);
     startOfDay.setHours(0, 0, 0, 0);
+
     const endOfDay = new Date(entryDate);
     endOfDay.setHours(23, 59, 59, 999);
 
-    const hoursNum = parseFloat(hours);
-    const overtimeNum = parseFloat(overtime);
+    // 1. Validate workers belong to site
+    const assignedWorkers = await prisma.siteWorker.findMany({
+      where: {
+        siteId,
+        workerId: {
+          in: workersIds,
+        },
+      },
+      select: {
+        workerId: true,
+      },
+    });
 
-    // Transaction:To create or update all entries atomically
-    await prisma.$transaction(async (tx) => {
-      for (const workerId of workersIds) {
-        // 1. Verifying worker is assigned to the site
-        const siteWorker = await tx.siteWorker.findFirst({
-          where: { siteId, workerId },
-        });
-        if (!siteWorker) {
-          throw new Error(
-            `Worker ${workerId} is not assigned to site ${siteId}`,
-          );
-        }
+    const assignedWorkerIds = assignedWorkers.map((w) => w.workerId);
 
-        // 2. Check for existing entry on the same day
-        const existingEntry = await tx.workEntry.findFirst({
-          where: {
-            workerId,
-            siteId,
-            date: { gte: startOfDay, lte: endOfDay },
-          },
-        });
+    const invalidWorkers = workersIds.filter(
+      (id: string) => !assignedWorkerIds.includes(id),
+    );
 
-        if (existingEntry) {
-          // Updating existing entry
-          await tx.workEntry.update({
-            where: { id: existingEntry.id },
+    if (invalidWorkers.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `Some workers are not assigned to this site`,
+        invalidWorkers,
+      });
+    }
+
+    // 2. Fetch existing entries once
+    const existingEntries = await prisma.workEntry.findMany({
+      where: {
+        workerId: {
+          in: workersIds,
+        },
+        siteId,
+        date: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+      },
+    });
+
+    const existingMap = new Map(
+      existingEntries.map((entry) => [entry.workerId, entry]),
+    );
+
+    const entriesToCreate = [];
+    const updatePromises = [];
+
+    for (const workerId of workersIds) {
+      const existing = existingMap.get(workerId);
+
+      if (existing) {
+        updatePromises.push(
+          prisma.workEntry.update({
+            where: {
+              id: existing.id,
+            },
             data: {
               hours: hoursNum,
               overtime: overtimeNum,
               notes,
             },
-          });
-        } else {
-          // Creating new entry
-          await tx.workEntry.create({
-            data: {
-              workerId,
-              siteId,
-              date: entryDate,
-              hours: hoursNum,
-              overtime: overtimeNum,
-              notes,
-            },
-          });
-        }
+          }),
+        );
+      } else {
+        entriesToCreate.push({
+          workerId,
+          siteId,
+          date: entryDate,
+          hours: hoursNum,
+          overtime: overtimeNum,
+          notes,
+        });
       }
+    }
 
-      // 3. Log activity once for the whole bulk operation
-      await tx.activityLog.create({
+    // 3. Execute operations
+    await prisma.$transaction([
+      ...(entriesToCreate.length > 0
+        ? [
+            prisma.workEntry.createMany({
+              data: entriesToCreate,
+            }),
+          ]
+        : []),
+
+      ...updatePromises,
+
+      prisma.activityLog.create({
         data: {
           userId,
           action: "BULK_CREATE",
           entity: "WORK_ENTRY",
           entityId: userId,
         },
-      });
-    });
+      }),
+    ]);
 
     return res.status(201).json({
       success: true,
@@ -787,9 +811,124 @@ export const bulkCreateWorkEntries = async (
     });
   } catch (error) {
     console.error("Error bulk creating work entries:", error);
+
     return res.status(500).json({
       success: false,
       message: "Failed to create work entries",
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+};
+
+// Bulk delete work entries (for multiple workers)
+export const bulkDeleteWorkEntries = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<Response> => {
+  try {
+    const { workersIds, siteId, date } = req.body;
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(200).json({
+        success: false,
+        message: "Unauthorized – login again to continue",
+      });
+    }
+
+    if (!Array.isArray(workersIds) || workersIds.length === 0) {
+      return res.status(200).json({
+        success: false,
+        message: "workersIds array is required",
+      });
+    }
+
+    if (!siteId) {
+      return res.status(200).json({
+        success: false,
+        message: "siteId is required",
+      });
+    }
+
+    // Parsing the target date (default to today if not provided)
+    const targetDate = date ? new Date(date) : new Date();
+    const startOfDay = new Date(targetDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(targetDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // 1. Validating that all given workers are actually assigned to the site
+    const assignedWorkers = await prisma.siteWorker.findMany({
+      where: {
+        siteId,
+        workerId: { in: workersIds },
+      },
+      select: { workerId: true },
+    });
+
+    const assignedWorkerIds = assignedWorkers.map((w) => w.workerId);
+    const invalidWorkers = workersIds.filter(
+      (id: string) => !assignedWorkerIds.includes(id),
+    );
+
+    if (invalidWorkers.length > 0) {
+      return res.status(200).json({
+        success: false,
+        message: "Some workers are not assigned to this site",
+        invalidWorkers,
+      });
+    }
+
+    // 2. Finding existing work entries for the selected workers on the given date
+    const existingEntries = await prisma.workEntry.findMany({
+      where: {
+        workerId: { in: workersIds },
+        siteId,
+        date: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+      },
+      select: { id: true, workerId: true },
+    });
+
+    if (existingEntries.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No work entries found for the selected workers on this date",
+      });
+    }
+
+    const entryIds = existingEntries.map((entry) => entry.id);
+    const deletedWorkerIds = existingEntries.map((entry) => entry.workerId);
+
+    // 3. Deleting the entries and log the action in a transaction
+    await prisma.$transaction([
+      prisma.workEntry.deleteMany({
+        where: {
+          id: { in: entryIds },
+        },
+      }),
+      prisma.activityLog.create({
+        data: {
+          userId,
+          action: "BULK_DELETE",
+          entity: "WORK_ENTRY",
+        },
+      }),
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      message: `Successfully deleted ${entryIds.length} work entries`,
+      count: entryIds.length,
+      deletedWorkerIds,
+    });
+  } catch (error) {
+    console.error("Error bulk deleting work entries:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to delete work entries",
       error: error instanceof Error ? error.message : "Unknown error",
     });
   }

@@ -1,6 +1,7 @@
 import e, { type Request, type Response } from "express";
 import prisma from "../../prisma/config.js";
 import { suspendUser } from "./user.js";
+export { getPaginatedSiteWorkers } from "./user.js";
 
 export const getSiteDetails = async (req: Request, res: Response) => {
   const { foremanId, siteId } = req.body;
