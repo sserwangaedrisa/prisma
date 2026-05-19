@@ -21,6 +21,7 @@ import settingsRoute from "./routes/settings";
 import userRoute from "./routes/user.js";
 import workerRoute from "./routes/worker";
 import attendanceRoute from "./routes/attendance";
+import reportRoute from "./routes/report";
 import paymentRoute from "./routes/payment";
 import siteRoute from "./routes/site";
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
@@ -83,6 +84,7 @@ app.use(
 
 app.use("/users", userRoute);
 app.use("/worker", workerRoute);
+app.use("/report", reportRoute);
 app.use("/attendance", attendanceRoute);
 app.use("/settings", settingsRoute);
 app.use("/payments", paymentRoute);

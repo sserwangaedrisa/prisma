@@ -15,4 +15,8 @@ router.post("/siteDetails", workerControllers.getSiteDetails);
 //gettin paginated workers
 router.post("/search", workerControllers.getPaginatedSiteWorkers);
 
+//getting workers present today
+router.post("/search/today", workerControllers.getPaginatedSiteWorkers);
+
+
 export default router;

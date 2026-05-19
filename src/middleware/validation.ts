@@ -105,6 +105,13 @@ export const validateUser = async (
       };
     }
 
+    if (typeof userId !== "string") {
+      return {
+        success: false,
+        message: "Invalid user ID",
+      };
+    }
+
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {

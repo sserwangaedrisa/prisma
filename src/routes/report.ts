@@ -1,4 +1,7 @@
 import express from "express";
+import { authorize } from "../middleware/authorize";
+import verifyToken from "../middleware/auth";
+
 import {
   getSiteSummaries,
   getMonthlyComparison,
@@ -8,31 +11,30 @@ import {
   getSiteReport,
   getWorkersSummary,
 } from "../controllers/report";
-import { validateUser } from "../middleware/validation";
 
 const router = express.Router();
 
-router.use(validateUser);
+router.use(verifyToken);
 
 // Site summaries (overview)
-router.get("/summaries", getSiteSummaries);
+router.post("/summaries", getSiteSummaries);
 
 // Monthly comparison stats (last N months)
-router.get("/monthly-comparison", getMonthlyComparison);
+router.post("/monthly-comparison", getMonthlyComparison);
 
 // Detailed payment status report
-router.get("/payments", getPaymentStatusReport);
+router.post("/payments", getPaymentStatusReport);
 
 // Detailed work entry status report
-router.get("/work-entries", getWorkEntryStatusReport);
+router.post("/work-entries", getWorkEntryStatusReport);
 
 // Company-wide report (date range within a single month)
-router.get("/company", getCompanyReport);
+router.post("/company", getCompanyReport);
 
 // Site-specific report (date range within a single month)
-router.get("/site/:siteId", getSiteReport);
+router.post("/site/:siteId", getSiteReport);
 
 // Worker performance summary (date range within a single month)
-router.get("/workers-summary", getWorkersSummary);
+router.post("/workers-summary", getWorkersSummary);
 
 export default router;

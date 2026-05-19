@@ -36,7 +36,6 @@ router.post(
   authorize(["FOREMAN", "OWNER"]),
   attendanceController.deleteWorkEntry,
 );
-// router.put("/bulk", attendanceController.updateBulk)
 
 // Get entries
 router.get("/worker/:workerId", attendanceController.getWorkerWorkEntries);

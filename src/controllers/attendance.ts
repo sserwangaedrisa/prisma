@@ -832,7 +832,7 @@ export const bulkDeleteWorkEntries = async (
     if (!userId) {
       return res.status(200).json({
         success: false,
-        message: "Unauthorized – login again to continue",
+        message: "Unauthorized _ login again to continue",
       });
     }
 
