@@ -26,21 +26,25 @@ const validateDateRange = (startStr?: string, endStr?: string) => {
       throw new Error("Invalid date format. Use ISO date strings.");
     }
 
-    if (
-      startDate.getFullYear() !== endDate.getFullYear() ||
-      startDate.getMonth() !== endDate.getMonth()
-    ) {
-      throw new Error("Date range must be within a single month.");
-    }
-
+    // Remove single-month restriction - allow any date range
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    today.setHours(23, 59, 59, 999);
     if (endDate > today) {
       throw new Error("End date cannot be in the future.");
+    }
+    if (startDate > endDate) {
+      throw new Error("Start date must be before end date.");
     }
   }
 
   return { startDate, endDate };
+};
+
+// Pagination helper
+const getPagination = (page: number = 1, limit: number = 10) => {
+  const take = limit;
+  const skip = (page - 1) * limit;
+  return { take, skip };
 };
 
 // ----------------------------------------------------------------------
@@ -48,15 +52,39 @@ const validateDateRange = (startStr?: string, endStr?: string) => {
 // ----------------------------------------------------------------------
 export const getSiteSummaries = async (req: Request, res: Response) => {
   try {
+    const {
+      startDate: startStr,
+      endDate: endStr,
+      page = 1,
+      limit = 10,
+    } = req.query;
+
+    const { startDate, endDate } = validateDateRange(
+      startStr as string,
+      endStr as string,
+    );
+    const { take, skip } = getPagination(Number(page), Number(limit));
+
+    // Get total count for pagination
+    const totalSites = await prisma.site.count();
+
     const sites = await prisma.site.findMany({
+      skip,
+      take,
       include: {
         payments: {
+          where: {
+            createdAt: { gte: startDate, lte: endDate },
+          },
           select: {
             status: true,
             totalAmount: true,
           },
         },
         workEntries: {
+          where: {
+            date: { gte: startDate, lte: endDate },
+          },
           select: {
             status: true,
           },
@@ -65,13 +93,13 @@ export const getSiteSummaries = async (req: Request, res: Response) => {
     });
 
     const summaries = sites.map((site) => {
-      // Payment status counts based on actual enum: PENDING, APPROVED, REVIEW, REJECTED, PAID
       const paymentStatuses = {
         PENDING: 0,
         APPROVED: 0,
         REVIEW: 0,
         REJECTED: 0,
         PAID: 0,
+        NOT_PAID: 0,
       };
       let totalAmount = 0;
 
@@ -81,7 +109,6 @@ export const getSiteSummaries = async (req: Request, res: Response) => {
         totalAmount += payment.totalAmount || 0;
       });
 
-      // WorkEntry statuses: NOT_PAID, PENDING, PAID, APPROVED, REVIEW, REJECTED
       const workEntryStatuses = {
         NOT_PAID: 0,
         PENDING: 0,
@@ -106,7 +133,16 @@ export const getSiteSummaries = async (req: Request, res: Response) => {
       };
     });
 
-    res.status(200).json({ success: true, data: summaries });
+    res.status(200).json({
+      success: true,
+      data: summaries,
+      pagination: {
+        currentPage: Number(page),
+        itemsPerPage: Number(limit),
+        totalItems: totalSites,
+        totalPages: Math.ceil(totalSites / Number(limit)),
+      },
+    });
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -129,7 +165,6 @@ export const getMonthlyComparison = async (req: Request, res: Response) => {
       1,
     );
 
-    // Payments use createdAt (as per schema)
     const paymentData = await prisma.payment.groupBy({
       by: ["createdAt", "status"],
       where: {
@@ -140,7 +175,6 @@ export const getMonthlyComparison = async (req: Request, res: Response) => {
       _count: true,
     });
 
-    // WorkEntries use date field (not createdAt)
     const workEntryData = await prisma.workEntry.groupBy({
       by: ["date", "status"],
       where: {
@@ -186,14 +220,37 @@ export const getMonthlyComparison = async (req: Request, res: Response) => {
 // ----------------------------------------------------------------------
 export const getPaymentStatusReport = async (req: Request, res: Response) => {
   try {
-    const { siteId } = req.query;
+    const {
+      siteId,
+      startDate: startStr,
+      endDate: endStr,
+      page = 1,
+      limit = 10,
+    } = req.query;
+
+    const { startDate, endDate } = validateDateRange(
+      startStr as string,
+      endStr as string,
+    );
+    const { take, skip } = getPagination(Number(page), Number(limit));
+
+    const whereCondition: any = {
+      ...(siteId && { siteId: String(siteId) }),
+      createdAt: { gte: startDate, lte: endDate },
+    };
+
+    // Get total count for pagination
+    const totalPayments = await prisma.payment.count({ where: whereCondition });
+
     const payments = await prisma.payment.findMany({
-      where: { ...(siteId && { siteId: String(siteId) }) },
+      where: whereCondition,
       include: {
         site: { select: { name: true, location: true } },
         worker: { select: { name: true, email: true } },
       },
       orderBy: { createdAt: "desc" },
+      skip,
+      take,
     });
 
     const groupedByStatus = payments.reduce(
@@ -216,7 +273,16 @@ export const getPaymentStatusReport = async (req: Request, res: Response) => {
       payments: items,
     }));
 
-    res.status(200).json({ success: true, data: report });
+    res.status(200).json({
+      success: true,
+      data: report,
+      pagination: {
+        currentPage: Number(page),
+        itemsPerPage: Number(limit),
+        totalItems: totalPayments,
+        totalPages: Math.ceil(totalPayments / Number(limit)),
+      },
+    });
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -231,14 +297,38 @@ export const getPaymentStatusReport = async (req: Request, res: Response) => {
 // ----------------------------------------------------------------------
 export const getWorkEntryStatusReport = async (req: Request, res: Response) => {
   try {
-    const { siteId } = req.query;
+    const {
+      siteId,
+      startDate: startStr,
+      endDate: endStr,
+      page = 1,
+      limit = 10,
+    } = req.query;
+
+    const { startDate, endDate } = validateDateRange(
+      startStr as string,
+      endStr as string,
+    );
+    const { take, skip } = getPagination(Number(page), Number(limit));
+
+    const whereCondition: any = {
+      ...(siteId && { siteId: String(siteId) }),
+      date: { gte: startDate, lte: endDate },
+    };
+
+    const totalWorkEntries = await prisma.workEntry.count({
+      where: whereCondition,
+    });
+
     const workEntries = await prisma.workEntry.findMany({
-      where: { ...(siteId && { siteId: String(siteId) }) },
+      where: whereCondition,
       include: {
         site: { select: { name: true, location: true } },
         worker: { select: { name: true, email: true } },
       },
       orderBy: { date: "desc" },
+      skip,
+      take,
     });
 
     const groupedByStatus = workEntries.reduce(
@@ -257,7 +347,16 @@ export const getWorkEntryStatusReport = async (req: Request, res: Response) => {
       workEntries: items,
     }));
 
-    res.status(200).json({ success: true, data: report });
+    res.status(200).json({
+      success: true,
+      data: report,
+      pagination: {
+        currentPage: Number(page),
+        itemsPerPage: Number(limit),
+        totalItems: totalWorkEntries,
+        totalPages: Math.ceil(totalWorkEntries / Number(limit)),
+      },
+    });
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -268,7 +367,7 @@ export const getWorkEntryStatusReport = async (req: Request, res: Response) => {
 };
 
 // ----------------------------------------------------------------------
-// 5. Company‑wide Report (date‑range, within single month)
+// 5. Company‑wide Report (date‑range)
 // ----------------------------------------------------------------------
 export const getCompanyReport = async (req: Request, res: Response) => {
   try {
@@ -328,10 +427,11 @@ export const getCompanyReport = async (req: Request, res: Response) => {
       }),
     );
 
-    const month = startDate.getMonth() + 1;
-    const year = startDate.getFullYear();
+    // Use createdAt for payment date range
     const payments = await prisma.payment.findMany({
-      where: { month, year },
+      where: {
+        createdAt: { gte: startDate, lte: endDate },
+      },
       select: { totalAmount: true, status: true },
     });
 
@@ -362,12 +462,17 @@ export const getCompanyReport = async (req: Request, res: Response) => {
 };
 
 // ----------------------------------------------------------------------
-// 6. Site‑specific Report (date‑range, within single month)
+// 6. Site‑specific Report (date‑range)
 // ----------------------------------------------------------------------
 export const getSiteReport = async (req: Request, res: Response) => {
   try {
     const { siteId } = req.params;
-    const { startDate: startStr, endDate: endStr } = req.query;
+    const {
+      startDate: startStr,
+      endDate: endStr,
+      page = 1,
+      limit = 10,
+    } = req.query;
 
     if (!siteId) {
       return res
@@ -431,7 +536,7 @@ export const getSiteReport = async (req: Request, res: Response) => {
       >,
     );
 
-    const formattedWorkerBreakdown = Object.entries(workerBreakdown).map(
+    let formattedWorkerBreakdown = Object.entries(workerBreakdown).map(
       ([id, data]) => ({
         workerId: id,
         workerName: data.workerName,
@@ -441,10 +546,20 @@ export const getSiteReport = async (req: Request, res: Response) => {
       }),
     );
 
-    const month = startDate.getMonth() + 1;
-    const year = startDate.getFullYear();
+    // Apply pagination to worker breakdown
+    const { take, skip } = getPagination(Number(page), Number(limit));
+    const totalWorkers = formattedWorkerBreakdown.length;
+    formattedWorkerBreakdown = formattedWorkerBreakdown.slice(
+      skip,
+      skip + take,
+    );
+
+    // Use createdAt for payment date range
     const payments = await prisma.payment.findMany({
-      where: { siteId, month, year },
+      where: {
+        siteId,
+        createdAt: { gte: startDate, lte: endDate },
+      },
       select: { totalAmount: true, status: true },
     });
 
@@ -467,6 +582,12 @@ export const getSiteReport = async (req: Request, res: Response) => {
         totalPendingAmount,
       },
       workerBreakdown: formattedWorkerBreakdown,
+      pagination: {
+        currentPage: Number(page),
+        itemsPerPage: Number(limit),
+        totalItems: totalWorkers,
+        totalPages: Math.ceil(totalWorkers / Number(limit)),
+      },
     });
   } catch (error: any) {
     console.error("Site report error:", error);
@@ -479,19 +600,25 @@ export const getSiteReport = async (req: Request, res: Response) => {
 // ----------------------------------------------------------------------
 export const getWorkersSummary = async (req: Request, res: Response) => {
   try {
-    const { siteId, startDate: startStr, endDate: endStr } = req.query;
+    const {
+      siteId,
+      startDate: startStr,
+      endDate: endStr,
+      page = 1,
+      limit = 10,
+    } = req.query;
+
     const { startDate, endDate } = validateDateRange(
       startStr as string,
       endStr as string,
     );
+    const { take, skip } = getPagination(Number(page), Number(limit));
 
-    // Base where clause for work entries
     const workWhere: any = {
       date: { gte: startDate, lte: endDate },
     };
     if (siteId) workWhere.siteId = String(siteId);
 
-    // Fetch all work entries in the period with worker and site info
     const workEntries = await prisma.workEntry.findMany({
       where: workWhere,
       include: {
@@ -566,15 +693,11 @@ export const getWorkersSummary = async (req: Request, res: Response) => {
       workerData.workEntriesCount += 1;
     }
 
-    // Get payment data for these workers within the same month/year
-    const month = startDate.getMonth() + 1;
-    const year = startDate.getFullYear();
-
+    // Get payment data using createdAt date range
     const payments = await prisma.payment.findMany({
       where: {
         ...(siteId && { siteId: String(siteId) }),
-        month,
-        year,
+        createdAt: { gte: startDate, lte: endDate },
         workerId: { in: Array.from(workerMap.keys()) },
       },
       select: {
@@ -588,21 +711,23 @@ export const getWorkersSummary = async (req: Request, res: Response) => {
     for (const payment of payments) {
       const workerData = workerMap.get(payment.workerId);
       if (workerData && payment.status in workerData.paymentSummary) {
-        // For simplicity we just count payments, but you could also sum amounts
         workerData.paymentSummary[
           payment.status as keyof typeof workerData.paymentSummary
         ] += 1;
       }
     }
 
-    // Convert map to array and format sitesWorked set to count
-    const workersSummary = Array.from(workerMap.values()).map((w) => ({
+    // Convert map to array
+    let workersSummary = Array.from(workerMap.values()).map((w) => ({
       ...w,
       sitesWorkedCount: w.sitesWorked.size,
-      sitesWorked: Array.from(w.sitesWorked), // optional: list of site IDs
+      sitesWorked: Array.from(w.sitesWorked),
     }));
 
-    // Optional totals across all workers
+    // Apply pagination
+    const totalWorkers = workersSummary.length;
+    workersSummary = workersSummary.slice(skip, skip + take);
+
     const overallTotals = {
       totalHours: workersSummary.reduce((sum, w) => sum + w.totalHours, 0),
       totalOvertime: workersSummary.reduce(
@@ -622,6 +747,12 @@ export const getWorkersSummary = async (req: Request, res: Response) => {
       filters: { siteId: siteId || null },
       overallTotals,
       workers: workersSummary,
+      pagination: {
+        currentPage: Number(page),
+        itemsPerPage: Number(limit),
+        totalItems: totalWorkers,
+        totalPages: Math.ceil(totalWorkers / Number(limit)),
+      },
     });
   } catch (error: any) {
     console.error("Workers summary error:", error);
