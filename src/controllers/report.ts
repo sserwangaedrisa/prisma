@@ -29,8 +29,8 @@ const validateDateRange = (startStr?: string, endStr?: string) => {
     // Remove single-month restriction - allow any date range
     const today = new Date();
     today.setHours(23, 59, 59, 999);
-    if (endDate > today) {
-      throw new Error("End date cannot be in the future.");
+    if (startDate > today) {
+      throw new Error("Date cannot be in the future.");
     }
     if (startDate > endDate) {
       throw new Error("Start date must be before end date.");
@@ -57,7 +57,7 @@ export const getSiteSummaries = async (req: Request, res: Response) => {
       endDate: endStr,
       page = 1,
       limit = 10,
-    } = req.query;
+    } = req.body;
 
     const { startDate, endDate } = validateDateRange(
       startStr as string,
@@ -371,7 +371,7 @@ export const getWorkEntryStatusReport = async (req: Request, res: Response) => {
 // ----------------------------------------------------------------------
 export const getCompanyReport = async (req: Request, res: Response) => {
   try {
-    const { startDate: startStr, endDate: endStr } = req.query;
+    const { startDate: startStr, endDate: endStr } = req.body;
     const { startDate, endDate } = validateDateRange(
       startStr as string,
       endStr as string,
@@ -430,14 +430,36 @@ export const getCompanyReport = async (req: Request, res: Response) => {
     // Use createdAt for payment date range
     const payments = await prisma.payment.findMany({
       where: {
-        createdAt: { gte: startDate, lte: endDate },
+        createdAt: {
+          gte: startDate,
+          lte: endDate,
+        },
       },
-      select: { totalAmount: true, status: true },
-    });
 
+      select: {
+        totalAmount: true,
+        status: true,
+
+        _count: {
+          select: {
+            workEntries: true,
+          },
+        },
+      },
+    });
     const totalPaidAmount = payments
       .filter((p) => p.status === "PAID")
       .reduce((sum, p) => sum + p.totalAmount, 0);
+    const totalApprovedAmount = payments
+      .filter((p) => p.status === "APPROVED")
+      .reduce((sum, p) => sum + p.totalAmount, 0);
+    const totalRejectedAmount = payments
+      .filter((p) => p.status === "REJECTED")
+      .reduce((sum, p) => sum + p.totalAmount, 0);
+    const totalReviewAmount = payments
+      .filter((p) => p.status === "REVIEW")
+      .reduce((sum, p) => sum + p.totalAmount, 0);
+
     const totalPendingAmount = payments
       .filter((p) => p.status === "PENDING")
       .reduce((sum, p) => sum + p.totalAmount, 0);
@@ -451,7 +473,10 @@ export const getCompanyReport = async (req: Request, res: Response) => {
         uniqueWorkers,
         uniqueSites,
         totalPaidAmount,
+        totalApprovedAmount,
+        totalRejectedAmount,
         totalPendingAmount,
+        totalReviewAmount,
       },
       siteBreakdown: formattedSiteBreakdown,
     });
@@ -472,7 +497,7 @@ export const getSiteReport = async (req: Request, res: Response) => {
       endDate: endStr,
       page = 1,
       limit = 10,
-    } = req.query;
+    } = req.body;
 
     if (!siteId) {
       return res
@@ -486,7 +511,7 @@ export const getSiteReport = async (req: Request, res: Response) => {
     );
 
     const site = await prisma.site.findUnique({
-      where: { id: siteId },
+      where: { id: siteId as string },
       select: { id: true, name: true, location: true },
     });
     if (!site) {
@@ -497,7 +522,7 @@ export const getSiteReport = async (req: Request, res: Response) => {
 
     const workEntries = await prisma.workEntry.findMany({
       where: {
-        siteId,
+        siteId: siteId as string,
         date: { gte: startDate, lte: endDate },
       },
       include: {
@@ -557,7 +582,7 @@ export const getSiteReport = async (req: Request, res: Response) => {
     // Use createdAt for payment date range
     const payments = await prisma.payment.findMany({
       where: {
-        siteId,
+        siteId: siteId as string,
         createdAt: { gte: startDate, lte: endDate },
       },
       select: { totalAmount: true, status: true },
@@ -566,6 +591,19 @@ export const getSiteReport = async (req: Request, res: Response) => {
     const totalPaidAmount = payments
       .filter((p) => p.status === "PAID")
       .reduce((sum, p) => sum + p.totalAmount, 0);
+
+    const totalApprovedAmount = payments
+      .filter((p) => p.status === "APPROVED")
+      .reduce((sum, p) => sum + p.totalAmount, 0);
+
+    const totalRejectedAmount = payments
+      .filter((p) => p.status === "REJECTED")
+      .reduce((sum, p) => sum + p.totalAmount, 0);
+
+    const totalReviewAmount = payments
+      .filter((p) => p.status === "REVIEW")
+      .reduce((sum, p) => sum + p.totalAmount, 0);
+
     const totalPendingAmount = payments
       .filter((p) => p.status === "PENDING")
       .reduce((sum, p) => sum + p.totalAmount, 0);
@@ -580,6 +618,9 @@ export const getSiteReport = async (req: Request, res: Response) => {
         uniqueWorkers,
         totalPaidAmount,
         totalPendingAmount,
+        totalApprovedAmount,
+        totalRejectedAmount,
+        totalReviewAmount,
       },
       workerBreakdown: formattedWorkerBreakdown,
       pagination: {
@@ -606,7 +647,7 @@ export const getWorkersSummary = async (req: Request, res: Response) => {
       endDate: endStr,
       page = 1,
       limit = 10,
-    } = req.query;
+    } = req.body;
 
     const { startDate, endDate } = validateDateRange(
       startStr as string,
