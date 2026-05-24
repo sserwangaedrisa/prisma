@@ -99,7 +99,6 @@ export const getSiteSummaries = async (req: Request, res: Response) => {
         REVIEW: 0,
         REJECTED: 0,
         PAID: 0,
-        NOT_PAID: 0,
       };
       let totalAmount = 0;
 
@@ -492,12 +491,7 @@ export const getCompanyReport = async (req: Request, res: Response) => {
 export const getSiteReport = async (req: Request, res: Response) => {
   try {
     const { siteId } = req.params;
-    const {
-      startDate: startStr,
-      endDate: endStr,
-      page = 1,
-      limit = 10,
-    } = req.body;
+    const { startDate: startStr, endDate: endStr } = req.body;
 
     if (!siteId) {
       return res
@@ -525,61 +519,12 @@ export const getSiteReport = async (req: Request, res: Response) => {
         siteId: siteId as string,
         date: { gte: startDate, lte: endDate },
       },
-      include: {
-        worker: { select: { id: true, name: true, email: true, role: true } },
-      },
     });
 
     const totalHours = workEntries.reduce((sum, e) => sum + e.hours, 0);
     const totalOvertime = workEntries.reduce((sum, e) => sum + e.overtime, 0);
     const uniqueWorkers = new Set(workEntries.map((e) => e.workerId)).size;
 
-    const workerBreakdown = workEntries.reduce(
-      (acc, entry) => {
-        const workerId = entry.workerId;
-        if (!acc[workerId]) {
-          acc[workerId] = {
-            workerName: entry.worker.name,
-            totalHours: 0,
-            totalOvertime: 0,
-            entriesCount: 0,
-          };
-        }
-        acc[workerId].totalHours += entry.hours;
-        acc[workerId].totalOvertime += entry.overtime;
-        acc[workerId].entriesCount += 1;
-        return acc;
-      },
-      {} as Record<
-        string,
-        {
-          workerName: string;
-          totalHours: number;
-          totalOvertime: number;
-          entriesCount: number;
-        }
-      >,
-    );
-
-    let formattedWorkerBreakdown = Object.entries(workerBreakdown).map(
-      ([id, data]) => ({
-        workerId: id,
-        workerName: data.workerName,
-        totalHours: data.totalHours,
-        totalOvertime: data.totalOvertime,
-        entriesCount: data.entriesCount,
-      }),
-    );
-
-    // Apply pagination to worker breakdown
-    const { take, skip } = getPagination(Number(page), Number(limit));
-    const totalWorkers = formattedWorkerBreakdown.length;
-    formattedWorkerBreakdown = formattedWorkerBreakdown.slice(
-      skip,
-      skip + take,
-    );
-
-    // Use createdAt for payment date range
     const payments = await prisma.payment.findMany({
       where: {
         siteId: siteId as string,
@@ -591,19 +536,15 @@ export const getSiteReport = async (req: Request, res: Response) => {
     const totalPaidAmount = payments
       .filter((p) => p.status === "PAID")
       .reduce((sum, p) => sum + p.totalAmount, 0);
-
     const totalApprovedAmount = payments
       .filter((p) => p.status === "APPROVED")
       .reduce((sum, p) => sum + p.totalAmount, 0);
-
     const totalRejectedAmount = payments
       .filter((p) => p.status === "REJECTED")
       .reduce((sum, p) => sum + p.totalAmount, 0);
-
     const totalReviewAmount = payments
       .filter((p) => p.status === "REVIEW")
       .reduce((sum, p) => sum + p.totalAmount, 0);
-
     const totalPendingAmount = payments
       .filter((p) => p.status === "PENDING")
       .reduce((sum, p) => sum + p.totalAmount, 0);
@@ -622,20 +563,12 @@ export const getSiteReport = async (req: Request, res: Response) => {
         totalRejectedAmount,
         totalReviewAmount,
       },
-      workerBreakdown: formattedWorkerBreakdown,
-      pagination: {
-        currentPage: Number(page),
-        itemsPerPage: Number(limit),
-        totalItems: totalWorkers,
-        totalPages: Math.ceil(totalWorkers / Number(limit)),
-      },
     });
   } catch (error: any) {
     console.error("Site report error:", error);
     res.status(400).json({ success: false, message: error.message });
   }
 };
-
 // ----------------------------------------------------------------------
 // 7. Workers Summary (hours, overtime, payment status per worker)
 // ----------------------------------------------------------------------
@@ -655,132 +588,202 @@ export const getWorkersSummary = async (req: Request, res: Response) => {
     );
     const { take, skip } = getPagination(Number(page), Number(limit));
 
-    const workWhere: any = {
-      date: { gte: startDate, lte: endDate },
-    };
-    if (siteId) workWhere.siteId = String(siteId);
+    // ---- Common base parameters (always present) ----
+    const baseParams: any[] = [startDate, endDate];
+    let siteCondition = "";
+    let paymentSiteCondition = "";
+    let siteParamIndex = 3; // next index after startDate ($1) and endDate ($2)
 
-    const workEntries = await prisma.workEntry.findMany({
-      where: workWhere,
-      include: {
-        worker: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            role: true,
-            phone: true,
-            wageRating: true,
-          },
-        },
-        site: {
-          select: { id: true, name: true },
-        },
-      },
-    });
+    if (siteId) {
+      siteCondition = `AND "siteId" = $${siteParamIndex}`;
+      paymentSiteCondition = `AND "siteId" = $${siteParamIndex}`;
+      baseParams.push(String(siteId));
+      siteParamIndex++;
+    }
 
-    // Group by worker
-    const workerMap = new Map<
-      string,
-      {
-        workerId: string;
-        workerName: string;
-        workerEmail: string;
-        workerRole: string;
-        workerPhone: string | null;
-        wageRating: number | null;
+    // 1. OVERALL TOTALS (no pagination, just aggregates)
+    const overallAgg = await prisma.$queryRawUnsafe<
+      Array<{
         totalHours: number;
         totalOvertime: number;
-        sitesWorked: Set<string>;
-        workEntriesCount: number;
-        paymentSummary: {
-          PAID: number;
-          PENDING: number;
-          APPROVED: number;
-          REVIEW: number;
-          REJECTED: number;
-        };
-      }
-    >();
+        totalWorkEntries: bigint;
+        totalWorkers: bigint;
+      }>
+    >(
+      `SELECT 
+        COALESCE(SUM("hours"), 0)::double precision as "totalHours",
+        COALESCE(SUM("overtime"), 0)::double precision as "totalOvertime",
+        COUNT("id") as "totalWorkEntries",
+        COUNT(DISTINCT "workerId") as "totalWorkers"
+      FROM "WorkEntry"
+      WHERE "date" >= $1 AND "date" <= $2 ${siteCondition}`,
+      ...baseParams,
+    );
 
-    for (const entry of workEntries) {
-      const workerId = entry.workerId;
-      if (!workerMap.has(workerId)) {
-        workerMap.set(workerId, {
-          workerId,
-          workerName: entry.worker.name,
-          workerEmail: entry.worker.email,
-          workerRole: entry.worker.role,
-          workerPhone: entry.worker.phone,
-          wageRating: entry.worker.wageRating,
-          totalHours: 0,
-          totalOvertime: 0,
-          sitesWorked: new Set(),
-          workEntriesCount: 0,
-          paymentSummary: {
-            PAID: 0,
-            PENDING: 0,
-            APPROVED: 0,
-            REVIEW: 0,
-            REJECTED: 0,
-          },
-        });
-      }
+    const overallTotals = {
+      totalHours: Number(overallAgg[0]?.totalHours ?? 0),
+      totalOvertime: Number(overallAgg[0]?.totalOvertime ?? 0),
+      totalWorkers: Number(overallAgg[0]?.totalWorkers ?? 0),
+      totalWorkEntries: Number(overallAgg[0]?.totalWorkEntries ?? 0),
+    };
 
-      const workerData = workerMap.get(workerId)!;
-      workerData.totalHours += entry.hours;
-      workerData.totalOvertime += entry.overtime;
-      workerData.sitesWorked.add(entry.siteId);
-      workerData.workEntriesCount += 1;
+    if (overallTotals.totalWorkers === 0) {
+      return res.json({
+        success: true,
+        dateRange: { startDate, endDate },
+        filters: { siteId: siteId || null },
+        overallTotals,
+        workers: [],
+        pagination: {
+          currentPage: Number(page),
+          itemsPerPage: Number(limit),
+          totalItems: 0,
+          totalPages: 0,
+        },
+      });
     }
 
-    // Get payment data using createdAt date range
-    const payments = await prisma.payment.findMany({
-      where: {
-        ...(siteId && { siteId: String(siteId) }),
-        createdAt: { gte: startDate, lte: endDate },
-        workerId: { in: Array.from(workerMap.keys()) },
-      },
+    // ==================================================
+    // 2. PAGINATED WORKER AGGREGATION (only workers for current page)
+    // ==================================================
+    // Parameters for work query: baseParams + take + skip
+    const workQueryParams = [...baseParams, take, skip];
+    const workAggregation = await prisma.$queryRawUnsafe<
+      Array<{
+        workerId: string;
+        totalHours: number;
+        totalOvertime: number;
+        workEntriesCount: bigint;
+        sitesWorkedCount: bigint;
+      }>
+    >(
+      `SELECT 
+        "workerId",
+        SUM("hours")::double precision as "totalHours",
+        SUM("overtime")::double precision as "totalOvertime",
+        COUNT("id") as "workEntriesCount",
+        COUNT(DISTINCT "siteId") as "sitesWorkedCount"
+      FROM "WorkEntry"
+      WHERE "date" >= $1 AND "date" <= $2 ${siteCondition}
+      GROUP BY "workerId"
+      ORDER BY "workerId"
+      LIMIT $${baseParams.length + 1} OFFSET $${baseParams.length + 2}`,
+      ...workQueryParams,
+    );
+
+    if (!workAggregation.length) {
+      return res.json({
+        success: true,
+        dateRange: { startDate, endDate },
+        filters: { siteId: siteId || null },
+        overallTotals,
+        workers: [],
+        pagination: {
+          currentPage: Number(page),
+          itemsPerPage: Number(limit),
+          totalItems: overallTotals.totalWorkers,
+          totalPages: Math.ceil(overallTotals.totalWorkers / Number(limit)),
+        },
+      });
+    }
+
+    const workerIds = workAggregation.map((w) => w.workerId);
+
+    // ==================================================
+    // 3. WORKER DETAILS (only for paginated workers)
+    // ==================================================
+    const workersDetails = await prisma.user.findMany({
+      where: { id: { in: workerIds } },
       select: {
-        workerId: true,
-        status: true,
-        totalAmount: true,
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        phone: true,
+        wageRating: true,
       },
     });
 
-    // Aggregate payment amounts per worker and status
-    for (const payment of payments) {
-      const workerData = workerMap.get(payment.workerId);
-      if (workerData && payment.status in workerData.paymentSummary) {
-        workerData.paymentSummary[
-          payment.status as keyof typeof workerData.paymentSummary
-        ] += 1;
+    const workerDetailsMap = new Map(workersDetails.map((w) => [w.id, w]));
+
+    // 4. PAYMENT AGGREGATION (only for paginated workers)
+    //    Includes both count and total amount per status
+    // Parameters for payment query: baseParams (date + optional site) + workerIds array
+    const paymentParams = [...baseParams, workerIds];
+    const workerIdsParamIndex = baseParams.length + 1;
+
+    const paymentAggregation = await prisma.$queryRawUnsafe<
+      Array<{
+        workerId: string;
+        status: string;
+        totalAmount: number;
+        count: bigint;
+      }>
+    >(
+      `SELECT 
+        "workerId",
+        "status",
+        SUM("totalAmount") as "totalAmount",
+        COUNT(*) as count
+      FROM "Payment"
+      WHERE "createdAt" >= $1 AND "createdAt" <= $2 ${paymentSiteCondition}
+        AND "workerId" = ANY($${workerIdsParamIndex}::text[])
+      GROUP BY "workerId", "status"`,
+      ...paymentParams,
+    );
+
+    // Build payment summary map: workerId -> { status: { count, amount } }
+    const paymentSummaryMap = new Map<
+      string,
+      Record<string, { count: number; amount: number }>
+    >();
+
+    for (const p of paymentAggregation) {
+      if (!paymentSummaryMap.has(p.workerId)) {
+        paymentSummaryMap.set(p.workerId, {
+          PAID: { count: 0, amount: 0 },
+          PENDING: { count: 0, amount: 0 },
+          APPROVED: { count: 0, amount: 0 },
+          REVIEW: { count: 0, amount: 0 },
+          REJECTED: { count: 0, amount: 0 },
+        });
+      }
+      const summary = paymentSummaryMap.get(p.workerId)!;
+      const status = p.status as keyof typeof summary;
+      if (status in summary) {
+        summary[status].count = Number(p.count);
+        summary[status].amount = Number(p.totalAmount);
       }
     }
 
-    // Convert map to array
-    let workersSummary = Array.from(workerMap.values()).map((w) => ({
-      ...w,
-      sitesWorkedCount: w.sitesWorked.size,
-      sitesWorked: Array.from(w.sitesWorked),
-    }));
-
-    // Apply pagination
-    const totalWorkers = workersSummary.length;
-    workersSummary = workersSummary.slice(skip, skip + take);
-
-    const overallTotals = {
-      totalHours: workersSummary.reduce((sum, w) => sum + w.totalHours, 0),
-      totalOvertime: workersSummary.reduce(
-        (sum, w) => sum + w.totalOvertime,
-        0,
-      ),
-      totalWorkers: workersSummary.length,
-      totalWorkEntries: workersSummary.reduce(
-        (sum, w) => sum + w.workEntriesCount,
-        0,
-      ),
-    };
+    // 5. BUILDING FINAL WORKERS ARRAY (paginated)
+    const workersSummary = workAggregation
+      .map((work) => {
+        const details = workerDetailsMap.get(work.workerId);
+        if (!details) return null;
+        const paymentSummary = paymentSummaryMap.get(work.workerId) || {
+          PAID: { count: 0, amount: 0 },
+          PENDING: { count: 0, amount: 0 },
+          APPROVED: { count: 0, amount: 0 },
+          REVIEW: { count: 0, amount: 0 },
+          REJECTED: { count: 0, amount: 0 },
+        };
+        return {
+          workerId: work.workerId,
+          workerName: details.name,
+          workerEmail: details.email,
+          workerRole: details.role,
+          workerPhone: details.phone,
+          wageRating: details.wageRating,
+          totalHours: Number(work.totalHours),
+          totalOvertime: Number(work.totalOvertime),
+          sitesWorkedCount: Number(work.sitesWorkedCount),
+          sitesWorked: [], // not fetched – requires separate query if needed
+          workEntriesCount: Number(work.workEntriesCount),
+          paymentSummary,
+        };
+      })
+      .filter(Boolean);
 
     res.json({
       success: true,
@@ -791,8 +794,8 @@ export const getWorkersSummary = async (req: Request, res: Response) => {
       pagination: {
         currentPage: Number(page),
         itemsPerPage: Number(limit),
-        totalItems: totalWorkers,
-        totalPages: Math.ceil(totalWorkers / Number(limit)),
+        totalItems: overallTotals.totalWorkers,
+        totalPages: Math.ceil(overallTotals.totalWorkers / Number(limit)),
       },
     });
   } catch (error: any) {
