@@ -368,6 +368,28 @@ export const getWorkEntryStatusReport = async (req: Request, res: Response) => {
 // ----------------------------------------------------------------------
 // 5. Company‑wide Report (date‑range)
 // ----------------------------------------------------------------------
+// Define interface for raw SQL aggregation result
+interface WorkEntryAggregateRow {
+  total_hours: number | string;
+  total_overtime: number | string;
+  unique_workers: number | string;
+  unique_sites: number | string;
+  site_id: string;
+  site_name: string;
+  site_hours: number | string;
+  site_overtime: number | string;
+  site_unique_workers: number | string;
+}
+type PaymentStatus = "PENDING" | "PAID" | "REVIEW" | "REJECTED" | "APPROVED";
+
+const toNumber = (
+  value: number | string | null | undefined | bigint,
+): number => {
+  if (value === null || value === undefined) return 0;
+  if (typeof value === "bigint") return Number(value);
+  if (typeof value === "string") return parseFloat(value);
+  return value;
+};
 export const getCompanyReport = async (req: Request, res: Response) => {
   try {
     const { startDate: startStr, endDate: endStr } = req.body;
@@ -376,106 +398,87 @@ export const getCompanyReport = async (req: Request, res: Response) => {
       endStr as string,
     );
 
-    const workEntries = await prisma.workEntry.findMany({
-      where: { date: { gte: startDate, lte: endDate } },
-      include: {
-        site: { select: { id: true, name: true } },
-        worker: { select: { id: true, name: true, email: true, role: true } },
-      },
-    });
+    // 1. Work entries aggregation – strongly typed raw query
+    const workAggResult: WorkEntryAggregateRow[] = await prisma.$queryRaw`
+      SELECT
+        COALESCE(SUM(we.hours), 0) AS total_hours,
+        COALESCE(SUM(we.overtime), 0) AS total_overtime,
+        COUNT(DISTINCT we."workerId") AS unique_workers,
+        COUNT(DISTINCT we."siteId") AS unique_sites,
+        we."siteId" AS site_id,
+        s.name AS site_name,
+        COALESCE(SUM(we.hours), 0) AS site_hours,
+        COALESCE(SUM(we.overtime), 0) AS site_overtime,
+        COUNT(DISTINCT we."workerId") AS site_unique_workers
+      FROM "WorkEntry" we
+      JOIN "Site" s ON we."siteId" = s.id
+      WHERE we.date BETWEEN ${startDate} AND ${endDate}
+      GROUP BY we."siteId", s.name
+    `;
 
-    const totalHours = workEntries.reduce((sum, e) => sum + e.hours, 0);
-    const totalOvertime = workEntries.reduce((sum, e) => sum + e.overtime, 0);
-    const uniqueWorkers = new Set(workEntries.map((e) => e.workerId)).size;
-    const uniqueSites = new Set(workEntries.map((e) => e.siteId)).size;
+    // Extract totals from first row (they are identical across all rows)
+    const firstRow = workAggResult[0];
+    const totalHours = firstRow ? toNumber(firstRow.total_hours) : 0;
+    const totalOvertime = firstRow ? toNumber(firstRow.total_overtime) : 0;
+    const uniqueWorkers = firstRow ? toNumber(firstRow.unique_workers) : 0;
+    const uniqueSites = firstRow ? toNumber(firstRow.unique_sites) : 0;
 
-    const siteBreakdown = workEntries.reduce(
-      (acc, entry) => {
-        const siteId = entry.siteId;
-        if (!acc[siteId]) {
-          acc[siteId] = {
-            siteName: entry.site.name,
-            totalHours: 0,
-            totalOvertime: 0,
-            workerCount: new Set<string>(),
-          };
-        }
-        acc[siteId].totalHours += entry.hours;
-        acc[siteId].totalOvertime += entry.overtime;
-        acc[siteId].workerCount.add(entry.workerId);
-        return acc;
-      },
-      {} as Record<
-        string,
-        {
-          siteName: string;
-          totalHours: number;
-          totalOvertime: number;
-          workerCount: Set<string>;
-        }
-      >,
-    );
+    // Build site breakdown with proper number conversion
+    const formattedSiteBreakdown = workAggResult.map((row) => ({
+      siteId: row.site_id,
+      siteName: row.site_name,
+      totalHours: toNumber(row.site_hours),
+      totalOvertime: toNumber(row.site_overtime),
+      uniqueWorkers: toNumber(row.site_unique_workers),
+    }));
 
-    const formattedSiteBreakdown = Object.entries(siteBreakdown).map(
-      ([id, data]) => ({
-        siteId: id,
-        siteName: data.siteName,
-        totalHours: data.totalHours,
-        totalOvertime: data.totalOvertime,
-        uniqueWorkers: data.workerCount.size,
-      }),
-    );
+    type PaymentStatus =
+      | "PENDING"
+      | "PAID"
+      | "REVIEW"
+      | "REJECTED"
+      | "APPROVED";
 
-    // Use createdAt for payment date range
-    const payments = await prisma.payment.findMany({
+    // 2. Payments aggregation including both count and sum
+    const paymentAgg = await prisma.payment.groupBy({
+      by: ["status"],
       where: {
-        createdAt: {
-          gte: startDate,
-          lte: endDate,
-        },
+        createdAt: { gte: startDate, lte: endDate },
       },
-
-      select: {
-        totalAmount: true,
-        status: true,
-
-        _count: {
-          select: {
-            workEntries: true,
-          },
-        },
-      },
+      _count: true,
+      _sum: { totalAmount: true },
     });
-    const totalPaidAmount = payments
-      .filter((p) => p.status === "PAID")
-      .reduce((sum, p) => sum + p.totalAmount, 0);
-    const totalApprovedAmount = payments
-      .filter((p) => p.status === "APPROVED")
-      .reduce((sum, p) => sum + p.totalAmount, 0);
-    const totalRejectedAmount = payments
-      .filter((p) => p.status === "REJECTED")
-      .reduce((sum, p) => sum + p.totalAmount, 0);
-    const totalReviewAmount = payments
-      .filter((p) => p.status === "REVIEW")
-      .reduce((sum, p) => sum + p.totalAmount, 0);
 
-    const totalPendingAmount = payments
-      .filter((p) => p.status === "PENDING")
-      .reduce((sum, p) => sum + p.totalAmount, 0);
+    const amountsByStatus: Record<
+      PaymentStatus,
+      { count: number; amount: number }
+    > = {
+      PENDING: { count: 0, amount: 0 },
+      APPROVED: { count: 0, amount: 0 },
+      REVIEW: { count: 0, amount: 0 },
+      REJECTED: { count: 0, amount: 0 },
+      PAID: { count: 0, amount: 0 },
+    };
 
+    for (const item of paymentAgg) {
+      amountsByStatus[item.status] = {
+        count: toNumber(item._count),
+        amount: toNumber(item._sum.totalAmount),
+      };
+    }
     res.json({
       success: true,
       dateRange: { startDate, endDate },
       summary: {
-        totalHours,
-        totalOvertime,
-        uniqueWorkers,
-        uniqueSites,
-        totalPaidAmount,
-        totalApprovedAmount,
-        totalRejectedAmount,
-        totalPendingAmount,
-        totalReviewAmount,
+        totalHours: toNumber(totalHours),
+        totalOvertime: toNumber(totalOvertime),
+        uniqueWorkers: toNumber(uniqueWorkers),
+        uniqueSites: toNumber(uniqueSites),
+        totalPaidAmount: amountsByStatus.PAID,
+        totalApprovedAmount: amountsByStatus.APPROVED,
+        totalRejectedAmount: amountsByStatus.REJECTED,
+        totalPendingAmount: amountsByStatus.PENDING,
+        totalReviewAmount: amountsByStatus.REVIEW,
       },
       siteBreakdown: formattedSiteBreakdown,
     });
@@ -488,6 +491,13 @@ export const getCompanyReport = async (req: Request, res: Response) => {
 // ----------------------------------------------------------------------
 // 6. Site‑specific Report (date‑range)
 // ----------------------------------------------------------------------
+// Add these type definitions at the top of your file (or import them)
+interface SiteWorkAggregateRow {
+  total_hours: number | string;
+  total_overtime: number | string;
+  unique_workers: number | string;
+}
+
 export const getSiteReport = async (req: Request, res: Response) => {
   try {
     const { siteId } = req.params;
@@ -504,50 +514,63 @@ export const getSiteReport = async (req: Request, res: Response) => {
       endStr as string,
     );
 
+    // Fetch site details
     const site = await prisma.site.findUnique({
       where: { id: siteId as string },
       select: { id: true, name: true, location: true },
     });
+
     if (!site) {
       return res
         .status(404)
         .json({ success: false, message: "Site not found" });
     }
 
-    const workEntries = await prisma.workEntry.findMany({
-      where: {
-        siteId: siteId as string,
-        date: { gte: startDate, lte: endDate },
-      },
-    });
+    // 1. Work entries aggregation for the specific site
+    const workAggResult: SiteWorkAggregateRow[] = await prisma.$queryRaw`
+      SELECT
+        COALESCE(SUM(we.hours), 0) AS total_hours,
+        COALESCE(SUM(we.overtime), 0) AS total_overtime,
+        COUNT(DISTINCT we."workerId") AS unique_workers
+      FROM "WorkEntry" we
+      WHERE we."siteId" = ${siteId}
+        AND we.date BETWEEN ${startDate} AND ${endDate}
+    `;
 
-    const totalHours = workEntries.reduce((sum, e) => sum + e.hours, 0);
-    const totalOvertime = workEntries.reduce((sum, e) => sum + e.overtime, 0);
-    const uniqueWorkers = new Set(workEntries.map((e) => e.workerId)).size;
+    const firstRow = workAggResult[0];
+    const totalHours = firstRow ? toNumber(firstRow.total_hours) : 0;
+    const totalOvertime = firstRow ? toNumber(firstRow.total_overtime) : 0;
+    const uniqueWorkers = firstRow ? toNumber(firstRow.unique_workers) : 0;
 
-    const payments = await prisma.payment.findMany({
+    // 2. Payments aggregation (count + sum by status)
+    const paymentAgg = await prisma.payment.groupBy({
+      by: ["status"],
       where: {
         siteId: siteId as string,
         createdAt: { gte: startDate, lte: endDate },
       },
-      select: { totalAmount: true, status: true },
+      _count: true,
+      _sum: { totalAmount: true },
     });
 
-    const totalPaidAmount = payments
-      .filter((p) => p.status === "PAID")
-      .reduce((sum, p) => sum + p.totalAmount, 0);
-    const totalApprovedAmount = payments
-      .filter((p) => p.status === "APPROVED")
-      .reduce((sum, p) => sum + p.totalAmount, 0);
-    const totalRejectedAmount = payments
-      .filter((p) => p.status === "REJECTED")
-      .reduce((sum, p) => sum + p.totalAmount, 0);
-    const totalReviewAmount = payments
-      .filter((p) => p.status === "REVIEW")
-      .reduce((sum, p) => sum + p.totalAmount, 0);
-    const totalPendingAmount = payments
-      .filter((p) => p.status === "PENDING")
-      .reduce((sum, p) => sum + p.totalAmount, 0);
+    // Build a record with both count and amount per status
+    const amountsByStatus: Record<
+      PaymentStatus,
+      { count: number; amount: number }
+    > = {
+      PENDING: { count: 0, amount: 0 },
+      APPROVED: { count: 0, amount: 0 },
+      REVIEW: { count: 0, amount: 0 },
+      REJECTED: { count: 0, amount: 0 },
+      PAID: { count: 0, amount: 0 },
+    };
+
+    for (const item of paymentAgg) {
+      amountsByStatus[item.status] = {
+        count: toNumber(item._count),
+        amount: toNumber(item._sum.totalAmount),
+      };
+    }
 
     res.json({
       success: true,
@@ -557,11 +580,13 @@ export const getSiteReport = async (req: Request, res: Response) => {
         totalHours,
         totalOvertime,
         uniqueWorkers,
-        totalPaidAmount,
-        totalPendingAmount,
-        totalApprovedAmount,
-        totalRejectedAmount,
-        totalReviewAmount,
+        paymentBreakdown: {
+          paid: amountsByStatus.PAID,
+          approved: amountsByStatus.APPROVED,
+          pending: amountsByStatus.PENDING,
+          rejected: amountsByStatus.REJECTED,
+          review: amountsByStatus.REVIEW,
+        },
       },
     });
   } catch (error: any) {
@@ -569,6 +594,7 @@ export const getSiteReport = async (req: Request, res: Response) => {
     res.status(400).json({ success: false, message: error.message });
   }
 };
+
 // ----------------------------------------------------------------------
 // 7. Workers Summary (hours, overtime, payment status per worker)
 // ----------------------------------------------------------------------
@@ -580,6 +606,7 @@ export const getWorkersSummary = async (req: Request, res: Response) => {
       endDate: endStr,
       page = 1,
       limit = 10,
+      search = "",
     } = req.body;
 
     const { startDate, endDate } = validateDateRange(
@@ -588,20 +615,33 @@ export const getWorkersSummary = async (req: Request, res: Response) => {
     );
     const { take, skip } = getPagination(Number(page), Number(limit));
 
-    // ---- Common base parameters (always present) ----
+    // ---- Base parameters: always startDate & endDate ----
     const baseParams: any[] = [startDate, endDate];
     let siteCondition = "";
     let paymentSiteCondition = "";
-    let siteParamIndex = 3; // next index after startDate ($1) and endDate ($2)
+    let paramIndex = 3; // next index after $1 and $2
 
+    // Site filter (optional)
     if (siteId) {
-      siteCondition = `AND "siteId" = $${siteParamIndex}`;
-      paymentSiteCondition = `AND "siteId" = $${siteParamIndex}`;
+      siteCondition = `AND "siteId" = $${paramIndex}`;
+      paymentSiteCondition = `AND "siteId" = $${paramIndex}`;
       baseParams.push(String(siteId));
-      siteParamIndex++;
+      paramIndex++;
     }
 
-    // 1. OVERALL TOTALS (no pagination, just aggregates)
+    // Search filter (optional) – matches worker name or email
+    let searchCondition = "";
+    if (search && search.trim() !== "") {
+      const searchPattern = `%${search}%`;
+      searchCondition = `AND "workerId" IN (
+        SELECT id FROM "User"
+        WHERE name ILIKE $${paramIndex} OR email ILIKE $${paramIndex}
+      )`;
+      baseParams.push(searchPattern);
+      paramIndex++;
+    }
+
+    // 1. OVERALL TOTALS (respects date, site, AND search)
     const overallAgg = await prisma.$queryRawUnsafe<
       Array<{
         totalHours: number;
@@ -616,7 +656,7 @@ export const getWorkersSummary = async (req: Request, res: Response) => {
         COUNT("id") as "totalWorkEntries",
         COUNT(DISTINCT "workerId") as "totalWorkers"
       FROM "WorkEntry"
-      WHERE "date" >= $1 AND "date" <= $2 ${siteCondition}`,
+      WHERE "date" >= $1 AND "date" <= $2 ${siteCondition} ${searchCondition}`,
       ...baseParams,
     );
 
@@ -627,11 +667,12 @@ export const getWorkersSummary = async (req: Request, res: Response) => {
       totalWorkEntries: Number(overallAgg[0]?.totalWorkEntries ?? 0),
     };
 
+    // Early exit if no workers match
     if (overallTotals.totalWorkers === 0) {
       return res.json({
         success: true,
         dateRange: { startDate, endDate },
-        filters: { siteId: siteId || null },
+        filters: { siteId: siteId || null, search: search || null },
         overallTotals,
         workers: [],
         pagination: {
@@ -643,10 +684,7 @@ export const getWorkersSummary = async (req: Request, res: Response) => {
       });
     }
 
-    // ==================================================
-    // 2. PAGINATED WORKER AGGREGATION (only workers for current page)
-    // ==================================================
-    // Parameters for work query: baseParams + take + skip
+    // 2. PAGINATED WORKER AGGREGATION (only workers for current page, respects search)
     const workQueryParams = [...baseParams, take, skip];
     const workAggregation = await prisma.$queryRawUnsafe<
       Array<{
@@ -664,7 +702,7 @@ export const getWorkersSummary = async (req: Request, res: Response) => {
         COUNT("id") as "workEntriesCount",
         COUNT(DISTINCT "siteId") as "sitesWorkedCount"
       FROM "WorkEntry"
-      WHERE "date" >= $1 AND "date" <= $2 ${siteCondition}
+      WHERE "date" >= $1 AND "date" <= $2 ${siteCondition} ${searchCondition}
       GROUP BY "workerId"
       ORDER BY "workerId"
       LIMIT $${baseParams.length + 1} OFFSET $${baseParams.length + 2}`,
@@ -675,7 +713,7 @@ export const getWorkersSummary = async (req: Request, res: Response) => {
       return res.json({
         success: true,
         dateRange: { startDate, endDate },
-        filters: { siteId: siteId || null },
+        filters: { siteId: siteId || null, search: search || null },
         overallTotals,
         workers: [],
         pagination: {
@@ -689,9 +727,7 @@ export const getWorkersSummary = async (req: Request, res: Response) => {
 
     const workerIds = workAggregation.map((w) => w.workerId);
 
-    // ==================================================
     // 3. WORKER DETAILS (only for paginated workers)
-    // ==================================================
     const workersDetails = await prisma.user.findMany({
       where: { id: { in: workerIds } },
       select: {
@@ -700,18 +736,20 @@ export const getWorkersSummary = async (req: Request, res: Response) => {
         email: true,
         role: true,
         phone: true,
+        imageUrl: true,
         wageRating: true,
       },
     });
 
     const workerDetailsMap = new Map(workersDetails.map((w) => [w.id, w]));
 
-    // 4. PAYMENT AGGREGATION (only for paginated workers)
-    //    Includes both count and total amount per status
-    // Parameters for payment query: baseParams (date + optional site) + workerIds array
-    const paymentParams = [...baseParams, workerIds];
-    const workerIdsParamIndex = baseParams.length + 1;
-
+    // 4. PAYMENT AGGREGATION (only for paginated workers – no extra search needed)
+    const paymentParams = [
+      ...baseParams.slice(0, 2),
+      ...(siteId ? [siteId] : []),
+      workerIds,
+    ];
+    const workerIdsParamIndex = baseParams.length - (search ? 1 : 0) + 1; // index of the workerIds array
     const paymentAggregation = await prisma.$queryRawUnsafe<
       Array<{
         workerId: string;
@@ -732,7 +770,7 @@ export const getWorkersSummary = async (req: Request, res: Response) => {
       ...paymentParams,
     );
 
-    // Build payment summary map: workerId -> { status: { count, amount } }
+    // Build payment summary map
     const paymentSummaryMap = new Map<
       string,
       Record<string, { count: number; amount: number }>
@@ -756,7 +794,7 @@ export const getWorkersSummary = async (req: Request, res: Response) => {
       }
     }
 
-    // 5. BUILDING FINAL WORKERS ARRAY (paginated)
+    // 5. BUILD FINAL WORKERS ARRAY (paginated)
     const workersSummary = workAggregation
       .map((work) => {
         const details = workerDetailsMap.get(work.workerId);
@@ -776,9 +814,10 @@ export const getWorkersSummary = async (req: Request, res: Response) => {
           workerPhone: details.phone,
           wageRating: details.wageRating,
           totalHours: Number(work.totalHours),
+          imageUrl: details.imageUrl,
           totalOvertime: Number(work.totalOvertime),
           sitesWorkedCount: Number(work.sitesWorkedCount),
-          sitesWorked: [], // not fetched – requires separate query if needed
+          sitesWorked: [],
           workEntriesCount: Number(work.workEntriesCount),
           paymentSummary,
         };
@@ -788,7 +827,7 @@ export const getWorkersSummary = async (req: Request, res: Response) => {
     res.json({
       success: true,
       dateRange: { startDate, endDate },
-      filters: { siteId: siteId || null },
+      filters: { siteId: siteId || null, search: search || null },
       overallTotals,
       workers: workersSummary,
       pagination: {
