@@ -709,6 +709,7 @@ export const loginUser = asyncHandler(
           id: true,
           name: true,
           email: true,
+          imageUrl: true,
           password: true,
           isActive: true,
           status: true,
