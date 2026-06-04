@@ -29,11 +29,13 @@ export type AggregateWorkEntry = {
 export type WorkEntryAvgAggregateOutputType = {
   hours: number | null
   overtime: number | null
+  amount: number | null
 }
 
 export type WorkEntrySumAggregateOutputType = {
   hours: number | null
   overtime: number | null
+  amount: number | null
 }
 
 export type WorkEntryMinAggregateOutputType = {
@@ -43,6 +45,7 @@ export type WorkEntryMinAggregateOutputType = {
   date: Date | null
   hours: number | null
   overtime: number | null
+  amount: number | null
   notes: string | null
   status: $Enums.WorkEntryStatus | null
   paymentId: string | null
@@ -56,6 +59,7 @@ export type WorkEntryMaxAggregateOutputType = {
   date: Date | null
   hours: number | null
   overtime: number | null
+  amount: number | null
   notes: string | null
   status: $Enums.WorkEntryStatus | null
   paymentId: string | null
@@ -69,6 +73,7 @@ export type WorkEntryCountAggregateOutputType = {
   date: number
   hours: number
   overtime: number
+  amount: number
   notes: number
   status: number
   paymentId: number
@@ -80,11 +85,13 @@ export type WorkEntryCountAggregateOutputType = {
 export type WorkEntryAvgAggregateInputType = {
   hours?: true
   overtime?: true
+  amount?: true
 }
 
 export type WorkEntrySumAggregateInputType = {
   hours?: true
   overtime?: true
+  amount?: true
 }
 
 export type WorkEntryMinAggregateInputType = {
@@ -94,6 +101,7 @@ export type WorkEntryMinAggregateInputType = {
   date?: true
   hours?: true
   overtime?: true
+  amount?: true
   notes?: true
   status?: true
   paymentId?: true
@@ -107,6 +115,7 @@ export type WorkEntryMaxAggregateInputType = {
   date?: true
   hours?: true
   overtime?: true
+  amount?: true
   notes?: true
   status?: true
   paymentId?: true
@@ -120,6 +129,7 @@ export type WorkEntryCountAggregateInputType = {
   date?: true
   hours?: true
   overtime?: true
+  amount?: true
   notes?: true
   status?: true
   paymentId?: true
@@ -220,6 +230,7 @@ export type WorkEntryGroupByOutputType = {
   date: Date
   hours: number
   overtime: number
+  amount: number
   notes: string | null
   status: $Enums.WorkEntryStatus
   paymentId: string | null
@@ -256,6 +267,7 @@ export type WorkEntryWhereInput = {
   date?: Prisma.DateTimeFilter<"WorkEntry"> | Date | string
   hours?: Prisma.FloatFilter<"WorkEntry"> | number
   overtime?: Prisma.FloatFilter<"WorkEntry"> | number
+  amount?: Prisma.FloatFilter<"WorkEntry"> | number
   notes?: Prisma.StringNullableFilter<"WorkEntry"> | string | null
   status?: Prisma.EnumWorkEntryStatusFilter<"WorkEntry"> | $Enums.WorkEntryStatus
   paymentId?: Prisma.StringNullableFilter<"WorkEntry"> | string | null
@@ -272,6 +284,7 @@ export type WorkEntryOrderByWithRelationInput = {
   date?: Prisma.SortOrder
   hours?: Prisma.SortOrder
   overtime?: Prisma.SortOrder
+  amount?: Prisma.SortOrder
   notes?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrder
   paymentId?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -291,6 +304,7 @@ export type WorkEntryWhereUniqueInput = Prisma.AtLeast<{
   date?: Prisma.DateTimeFilter<"WorkEntry"> | Date | string
   hours?: Prisma.FloatFilter<"WorkEntry"> | number
   overtime?: Prisma.FloatFilter<"WorkEntry"> | number
+  amount?: Prisma.FloatFilter<"WorkEntry"> | number
   notes?: Prisma.StringNullableFilter<"WorkEntry"> | string | null
   status?: Prisma.EnumWorkEntryStatusFilter<"WorkEntry"> | $Enums.WorkEntryStatus
   paymentId?: Prisma.StringNullableFilter<"WorkEntry"> | string | null
@@ -307,6 +321,7 @@ export type WorkEntryOrderByWithAggregationInput = {
   date?: Prisma.SortOrder
   hours?: Prisma.SortOrder
   overtime?: Prisma.SortOrder
+  amount?: Prisma.SortOrder
   notes?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrder
   paymentId?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -328,6 +343,7 @@ export type WorkEntryScalarWhereWithAggregatesInput = {
   date?: Prisma.DateTimeWithAggregatesFilter<"WorkEntry"> | Date | string
   hours?: Prisma.FloatWithAggregatesFilter<"WorkEntry"> | number
   overtime?: Prisma.FloatWithAggregatesFilter<"WorkEntry"> | number
+  amount?: Prisma.FloatWithAggregatesFilter<"WorkEntry"> | number
   notes?: Prisma.StringNullableWithAggregatesFilter<"WorkEntry"> | string | null
   status?: Prisma.EnumWorkEntryStatusWithAggregatesFilter<"WorkEntry"> | $Enums.WorkEntryStatus
   paymentId?: Prisma.StringNullableWithAggregatesFilter<"WorkEntry"> | string | null
@@ -339,6 +355,7 @@ export type WorkEntryCreateInput = {
   date?: Date | string
   hours: number
   overtime?: number
+  amount?: number
   notes?: string | null
   status?: $Enums.WorkEntryStatus
   createdAt?: Date | string
@@ -354,6 +371,7 @@ export type WorkEntryUncheckedCreateInput = {
   date?: Date | string
   hours: number
   overtime?: number
+  amount?: number
   notes?: string | null
   status?: $Enums.WorkEntryStatus
   paymentId?: string | null
@@ -365,6 +383,7 @@ export type WorkEntryUpdateInput = {
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   hours?: Prisma.FloatFieldUpdateOperationsInput | number
   overtime?: Prisma.FloatFieldUpdateOperationsInput | number
+  amount?: Prisma.FloatFieldUpdateOperationsInput | number
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkEntryStatusFieldUpdateOperationsInput | $Enums.WorkEntryStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -380,6 +399,7 @@ export type WorkEntryUncheckedUpdateInput = {
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   hours?: Prisma.FloatFieldUpdateOperationsInput | number
   overtime?: Prisma.FloatFieldUpdateOperationsInput | number
+  amount?: Prisma.FloatFieldUpdateOperationsInput | number
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkEntryStatusFieldUpdateOperationsInput | $Enums.WorkEntryStatus
   paymentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -393,6 +413,7 @@ export type WorkEntryCreateManyInput = {
   date?: Date | string
   hours: number
   overtime?: number
+  amount?: number
   notes?: string | null
   status?: $Enums.WorkEntryStatus
   paymentId?: string | null
@@ -404,6 +425,7 @@ export type WorkEntryUpdateManyMutationInput = {
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   hours?: Prisma.FloatFieldUpdateOperationsInput | number
   overtime?: Prisma.FloatFieldUpdateOperationsInput | number
+  amount?: Prisma.FloatFieldUpdateOperationsInput | number
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkEntryStatusFieldUpdateOperationsInput | $Enums.WorkEntryStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -416,6 +438,7 @@ export type WorkEntryUncheckedUpdateManyInput = {
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   hours?: Prisma.FloatFieldUpdateOperationsInput | number
   overtime?: Prisma.FloatFieldUpdateOperationsInput | number
+  amount?: Prisma.FloatFieldUpdateOperationsInput | number
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkEntryStatusFieldUpdateOperationsInput | $Enums.WorkEntryStatus
   paymentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -439,6 +462,7 @@ export type WorkEntryCountOrderByAggregateInput = {
   date?: Prisma.SortOrder
   hours?: Prisma.SortOrder
   overtime?: Prisma.SortOrder
+  amount?: Prisma.SortOrder
   notes?: Prisma.SortOrder
   status?: Prisma.SortOrder
   paymentId?: Prisma.SortOrder
@@ -448,6 +472,7 @@ export type WorkEntryCountOrderByAggregateInput = {
 export type WorkEntryAvgOrderByAggregateInput = {
   hours?: Prisma.SortOrder
   overtime?: Prisma.SortOrder
+  amount?: Prisma.SortOrder
 }
 
 export type WorkEntryMaxOrderByAggregateInput = {
@@ -457,6 +482,7 @@ export type WorkEntryMaxOrderByAggregateInput = {
   date?: Prisma.SortOrder
   hours?: Prisma.SortOrder
   overtime?: Prisma.SortOrder
+  amount?: Prisma.SortOrder
   notes?: Prisma.SortOrder
   status?: Prisma.SortOrder
   paymentId?: Prisma.SortOrder
@@ -470,6 +496,7 @@ export type WorkEntryMinOrderByAggregateInput = {
   date?: Prisma.SortOrder
   hours?: Prisma.SortOrder
   overtime?: Prisma.SortOrder
+  amount?: Prisma.SortOrder
   notes?: Prisma.SortOrder
   status?: Prisma.SortOrder
   paymentId?: Prisma.SortOrder
@@ -479,6 +506,7 @@ export type WorkEntryMinOrderByAggregateInput = {
 export type WorkEntrySumOrderByAggregateInput = {
   hours?: Prisma.SortOrder
   overtime?: Prisma.SortOrder
+  amount?: Prisma.SortOrder
 }
 
 export type WorkEntryCreateNestedManyWithoutWorkerInput = {
@@ -565,14 +593,6 @@ export type WorkEntryUncheckedUpdateManyWithoutSiteNestedInput = {
   deleteMany?: Prisma.WorkEntryScalarWhereInput | Prisma.WorkEntryScalarWhereInput[]
 }
 
-export type FloatFieldUpdateOperationsInput = {
-  set?: number
-  increment?: number
-  decrement?: number
-  multiply?: number
-  divide?: number
-}
-
 export type EnumWorkEntryStatusFieldUpdateOperationsInput = {
   set?: $Enums.WorkEntryStatus
 }
@@ -624,6 +644,7 @@ export type WorkEntryCreateWithoutWorkerInput = {
   date?: Date | string
   hours: number
   overtime?: number
+  amount?: number
   notes?: string | null
   status?: $Enums.WorkEntryStatus
   createdAt?: Date | string
@@ -637,6 +658,7 @@ export type WorkEntryUncheckedCreateWithoutWorkerInput = {
   date?: Date | string
   hours: number
   overtime?: number
+  amount?: number
   notes?: string | null
   status?: $Enums.WorkEntryStatus
   paymentId?: string | null
@@ -679,6 +701,7 @@ export type WorkEntryScalarWhereInput = {
   date?: Prisma.DateTimeFilter<"WorkEntry"> | Date | string
   hours?: Prisma.FloatFilter<"WorkEntry"> | number
   overtime?: Prisma.FloatFilter<"WorkEntry"> | number
+  amount?: Prisma.FloatFilter<"WorkEntry"> | number
   notes?: Prisma.StringNullableFilter<"WorkEntry"> | string | null
   status?: Prisma.EnumWorkEntryStatusFilter<"WorkEntry"> | $Enums.WorkEntryStatus
   paymentId?: Prisma.StringNullableFilter<"WorkEntry"> | string | null
@@ -690,6 +713,7 @@ export type WorkEntryCreateWithoutSiteInput = {
   date?: Date | string
   hours: number
   overtime?: number
+  amount?: number
   notes?: string | null
   status?: $Enums.WorkEntryStatus
   createdAt?: Date | string
@@ -703,6 +727,7 @@ export type WorkEntryUncheckedCreateWithoutSiteInput = {
   date?: Date | string
   hours: number
   overtime?: number
+  amount?: number
   notes?: string | null
   status?: $Enums.WorkEntryStatus
   paymentId?: string | null
@@ -740,6 +765,7 @@ export type WorkEntryCreateWithoutPaymentInput = {
   date?: Date | string
   hours: number
   overtime?: number
+  amount?: number
   notes?: string | null
   status?: $Enums.WorkEntryStatus
   createdAt?: Date | string
@@ -754,6 +780,7 @@ export type WorkEntryUncheckedCreateWithoutPaymentInput = {
   date?: Date | string
   hours: number
   overtime?: number
+  amount?: number
   notes?: string | null
   status?: $Enums.WorkEntryStatus
   createdAt?: Date | string
@@ -791,6 +818,7 @@ export type WorkEntryCreateManyWorkerInput = {
   date?: Date | string
   hours: number
   overtime?: number
+  amount?: number
   notes?: string | null
   status?: $Enums.WorkEntryStatus
   paymentId?: string | null
@@ -802,6 +830,7 @@ export type WorkEntryUpdateWithoutWorkerInput = {
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   hours?: Prisma.FloatFieldUpdateOperationsInput | number
   overtime?: Prisma.FloatFieldUpdateOperationsInput | number
+  amount?: Prisma.FloatFieldUpdateOperationsInput | number
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkEntryStatusFieldUpdateOperationsInput | $Enums.WorkEntryStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -815,6 +844,7 @@ export type WorkEntryUncheckedUpdateWithoutWorkerInput = {
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   hours?: Prisma.FloatFieldUpdateOperationsInput | number
   overtime?: Prisma.FloatFieldUpdateOperationsInput | number
+  amount?: Prisma.FloatFieldUpdateOperationsInput | number
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkEntryStatusFieldUpdateOperationsInput | $Enums.WorkEntryStatus
   paymentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -827,6 +857,7 @@ export type WorkEntryUncheckedUpdateManyWithoutWorkerInput = {
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   hours?: Prisma.FloatFieldUpdateOperationsInput | number
   overtime?: Prisma.FloatFieldUpdateOperationsInput | number
+  amount?: Prisma.FloatFieldUpdateOperationsInput | number
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkEntryStatusFieldUpdateOperationsInput | $Enums.WorkEntryStatus
   paymentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -839,6 +870,7 @@ export type WorkEntryCreateManySiteInput = {
   date?: Date | string
   hours: number
   overtime?: number
+  amount?: number
   notes?: string | null
   status?: $Enums.WorkEntryStatus
   paymentId?: string | null
@@ -850,6 +882,7 @@ export type WorkEntryUpdateWithoutSiteInput = {
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   hours?: Prisma.FloatFieldUpdateOperationsInput | number
   overtime?: Prisma.FloatFieldUpdateOperationsInput | number
+  amount?: Prisma.FloatFieldUpdateOperationsInput | number
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkEntryStatusFieldUpdateOperationsInput | $Enums.WorkEntryStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -863,6 +896,7 @@ export type WorkEntryUncheckedUpdateWithoutSiteInput = {
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   hours?: Prisma.FloatFieldUpdateOperationsInput | number
   overtime?: Prisma.FloatFieldUpdateOperationsInput | number
+  amount?: Prisma.FloatFieldUpdateOperationsInput | number
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkEntryStatusFieldUpdateOperationsInput | $Enums.WorkEntryStatus
   paymentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -875,6 +909,7 @@ export type WorkEntryUncheckedUpdateManyWithoutSiteInput = {
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   hours?: Prisma.FloatFieldUpdateOperationsInput | number
   overtime?: Prisma.FloatFieldUpdateOperationsInput | number
+  amount?: Prisma.FloatFieldUpdateOperationsInput | number
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkEntryStatusFieldUpdateOperationsInput | $Enums.WorkEntryStatus
   paymentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -888,6 +923,7 @@ export type WorkEntryCreateManyPaymentInput = {
   date?: Date | string
   hours: number
   overtime?: number
+  amount?: number
   notes?: string | null
   status?: $Enums.WorkEntryStatus
   createdAt?: Date | string
@@ -898,6 +934,7 @@ export type WorkEntryUpdateWithoutPaymentInput = {
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   hours?: Prisma.FloatFieldUpdateOperationsInput | number
   overtime?: Prisma.FloatFieldUpdateOperationsInput | number
+  amount?: Prisma.FloatFieldUpdateOperationsInput | number
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkEntryStatusFieldUpdateOperationsInput | $Enums.WorkEntryStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -912,6 +949,7 @@ export type WorkEntryUncheckedUpdateWithoutPaymentInput = {
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   hours?: Prisma.FloatFieldUpdateOperationsInput | number
   overtime?: Prisma.FloatFieldUpdateOperationsInput | number
+  amount?: Prisma.FloatFieldUpdateOperationsInput | number
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkEntryStatusFieldUpdateOperationsInput | $Enums.WorkEntryStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -924,6 +962,7 @@ export type WorkEntryUncheckedUpdateManyWithoutPaymentInput = {
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   hours?: Prisma.FloatFieldUpdateOperationsInput | number
   overtime?: Prisma.FloatFieldUpdateOperationsInput | number
+  amount?: Prisma.FloatFieldUpdateOperationsInput | number
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumWorkEntryStatusFieldUpdateOperationsInput | $Enums.WorkEntryStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -938,6 +977,7 @@ export type WorkEntrySelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   date?: boolean
   hours?: boolean
   overtime?: boolean
+  amount?: boolean
   notes?: boolean
   status?: boolean
   paymentId?: boolean
@@ -954,6 +994,7 @@ export type WorkEntrySelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ext
   date?: boolean
   hours?: boolean
   overtime?: boolean
+  amount?: boolean
   notes?: boolean
   status?: boolean
   paymentId?: boolean
@@ -970,6 +1011,7 @@ export type WorkEntrySelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ext
   date?: boolean
   hours?: boolean
   overtime?: boolean
+  amount?: boolean
   notes?: boolean
   status?: boolean
   paymentId?: boolean
@@ -986,13 +1028,14 @@ export type WorkEntrySelectScalar = {
   date?: boolean
   hours?: boolean
   overtime?: boolean
+  amount?: boolean
   notes?: boolean
   status?: boolean
   paymentId?: boolean
   createdAt?: boolean
 }
 
-export type WorkEntryOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "workerId" | "siteId" | "date" | "hours" | "overtime" | "notes" | "status" | "paymentId" | "createdAt", ExtArgs["result"]["workEntry"]>
+export type WorkEntryOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "workerId" | "siteId" | "date" | "hours" | "overtime" | "amount" | "notes" | "status" | "paymentId" | "createdAt", ExtArgs["result"]["workEntry"]>
 export type WorkEntryInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   site?: boolean | Prisma.SiteDefaultArgs<ExtArgs>
   worker?: boolean | Prisma.UserDefaultArgs<ExtArgs>
@@ -1023,6 +1066,7 @@ export type $WorkEntryPayload<ExtArgs extends runtime.Types.Extensions.InternalA
     date: Date
     hours: number
     overtime: number
+    amount: number
     notes: string | null
     status: $Enums.WorkEntryStatus
     paymentId: string | null
@@ -1459,6 +1503,7 @@ export interface WorkEntryFieldRefs {
   readonly date: Prisma.FieldRef<"WorkEntry", 'DateTime'>
   readonly hours: Prisma.FieldRef<"WorkEntry", 'Float'>
   readonly overtime: Prisma.FieldRef<"WorkEntry", 'Float'>
+  readonly amount: Prisma.FieldRef<"WorkEntry", 'Float'>
   readonly notes: Prisma.FieldRef<"WorkEntry", 'String'>
   readonly status: Prisma.FieldRef<"WorkEntry", 'WorkEntryStatus'>
   readonly paymentId: Prisma.FieldRef<"WorkEntry", 'String'>

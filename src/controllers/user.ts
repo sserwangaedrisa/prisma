@@ -517,7 +517,7 @@ export const registerUser = asyncHandler(
     let siteId: string | string[] = "";
 
     if (sites) {
-      siteId = sites as string[]; // Assuming sites is an array of site IDs
+      siteId = sites as string[];
     }
 
     if (!sites) {
@@ -625,22 +625,24 @@ export const registerUser = asyncHandler(
 
       let siteAttachment;
 
-      console.log("siteId: ", siteId);
-      console.log("typeof siteId: ", typeof siteId);
-      console.log("user.id: ", user.id);
-
       if (siteId) {
         if (typeof siteId === "string") {
           siteAttachment = await prisma.siteWorker.create({
             data: {
               workerId: user.id,
+
               siteId: siteId,
+
+              wageRating: parseFloat(wageRating),
             },
           });
         } else if (Array.isArray(siteId)) {
           const assignments = siteId.map((siteId) => ({
             workerId: user.id,
+
             siteId: siteId,
+
+            wageRating: parseFloat(wageRating),
           }));
 
           siteAttachment = await prisma.siteWorker.createMany({
@@ -648,13 +650,6 @@ export const registerUser = asyncHandler(
           });
         }
       }
-
-      // const siteAttachment = await prisma.siteWorker.create({
-      //   data: {
-      //     siteId: siteId,
-      //     workerId: user.id,
-      //   },
-      // });
 
       if (!siteAttachment) {
         res.status(200).json({

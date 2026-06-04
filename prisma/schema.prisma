@@ -66,6 +66,7 @@ model Site {
 model SiteWorker {
   id         String   @id @default(uuid())
   siteId     String
+  wageRating Float    @default(0)
   workerId   String
   assignedAt DateTime @default(now())
   site       Site     @relation(fields: [siteId], references: [id])
@@ -83,6 +84,7 @@ model WorkEntry {
   date      DateTime @default(now())
   hours     Float
   overtime  Float    @default(0)
+  amount    Float    @default(0)
   notes     String?
   status    WorkEntryStatus @default(NOT_PAID)
   paymentId String? 

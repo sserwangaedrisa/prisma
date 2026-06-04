@@ -121,6 +121,7 @@ export type SiteScalarFieldEnum = (typeof SiteScalarFieldEnum)[keyof typeof Site
 export const SiteWorkerScalarFieldEnum = {
   id: 'id',
   siteId: 'siteId',
+  wageRating: 'wageRating',
   workerId: 'workerId',
   assignedAt: 'assignedAt'
 } as const
@@ -135,6 +136,7 @@ export const WorkEntryScalarFieldEnum = {
   date: 'date',
   hours: 'hours',
   overtime: 'overtime',
+  amount: 'amount',
   notes: 'notes',
   status: 'status',
   paymentId: 'paymentId',

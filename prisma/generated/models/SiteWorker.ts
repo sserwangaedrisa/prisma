@@ -20,13 +20,24 @@ export type SiteWorkerModel = runtime.Types.Result.DefaultSelection<Prisma.$Site
 
 export type AggregateSiteWorker = {
   _count: SiteWorkerCountAggregateOutputType | null
+  _avg: SiteWorkerAvgAggregateOutputType | null
+  _sum: SiteWorkerSumAggregateOutputType | null
   _min: SiteWorkerMinAggregateOutputType | null
   _max: SiteWorkerMaxAggregateOutputType | null
+}
+
+export type SiteWorkerAvgAggregateOutputType = {
+  wageRating: number | null
+}
+
+export type SiteWorkerSumAggregateOutputType = {
+  wageRating: number | null
 }
 
 export type SiteWorkerMinAggregateOutputType = {
   id: string | null
   siteId: string | null
+  wageRating: number | null
   workerId: string | null
   assignedAt: Date | null
 }
@@ -34,6 +45,7 @@ export type SiteWorkerMinAggregateOutputType = {
 export type SiteWorkerMaxAggregateOutputType = {
   id: string | null
   siteId: string | null
+  wageRating: number | null
   workerId: string | null
   assignedAt: Date | null
 }
@@ -41,15 +53,25 @@ export type SiteWorkerMaxAggregateOutputType = {
 export type SiteWorkerCountAggregateOutputType = {
   id: number
   siteId: number
+  wageRating: number
   workerId: number
   assignedAt: number
   _all: number
 }
 
 
+export type SiteWorkerAvgAggregateInputType = {
+  wageRating?: true
+}
+
+export type SiteWorkerSumAggregateInputType = {
+  wageRating?: true
+}
+
 export type SiteWorkerMinAggregateInputType = {
   id?: true
   siteId?: true
+  wageRating?: true
   workerId?: true
   assignedAt?: true
 }
@@ -57,6 +79,7 @@ export type SiteWorkerMinAggregateInputType = {
 export type SiteWorkerMaxAggregateInputType = {
   id?: true
   siteId?: true
+  wageRating?: true
   workerId?: true
   assignedAt?: true
 }
@@ -64,6 +87,7 @@ export type SiteWorkerMaxAggregateInputType = {
 export type SiteWorkerCountAggregateInputType = {
   id?: true
   siteId?: true
+  wageRating?: true
   workerId?: true
   assignedAt?: true
   _all?: true
@@ -107,6 +131,18 @@ export type SiteWorkerAggregateArgs<ExtArgs extends runtime.Types.Extensions.Int
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    * 
+   * Select which fields to average
+  **/
+  _avg?: SiteWorkerAvgAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
+   * Select which fields to sum
+  **/
+  _sum?: SiteWorkerSumAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
    * Select which fields to find the minimum value
   **/
   _min?: SiteWorkerMinAggregateInputType
@@ -137,6 +173,8 @@ export type SiteWorkerGroupByArgs<ExtArgs extends runtime.Types.Extensions.Inter
   take?: number
   skip?: number
   _count?: SiteWorkerCountAggregateInputType | true
+  _avg?: SiteWorkerAvgAggregateInputType
+  _sum?: SiteWorkerSumAggregateInputType
   _min?: SiteWorkerMinAggregateInputType
   _max?: SiteWorkerMaxAggregateInputType
 }
@@ -144,9 +182,12 @@ export type SiteWorkerGroupByArgs<ExtArgs extends runtime.Types.Extensions.Inter
 export type SiteWorkerGroupByOutputType = {
   id: string
   siteId: string
+  wageRating: number
   workerId: string
   assignedAt: Date
   _count: SiteWorkerCountAggregateOutputType | null
+  _avg: SiteWorkerAvgAggregateOutputType | null
+  _sum: SiteWorkerSumAggregateOutputType | null
   _min: SiteWorkerMinAggregateOutputType | null
   _max: SiteWorkerMaxAggregateOutputType | null
 }
@@ -172,6 +213,7 @@ export type SiteWorkerWhereInput = {
   NOT?: Prisma.SiteWorkerWhereInput | Prisma.SiteWorkerWhereInput[]
   id?: Prisma.StringFilter<"SiteWorker"> | string
   siteId?: Prisma.StringFilter<"SiteWorker"> | string
+  wageRating?: Prisma.FloatFilter<"SiteWorker"> | number
   workerId?: Prisma.StringFilter<"SiteWorker"> | string
   assignedAt?: Prisma.DateTimeFilter<"SiteWorker"> | Date | string
   site?: Prisma.XOR<Prisma.SiteScalarRelationFilter, Prisma.SiteWhereInput>
@@ -181,6 +223,7 @@ export type SiteWorkerWhereInput = {
 export type SiteWorkerOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   siteId?: Prisma.SortOrder
+  wageRating?: Prisma.SortOrder
   workerId?: Prisma.SortOrder
   assignedAt?: Prisma.SortOrder
   site?: Prisma.SiteOrderByWithRelationInput
@@ -193,6 +236,7 @@ export type SiteWorkerWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.SiteWorkerWhereInput[]
   NOT?: Prisma.SiteWorkerWhereInput | Prisma.SiteWorkerWhereInput[]
   siteId?: Prisma.StringFilter<"SiteWorker"> | string
+  wageRating?: Prisma.FloatFilter<"SiteWorker"> | number
   workerId?: Prisma.StringFilter<"SiteWorker"> | string
   assignedAt?: Prisma.DateTimeFilter<"SiteWorker"> | Date | string
   site?: Prisma.XOR<Prisma.SiteScalarRelationFilter, Prisma.SiteWhereInput>
@@ -202,11 +246,14 @@ export type SiteWorkerWhereUniqueInput = Prisma.AtLeast<{
 export type SiteWorkerOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   siteId?: Prisma.SortOrder
+  wageRating?: Prisma.SortOrder
   workerId?: Prisma.SortOrder
   assignedAt?: Prisma.SortOrder
   _count?: Prisma.SiteWorkerCountOrderByAggregateInput
+  _avg?: Prisma.SiteWorkerAvgOrderByAggregateInput
   _max?: Prisma.SiteWorkerMaxOrderByAggregateInput
   _min?: Prisma.SiteWorkerMinOrderByAggregateInput
+  _sum?: Prisma.SiteWorkerSumOrderByAggregateInput
 }
 
 export type SiteWorkerScalarWhereWithAggregatesInput = {
@@ -215,12 +262,14 @@ export type SiteWorkerScalarWhereWithAggregatesInput = {
   NOT?: Prisma.SiteWorkerScalarWhereWithAggregatesInput | Prisma.SiteWorkerScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"SiteWorker"> | string
   siteId?: Prisma.StringWithAggregatesFilter<"SiteWorker"> | string
+  wageRating?: Prisma.FloatWithAggregatesFilter<"SiteWorker"> | number
   workerId?: Prisma.StringWithAggregatesFilter<"SiteWorker"> | string
   assignedAt?: Prisma.DateTimeWithAggregatesFilter<"SiteWorker"> | Date | string
 }
 
 export type SiteWorkerCreateInput = {
   id?: string
+  wageRating?: number
   assignedAt?: Date | string
   site: Prisma.SiteCreateNestedOneWithoutWorkersInput
   worker: Prisma.UserCreateNestedOneWithoutAssignedSitesInput
@@ -229,12 +278,14 @@ export type SiteWorkerCreateInput = {
 export type SiteWorkerUncheckedCreateInput = {
   id?: string
   siteId: string
+  wageRating?: number
   workerId: string
   assignedAt?: Date | string
 }
 
 export type SiteWorkerUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  wageRating?: Prisma.FloatFieldUpdateOperationsInput | number
   assignedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   site?: Prisma.SiteUpdateOneRequiredWithoutWorkersNestedInput
   worker?: Prisma.UserUpdateOneRequiredWithoutAssignedSitesNestedInput
@@ -243,6 +294,7 @@ export type SiteWorkerUpdateInput = {
 export type SiteWorkerUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   siteId?: Prisma.StringFieldUpdateOperationsInput | string
+  wageRating?: Prisma.FloatFieldUpdateOperationsInput | number
   workerId?: Prisma.StringFieldUpdateOperationsInput | string
   assignedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -250,18 +302,21 @@ export type SiteWorkerUncheckedUpdateInput = {
 export type SiteWorkerCreateManyInput = {
   id?: string
   siteId: string
+  wageRating?: number
   workerId: string
   assignedAt?: Date | string
 }
 
 export type SiteWorkerUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  wageRating?: Prisma.FloatFieldUpdateOperationsInput | number
   assignedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type SiteWorkerUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   siteId?: Prisma.StringFieldUpdateOperationsInput | string
+  wageRating?: Prisma.FloatFieldUpdateOperationsInput | number
   workerId?: Prisma.StringFieldUpdateOperationsInput | string
   assignedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -279,13 +334,19 @@ export type SiteWorkerOrderByRelationAggregateInput = {
 export type SiteWorkerCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   siteId?: Prisma.SortOrder
+  wageRating?: Prisma.SortOrder
   workerId?: Prisma.SortOrder
   assignedAt?: Prisma.SortOrder
+}
+
+export type SiteWorkerAvgOrderByAggregateInput = {
+  wageRating?: Prisma.SortOrder
 }
 
 export type SiteWorkerMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   siteId?: Prisma.SortOrder
+  wageRating?: Prisma.SortOrder
   workerId?: Prisma.SortOrder
   assignedAt?: Prisma.SortOrder
 }
@@ -293,8 +354,13 @@ export type SiteWorkerMaxOrderByAggregateInput = {
 export type SiteWorkerMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   siteId?: Prisma.SortOrder
+  wageRating?: Prisma.SortOrder
   workerId?: Prisma.SortOrder
   assignedAt?: Prisma.SortOrder
+}
+
+export type SiteWorkerSumOrderByAggregateInput = {
+  wageRating?: Prisma.SortOrder
 }
 
 export type SiteWorkerCreateNestedManyWithoutWorkerInput = {
@@ -381,8 +447,17 @@ export type SiteWorkerUncheckedUpdateManyWithoutSiteNestedInput = {
   deleteMany?: Prisma.SiteWorkerScalarWhereInput | Prisma.SiteWorkerScalarWhereInput[]
 }
 
+export type FloatFieldUpdateOperationsInput = {
+  set?: number
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
+}
+
 export type SiteWorkerCreateWithoutWorkerInput = {
   id?: string
+  wageRating?: number
   assignedAt?: Date | string
   site: Prisma.SiteCreateNestedOneWithoutWorkersInput
 }
@@ -390,6 +465,7 @@ export type SiteWorkerCreateWithoutWorkerInput = {
 export type SiteWorkerUncheckedCreateWithoutWorkerInput = {
   id?: string
   siteId: string
+  wageRating?: number
   assignedAt?: Date | string
 }
 
@@ -425,18 +501,21 @@ export type SiteWorkerScalarWhereInput = {
   NOT?: Prisma.SiteWorkerScalarWhereInput | Prisma.SiteWorkerScalarWhereInput[]
   id?: Prisma.StringFilter<"SiteWorker"> | string
   siteId?: Prisma.StringFilter<"SiteWorker"> | string
+  wageRating?: Prisma.FloatFilter<"SiteWorker"> | number
   workerId?: Prisma.StringFilter<"SiteWorker"> | string
   assignedAt?: Prisma.DateTimeFilter<"SiteWorker"> | Date | string
 }
 
 export type SiteWorkerCreateWithoutSiteInput = {
   id?: string
+  wageRating?: number
   assignedAt?: Date | string
   worker: Prisma.UserCreateNestedOneWithoutAssignedSitesInput
 }
 
 export type SiteWorkerUncheckedCreateWithoutSiteInput = {
   id?: string
+  wageRating?: number
   workerId: string
   assignedAt?: Date | string
 }
@@ -470,11 +549,13 @@ export type SiteWorkerUpdateManyWithWhereWithoutSiteInput = {
 export type SiteWorkerCreateManyWorkerInput = {
   id?: string
   siteId: string
+  wageRating?: number
   assignedAt?: Date | string
 }
 
 export type SiteWorkerUpdateWithoutWorkerInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  wageRating?: Prisma.FloatFieldUpdateOperationsInput | number
   assignedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   site?: Prisma.SiteUpdateOneRequiredWithoutWorkersNestedInput
 }
@@ -482,35 +563,41 @@ export type SiteWorkerUpdateWithoutWorkerInput = {
 export type SiteWorkerUncheckedUpdateWithoutWorkerInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   siteId?: Prisma.StringFieldUpdateOperationsInput | string
+  wageRating?: Prisma.FloatFieldUpdateOperationsInput | number
   assignedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type SiteWorkerUncheckedUpdateManyWithoutWorkerInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   siteId?: Prisma.StringFieldUpdateOperationsInput | string
+  wageRating?: Prisma.FloatFieldUpdateOperationsInput | number
   assignedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type SiteWorkerCreateManySiteInput = {
   id?: string
+  wageRating?: number
   workerId: string
   assignedAt?: Date | string
 }
 
 export type SiteWorkerUpdateWithoutSiteInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  wageRating?: Prisma.FloatFieldUpdateOperationsInput | number
   assignedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   worker?: Prisma.UserUpdateOneRequiredWithoutAssignedSitesNestedInput
 }
 
 export type SiteWorkerUncheckedUpdateWithoutSiteInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  wageRating?: Prisma.FloatFieldUpdateOperationsInput | number
   workerId?: Prisma.StringFieldUpdateOperationsInput | string
   assignedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type SiteWorkerUncheckedUpdateManyWithoutSiteInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  wageRating?: Prisma.FloatFieldUpdateOperationsInput | number
   workerId?: Prisma.StringFieldUpdateOperationsInput | string
   assignedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -520,6 +607,7 @@ export type SiteWorkerUncheckedUpdateManyWithoutSiteInput = {
 export type SiteWorkerSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   siteId?: boolean
+  wageRating?: boolean
   workerId?: boolean
   assignedAt?: boolean
   site?: boolean | Prisma.SiteDefaultArgs<ExtArgs>
@@ -529,6 +617,7 @@ export type SiteWorkerSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
 export type SiteWorkerSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   siteId?: boolean
+  wageRating?: boolean
   workerId?: boolean
   assignedAt?: boolean
   site?: boolean | Prisma.SiteDefaultArgs<ExtArgs>
@@ -538,6 +627,7 @@ export type SiteWorkerSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ex
 export type SiteWorkerSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   siteId?: boolean
+  wageRating?: boolean
   workerId?: boolean
   assignedAt?: boolean
   site?: boolean | Prisma.SiteDefaultArgs<ExtArgs>
@@ -547,11 +637,12 @@ export type SiteWorkerSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ex
 export type SiteWorkerSelectScalar = {
   id?: boolean
   siteId?: boolean
+  wageRating?: boolean
   workerId?: boolean
   assignedAt?: boolean
 }
 
-export type SiteWorkerOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "siteId" | "workerId" | "assignedAt", ExtArgs["result"]["siteWorker"]>
+export type SiteWorkerOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "siteId" | "wageRating" | "workerId" | "assignedAt", ExtArgs["result"]["siteWorker"]>
 export type SiteWorkerInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   site?: boolean | Prisma.SiteDefaultArgs<ExtArgs>
   worker?: boolean | Prisma.UserDefaultArgs<ExtArgs>
@@ -574,6 +665,7 @@ export type $SiteWorkerPayload<ExtArgs extends runtime.Types.Extensions.Internal
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     siteId: string
+    wageRating: number
     workerId: string
     assignedAt: Date
   }, ExtArgs["result"]["siteWorker"]>
@@ -1003,6 +1095,7 @@ export interface Prisma__SiteWorkerClient<T, Null = never, ExtArgs extends runti
 export interface SiteWorkerFieldRefs {
   readonly id: Prisma.FieldRef<"SiteWorker", 'String'>
   readonly siteId: Prisma.FieldRef<"SiteWorker", 'String'>
+  readonly wageRating: Prisma.FieldRef<"SiteWorker", 'Float'>
   readonly workerId: Prisma.FieldRef<"SiteWorker", 'String'>
   readonly assignedAt: Prisma.FieldRef<"SiteWorker", 'DateTime'>
 }

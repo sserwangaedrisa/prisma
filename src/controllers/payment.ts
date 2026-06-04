@@ -538,7 +538,6 @@ export const sitePaymentSummary = async (req: Request, res: Response) => {
         COALESCE(SUM((we.hours + we.overtime) * COALESCE(w."wageRating", 0)), 0) as total_amount,
         COUNT(we.id) as entry_count,
 
-        -- Building the json response
         COALESCE(
           JSON_AGG(
             JSON_BUILD_OBJECT(

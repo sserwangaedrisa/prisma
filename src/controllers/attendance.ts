@@ -102,14 +102,6 @@ export const recordAttendance = async (req: Request, res: Response) => {
 
     const monthClosed = await validateMonthNotLocked(siteId, entryDate);
 
-    if (!monthClosed.success) {
-      return res.status(200).json({
-        success: false,
-        message: "Cannot delete work entry from a locked month",
-        status: "locked month",
-      });
-    }
-
     // Check for existing entry on the same day
     const startOfDay = new Date(entryDate);
     startOfDay.setHours(0, 0, 0, 0);
@@ -130,12 +122,14 @@ export const recordAttendance = async (req: Request, res: Response) => {
 
     if (
       existingEntry?.status &&
-      ["APPROVED", "PAID", "REJECTED", "PENDING"].includes(existingEntry.status)
+      ["APPROVED", "PAID", "REJECTED", "PENDING", "REVIEW"].includes(
+        existingEntry.status,
+      )
     ) {
       return res.status(200).json({
         success: false,
         message:
-          "WorkEntry is either 'APPROVED', 'REJECTED', 'PAID', OR 'PENDING'.",
+          "WorkEntry is either 'APPROVED', 'REJECTED', 'PAID', 'REVIEW', OR 'PENDING'.",
         status: "invalid_status",
       });
     }
@@ -151,6 +145,11 @@ export const recordAttendance = async (req: Request, res: Response) => {
             overtime !== undefined ? parseFloat(overtime as string) : undefined,
           notes: notes !== undefined ? notes : undefined,
           date: date ? new Date(date) : undefined,
+          amount:
+            (parseFloat(hours as string) +
+              (overtime ? parseFloat(overtime as string) : 0)) *
+            (worker.wageRating || 0),
+          createdAt: new Date(),
         },
       });
 
@@ -177,9 +176,13 @@ export const recordAttendance = async (req: Request, res: Response) => {
         workerId,
         siteId,
         date,
-        hours: parseInt(hours, 10),
+        hours: parseFloat(hours as string),
         notes,
-        overtime: overtime ? parseInt(overtime, 10) : 0,
+        overtime: overtime ? parseFloat(overtime as string) : 0,
+        amount:
+          (parseFloat(hours as string) +
+            (overtime ? parseFloat(overtime as string) : 0)) *
+          (worker.wageRating || 0),
       },
     });
 
@@ -329,6 +332,10 @@ export const createWorkEntry = async (
         hours: parsedHours,
         overtime: overtime ? parseFloat(overtime as string) : 0,
         notes,
+        amount:
+          (parseFloat(hours as string) +
+            (overtime ? parseFloat(overtime as string) : 0)) *
+          (siteWorker.wageRating || 0),
       },
       include: {
         worker: {
@@ -716,6 +723,7 @@ export const bulkCreateWorkEntries = async (
       },
       select: {
         workerId: true,
+        wageRating: true,
       },
     });
 
@@ -756,7 +764,17 @@ export const bulkCreateWorkEntries = async (
 
     for (const workerId of workersIds) {
       const existing = existingMap.get(workerId);
-
+      if (
+        existing?.status &&
+        ["APPROVED", "PAID", "REJECTED", "PENDING", "REVIEW"].includes(
+          existing.status,
+        )
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: `Work entry for worker ${workerId} is already approved or paid`,
+        });
+      }
       if (existing) {
         updatePromises.push(
           prisma.workEntry.update({
@@ -767,6 +785,11 @@ export const bulkCreateWorkEntries = async (
               hours: hoursNum,
               overtime: overtimeNum,
               notes,
+              date: entryDate,
+              amount:
+                (hoursNum + overtimeNum) *
+                (assignedWorkers.find((w) => w.workerId === workerId)
+                  ?.wageRating || 0),
             },
           }),
         );
@@ -777,6 +800,10 @@ export const bulkCreateWorkEntries = async (
           date: entryDate,
           hours: hoursNum,
           overtime: overtimeNum,
+          amount:
+            (hoursNum + overtimeNum) *
+            (assignedWorkers.find((w) => w.workerId === workerId)?.wageRating ||
+              0),
           notes,
         });
       }
