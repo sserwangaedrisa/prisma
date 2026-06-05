@@ -15,169 +15,7 @@ interface worker {
   imageUrl: string | null;
 }
 
-// export const singleWorkerPayment = async (req: Request, res: Response) => {
-//   try {
-//     const { workerId, siteId, startDate, endDate, paymentId } = req.body;
-
-//     if (!siteId || !startDate || !endDate) {
-//       return res.status(200).json({
-//         message: "Missing required parameters: siteId, startDate, endDate",
-//         success: false,
-//       });
-//     }
-
-//     const workerData = await validateUser(workerId);
-//     if (!workerData || !workerData.success) {
-//       return res.status(200).json({
-//         success: false,
-//         message: workerData.message,
-//       });
-//     }
-
-//     const worker: worker = workerData.data as worker;
-//     const wageRating = worker?.wageRatings || 0;
-
-//     const start = new Date(startDate);
-//     const end = new Date(endDate);
-
-//     //  Enforce max 1 month range
-//     const diffInMs = end.getTime() - start.getTime();
-//     const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
-
-//     if (diffInDays > 31) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Date range should not exceed one month",
-//       });
-//     }
-
-//     // checking for the closed month
-//     const monthClose = await prisma.monthClose.findFirst({
-//       where: {
-//         siteId: siteId,
-//         month: start.getMonth() + 1,
-//         year: start.getFullYear(),
-//       },
-//     });
-
-//     if (monthClose && monthClose.status === "LOCKED") {
-//       return res.status(403).json({
-//         success: false,
-//         message: "locked month",
-//         status: "locked month",
-//       });
-//     }
-
-//     const workEntries = await prisma.workEntry.findMany({
-//       where: {
-//         workerId: workerId,
-//         siteId: siteId,
-//         paymentId: paymentId ? paymentId : undefined,
-//         date: paymentId
-//           ? undefined
-//           : {
-//               gte: start,
-//               lte: end,
-//             },
-//       },
-//       orderBy: {
-//         date: "asc",
-//       },
-//       take: 31,
-//     });
-
-//     const aggregateData = await prisma.workEntry.aggregate({
-//       where: {
-//         workerId: workerId,
-//         siteId: siteId,
-//         status: paymentId
-//           ? undefined
-//           : {
-//               not: "PAID",
-//             },
-//         date: paymentId
-//           ? undefined
-//           : {
-//               gte: start,
-//               lte: end,
-//             },
-//       },
-//       _sum: {
-//         hours: true,
-//         overtime: true,
-//       },
-//       _count: {
-//         id: true,
-//       },
-//     });
-
-//     const totalRegularHours = aggregateData._sum.hours || 0;
-//     const totalOvertimeHours = aggregateData._sum.overtime || 0;
-//     const totalHours = totalRegularHours + totalOvertimeHours;
-//     const entryCount = aggregateData._count.id;
-
-//     if (entryCount === 0) {
-//       return res.status(200).json({
-//         workerId,
-//         siteId,
-//         period: paymentId ? undefined : { startDate, endDate },
-//         hasEntries: false,
-//         message: "No work entries found for this period",
-//       });
-//     }
-
-//     const totalAmount = totalHours * wageRating;
-
-//     const response = {
-//       worker: {
-//         id: worker?.id,
-//         name: worker?.name,
-//         email: worker?.email,
-//         wageRating: wageRating,
-//         role: worker?.role,
-//         job: worker?.job,
-//         imageUrl: worker?.imageUrl,
-//       },
-//       site: {
-//         id: siteId,
-//         name: "",
-//       },
-//       period: {
-//         startDate,
-//         endDate,
-//       },
-//       calculation: {
-//         formula: `Total Amount = (Total Hours + Overtime) × Wage Rating`,
-//         wageRating: wageRating,
-//         ratePerHour: wageRating,
-//       },
-//       summary: {
-//         totalRegularHours: Number(totalRegularHours.toFixed(2)),
-//         totalOvertimeHours: Number(totalOvertimeHours.toFixed(2)),
-//         totalHours: Number(totalHours.toFixed(2)),
-//         totalAmount: Number(totalAmount.toFixed(2)),
-//       },
-//       metadata: {
-//         entryCount: entryCount,
-//       },
-//       entries: workEntries,
-//     };
-
-//     return res.status(200).json({
-//       data: response,
-//       success: true,
-//       message: "entries retrieved successfully",
-//     });
-//   } catch (error) {
-//     console.error("Payment calculation error:", error);
-//     return res.status(500).json({
-//       message: "Failed to calculate payment",
-//       status: 500,
-//     });
-//   }
-// };
-
-// payment request processing for the an individual
+// Single workers details for the month.
 
 export const singleWorkerPayment = async (req: Request, res: Response) => {
   try {
@@ -208,7 +46,6 @@ export const singleWorkerPayment = async (req: Request, res: Response) => {
     if (!paymentId && start && end) {
       const diffInMs = end.getTime() - start.getTime();
       const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
-
       if (diffInDays > 31) {
         return res.status(400).json({
           success: false,
@@ -216,25 +53,6 @@ export const singleWorkerPayment = async (req: Request, res: Response) => {
         });
       }
     }
-
-    // Month lock check (only when using date)
-    // if (!paymentId && start) {
-    //   const monthClose = await prisma.monthClose.findFirst({
-    //     where: {
-    //       siteId,
-    //       month: start.getMonth() + 1,
-    //       year: start.getFullYear(),
-    //     },
-    //   });
-
-    //   if (monthClose && monthClose.status === "LOCKED") {
-    //     return res.status(403).json({
-    //       success: false,
-    //       message: "locked month",
-    //       status: "locked month",
-    //     });
-    //   }
-    // }
 
     // Shared WHERE condition
     const whereCondition = {
@@ -251,69 +69,59 @@ export const singleWorkerPayment = async (req: Request, res: Response) => {
           }),
     };
 
-    // Entries
-    const workEntries = await prisma.workEntry.findMany({
-      where: whereCondition,
-      orderBy: { date: "asc" },
-      take: 31,
-    });
-    let paymentMonthStart = null;
-    let paymentMonthEnd = null;
-    if (paymentId) {
-      const date = workEntries[0]?.date;
-      paymentMonthStart = new Date(date.getFullYear(), date.getMonth(), 1);
-      paymentMonthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-    }
-
-    //  Grouping by status
+    // Single groupBy query to get all per‑status sums
     const groupedStatus = await prisma.workEntry.groupBy({
       by: ["status"],
       where: whereCondition,
       _sum: {
         hours: true,
         overtime: true,
+        amount: true,
       },
       _count: {
         id: true,
       },
     });
 
+    // Initialize status summary with all possible statuses
     const statusSummary: any = {
       PENDING: { hours: 0, overtime: 0, total: 0, amount: 0, count: 0 },
       PAID: { hours: 0, overtime: 0, total: 0, amount: 0, count: 0 },
       REJECTED: { hours: 0, overtime: 0, total: 0, amount: 0, count: 0 },
       REVIEW: { hours: 0, overtime: 0, total: 0, amount: 0, count: 0 },
       NOT_PAID: { hours: 0, overtime: 0, total: 0, amount: 0, count: 0 },
+      APPROVED: { hours: 0, overtime: 0, total: 0, amount: 0, count: 0 },
     };
 
-    // Initializing the totals
-    let TOTALREGULARHOURS = 0;
-    let TOTALOVERTIMEHOURS = 0;
-    let TOTALHOURS = 0;
-    let ENTRYCOUNT = 0;
+    // Accumulate totals while populating statusSummary
+    let totalRegularHours = 0;
+    let totalOvertimeHours = 0;
+    let totalAmount = 0;
+    let entryCount = 0;
 
-    groupedStatus.forEach((item) => {
+    for (const item of groupedStatus) {
       const hours = item._sum.hours || 0;
       const overtime = item._sum.overtime || 0;
       const total = hours + overtime;
-      TOTALREGULARHOURS += hours;
-      TOTALOVERTIMEHOURS += overtime;
-      TOTALHOURS += total;
-      ENTRYCOUNT += item._count.id;
+      const amount = item._sum.amount || 0;
+      const count = item._count.id;
 
       statusSummary[item.status] = {
         hours,
         overtime,
         total,
-        amount: total * wageRating,
-        count: item._count.id,
+        amount,
+        count,
       };
-    });
 
-    const totalRegularHours = TOTALREGULARHOURS || 0;
-    const totalOvertimeHours = TOTALOVERTIMEHOURS || 0;
-    const totalHours = TOTALHOURS || 0;
-    const entryCount = ENTRYCOUNT;
+      // Adding to overall totals
+      totalRegularHours += hours;
+      totalOvertimeHours += overtime;
+      totalAmount += amount;
+      entryCount += count;
+    }
+
+    const totalHours = totalRegularHours + totalOvertimeHours;
 
     if (entryCount === 0) {
       return res.status(200).json({
@@ -325,7 +133,20 @@ export const singleWorkerPayment = async (req: Request, res: Response) => {
       });
     }
 
-    const totalAmount = totalHours * wageRating;
+    // Detailed entries for frontend display (limited to 31 entries for pagination)
+    const workEntries = await prisma.workEntry.findMany({
+      where: whereCondition,
+      orderBy: { date: "asc" },
+      take: 31,
+    });
+
+    let paymentMonthStart = null;
+    let paymentMonthEnd = null;
+    if (paymentId && workEntries.length > 0) {
+      const date = workEntries[0].date;
+      paymentMonthStart = new Date(date.getFullYear(), date.getMonth(), 1);
+      paymentMonthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+    }
 
     const response = {
       worker: {
@@ -346,7 +167,7 @@ export const singleWorkerPayment = async (req: Request, res: Response) => {
         : { startDate, endDate },
 
       calculation: {
-        formula: `Total Amount = (Total Hours + Overtime) × Wage Rating`,
+        formula: `Total Amount = Sum of precomputed entry amounts`,
         wageRating,
         ratePerHour: wageRating,
       },
@@ -356,10 +177,10 @@ export const singleWorkerPayment = async (req: Request, res: Response) => {
         totalOvertimeHours: Number(totalOvertimeHours.toFixed(2)),
         totalHours: Number(totalHours.toFixed(2)),
         totalAmount: Number(totalAmount.toFixed(2)),
-        TOTALREGULARHOURS: Number(TOTALREGULARHOURS.toFixed(2)),
-        TOTALOVERTIMEHOURS: Number(TOTALOVERTIMEHOURS.toFixed(2)),
-        TOTALHOURS: Number(TOTALHOURS.toFixed(2)),
-        ENTRYCOUNT: Number(ENTRYCOUNT),
+        TOTALREGULARHOURS: Number(totalRegularHours.toFixed(2)),
+        TOTALOVERTIMEHOURS: Number(totalOvertimeHours.toFixed(2)),
+        TOTALHOURS: Number(totalHours.toFixed(2)),
+        ENTRYCOUNT: entryCount,
       },
 
       statusSummary,
@@ -384,6 +205,7 @@ export const singleWorkerPayment = async (req: Request, res: Response) => {
     });
   }
 };
+
 export const singleWorkerPaymentRequest = async (
   req: Request,
   res: Response,
@@ -395,7 +217,7 @@ export const singleWorkerPaymentRequest = async (
     if (!siteId || !workerId || !entryIds) {
       res.status(200).json({
         success: false,
-        message: "Some feilds missing",
+        message: "Some fields missing",
       });
       return;
     }
@@ -419,15 +241,16 @@ export const singleWorkerPaymentRequest = async (
       _sum: {
         hours: true,
         overtime: true,
+        amount: true,
       },
     });
 
     const totalHours = totals._sum.hours ?? 0;
     const totalOvertime = totals._sum.overtime ?? 0;
+    const totalAmount = totals._sum.amount ?? 0;
 
     const baseAmount = totalHours * baseHourlyRate;
     const overtimePay = totalOvertime * baseHourlyRate;
-    const totalAmount = baseAmount + overtimePay;
 
     if (totalAmount <= 0) {
       res.status(200).json({
@@ -463,6 +286,10 @@ export const singleWorkerPaymentRequest = async (
     });
 
     if (entryUpdate.count === 0) {
+      await prisma.payment.delete({
+        where: { id: payment.id },
+      });
+
       return res.status(400).json({
         success: false,
         message: "Failed to finish the request proccessing.",
@@ -1517,7 +1344,7 @@ export const markMultipleAsPaid = async (req: Request, res: Response) => {
         "paidAt" = NOW()
       WHERE 
         id = ANY(${paymentIds}::text[])
-        AND status != 'PAID'::"PaymentStatus"
+        AND status NOT IN ('PAID'::"PaymentStatus", 'REJECTED'::"PaymentStatus")      
       RETURNING id
     `;
 
@@ -1525,7 +1352,7 @@ export const markMultipleAsPaid = async (req: Request, res: Response) => {
       return res.status(200).json({
         success: false,
         message:
-          "No payments were approved. They may have already been approved or paid.",
+          "No payments were marked as paid. They may have already been paid or rejected.",
       });
     }
     const paymentIdsToUpdate = result.map((r) => r.id);
@@ -1538,6 +1365,15 @@ export const markMultipleAsPaid = async (req: Request, res: Response) => {
         `;
 
       if (updatedWorkEntries.length === 0) {
+        await prisma.payment.updateMany({
+          where: {
+            id: { in: paymentIdsToUpdate },
+          },
+          data: {
+            status: "APPROVED",
+            paidAt: null,
+          },
+        });
         return res.status(200).json({
           success: false,
           message:
@@ -1601,7 +1437,6 @@ export const approveSinglePayment = async (req: Request, res: Response) => {
         "approvedAt" = NOW()
       WHERE 
         id = ${paymentId}::text
-        AND status = 'PENDING'::"PaymentStatus"
       RETURNING id
     `;
 
@@ -1665,14 +1500,14 @@ export const markSingleAsPaid = async (req: Request, res: Response) => {
         "paidAt" = NOW()
       WHERE 
         id = ${paymentId}::text
-        AND status IN ('PENDING'::"PaymentStatus", 'APPROVED'::"PaymentStatus")
+        AND status IN ('PENDING'::"PaymentStatus", 'APPROVED'::"PaymentStatus", 'REVIEW'::"PaymentStatus")
       RETURNING id
     `;
 
     if ((result as any[]).length === 0) {
       return res.status(404).json({
         success: false,
-        message: "Payment not found or already paid",
+        message: "Payment not found or already paid, or Rejected",
       });
     }
 
@@ -1705,6 +1540,24 @@ export const reviewSinglePayment = async (req: Request, res: Response) => {
   const userId = req.user.id;
 
   try {
+    const updatedWorkEntries = await prisma.$queryRaw`
+        UPDATE "WorkEntry"
+        SET 
+          status = 'REVIEW'::"WorkEntryStatus"
+        WHERE 
+          "paymentId" = ${paymentId}::text 
+        RETURNING id
+      `;
+    if ((updatedWorkEntries as any[]).length === 0) {
+      console.warn(
+        `No work entries found for payment ${paymentId} when sending for review`,
+      );
+      return res.status(200).json({
+        success: false,
+        message: "No associated work entries were found to update",
+      });
+    }
+
     const result = await prisma.$queryRaw`
       UPDATE "Payment"
       SET 
@@ -1898,6 +1751,27 @@ export const rejectSinglePayment = async (req: Request, res: Response) => {
   const { reason } = req.body;
   const userId = req.user.id;
   try {
+    const updatedWorkEntries = await prisma.$queryRaw`
+        UPDATE "WorkEntry"
+        SET 
+          status = 'REJECTED'::"WorkEntryStatus"
+        WHERE 
+          "paymentId" = ${paymentId}::text 
+        RETURNING id
+      `;
+    if ((updatedWorkEntries as any[]).length === 0) {
+      await prisma.$queryRaw` 
+      delete from "Payment" where id = ${paymentId}::text`;
+
+      console.warn(
+        `No work entries found for payment ${paymentId} when rejecting payment`,
+      );
+      return res.status(200).json({
+        success: false,
+        message: "No associated work entries were found to update",
+      });
+    }
+
     const result = await prisma.$queryRaw`
       UPDATE "Payment"
       SET 
@@ -1910,6 +1784,24 @@ export const rejectSinglePayment = async (req: Request, res: Response) => {
     `;
 
     if ((result as any[]).length === 0) {
+      await prisma.$queryRaw`
+        UPDATE "WorkEntry"
+        SET 
+          status = 'PENDING'::"WorkEntryStatus"
+        WHERE 
+          "paymentId" = ${paymentId}::text 
+        RETURNING id
+      `;
+
+      await prisma.$queryRaw`
+        UPDATE "Payment"
+        SET
+          status = 'PENDING'::"PaymentStatus",
+          "approvedAt" = NULL
+        WHERE 
+          id = ${paymentId}::text
+      `;
+
       return res.status(404).json({
         success: false,
         message: "Payment not found or payment status is already updated",
@@ -2396,7 +2288,7 @@ export const updateWorkEntriesStatus = async (req: Request, res: Response) => {
       }[] = await tx.$queryRaw`
         UPDATE "WorkEntry"
         SET status = ${newStatus}::"WorkEntryStatus"
-        WHERE id = ANY(${entryIds}::text[])
+        WHERE id = ANY(${entryIds}::text[]) and status != 'PAID'::"WorkEntryStatus"
         RETURNING id, "paymentId"
       `;
 
@@ -2427,8 +2319,7 @@ export const updateWorkEntriesStatus = async (req: Request, res: Response) => {
             rejectedcount: string;
             paidcount: string;
             notpaidcount: string;
-            totalhours: string;
-            totalovertime: string;
+            amount: number;
           }[] = await tx.$queryRaw`
     SELECT
       COUNT(*) as "totalentries",
@@ -2457,9 +2348,7 @@ export const updateWorkEntriesStatus = async (req: Request, res: Response) => {
         WHERE status = 'NOT_PAID'::"WorkEntryStatus"
       ) as "notpaidcount",
 
-      COALESCE(SUM(hours), 0) as "totalhours",
-
-      COALESCE(SUM(overtime), 0) as "totalovertime"
+      COALESCE(SUM(amount), 0) as "amount"
 
     FROM "WorkEntry"
     WHERE "paymentId" = ${paymentId}::text
@@ -2476,8 +2365,7 @@ export const updateWorkEntriesStatus = async (req: Request, res: Response) => {
           const paidCount = Number(stats.paidcount);
           const notPaidCount = Number(stats.notpaidcount);
 
-          const totalHours = Number(stats.totalhours);
-          const totalOvertime = Number(stats.totalovertime);
+          const totalAmount = Number(stats.amount);
 
           // CASE 1:
           // if  ALL entries became NOT_PAID  DELETE payment
@@ -2506,24 +2394,12 @@ export const updateWorkEntriesStatus = async (req: Request, res: Response) => {
             paymentStatus = "PAID";
           }
 
-          const baseHourlyRate = verifiedWorker.data?.wageRatings || 0;
-
-          const baseAmount = totalHours * baseHourlyRate;
-
-          const overtimePay = totalOvertime * baseHourlyRate;
-
-          const totalAmount = baseAmount + overtimePay;
-
           // Updating payment
           await tx.payment.update({
             where: {
               id: paymentId,
             },
             data: {
-              totalHours,
-              overtime: totalOvertime,
-              baseAmount,
-              overtimePay,
               totalAmount,
 
               ...(paymentStatus && {
@@ -2558,8 +2434,7 @@ export const updateWorkEntriesStatus = async (req: Request, res: Response) => {
             rejectedcount: string;
             paidcount: string;
             notpaidcount: string;
-            totalhours: string;
-            totalovertime: string;
+            amount: string;
           }[] = await tx.$queryRaw`
             SELECT
               COUNT(*) as "totalentries",
@@ -2587,10 +2462,8 @@ export const updateWorkEntriesStatus = async (req: Request, res: Response) => {
               COUNT(*) FILTER (
                 WHERE status = 'NOT_PAID'::"WorkEntryStatus"
               ) as "notpaidcount",
-
-              COALESCE(SUM(hours), 0) as "totalhours",
-
-              COALESCE(SUM(overtime), 0) as "totalovertime"
+              
+              COALESCE(SUM(amount), 0) as "amount",
 
             FROM "WorkEntry"
             WHERE "paymentId" = ${paymentId}::text
@@ -2607,8 +2480,7 @@ export const updateWorkEntriesStatus = async (req: Request, res: Response) => {
           const paidCount = Number(stats.paidcount);
           const notPaidCount = Number(stats.notpaidcount);
 
-          const totalHours = Number(stats.totalhours);
-          const totalOvertime = Number(stats.totalovertime);
+          const totalAmount = Number(stats.amount);
 
           // CASE 1: ALL entries became NOT_PAID DELETE payment
           if (notPaidCount === totalEntries) {
