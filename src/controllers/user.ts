@@ -1,13 +1,10 @@
 import e, { type Request, type Response } from "express";
 import asyncHandler from "express-async-handler";
 import bcrypt from "bcryptjs";
-import uploadToD from "../utils/googleDrive.js";
-import { google } from "googleapis";
 import sendEmail from "../utils/mail.js";
 import prisma from "../../prisma/config.js";
 import handleError from "../utils/errorHandler.js";
 import { validateEmail } from "../utils/emailVerification.js";
-import { uploadToDrive } from "../middleware/image-upload.js";
 import { uploadToSupabase } from "../utils/uploadToSupabase.js";
 import { validateUser, validateMonthNotLocked } from "../middleware/validation";
 import {
@@ -15,43 +12,6 @@ import {
   generateRefreshToken,
   generateOTP,
 } from "../utils/generate.js";
-
-const auth = new google.auth.GoogleAuth({
-  keyFile: "utils/credentials.json",
-  scopes: ["https://www.googleapis.com/auth/drive.readonly"],
-});
-
-export const getImage = async (req: Request, res: Response) => {
-  const fileId = Array.isArray(req.params?.id)
-    ? req.params.id[0]
-    : req.params?.id;
-
-  if (!fileId) {
-    return res.status(400).send("File ID is required");
-  }
-
-  try {
-    const authClient: any = await auth.getClient();
-    const drive = google.drive({ version: "v3", auth: authClient });
-
-    const fileResponse = await drive.files.get(
-      { fileId: fileId, alt: "media" },
-      { responseType: "stream" },
-    );
-
-    res.setHeader("Content-Type", "image/jpeg");
-
-    fileResponse.data
-      .on("error", (err) => {
-        console.error("Stream Error:", err.message);
-        res.sendStatus(500);
-      })
-      .pipe(res);
-  } catch (err: any) {
-    console.error("Google Drive fetch error:", err.message);
-    res.status(404).send("Image not found or access denied");
-  }
-};
 
 export const getForemen = async (req: Request, res: Response) => {
   try {
