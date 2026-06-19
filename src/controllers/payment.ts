@@ -2036,145 +2036,145 @@ export const getPaymentSites = async (req: Request, res: Response) => {
 };
 
 // Get payment statistics
-export const getPaymentStatistics = async (req: Request, res: Response) => {
-  const userId = req.user?.id;
-  const userRole = req.user?.role;
+// export const getPaymentStatistics = async (req: Request, res: Response) => {
+//   const userId = req.user?.id;
+//   const userRole = req.user?.role;
 
-  try {
-    let siteFilter = "";
-    const params: any[] = [];
-    let paramIndex = 1;
+//   try {
+//     let siteFilter = "";
+//     const params: any[] = [];
+//     let paramIndex = 1;
 
-    if (userRole === "OWNER") {
-      siteFilter = `WHERE s."ownerId" = $${paramIndex}::uuid`;
-      params.push(userId);
-      paramIndex++;
-    } else if (userRole === "FOREMAN") {
-      siteFilter = `WHERE s."foremanId" = $${paramIndex}::uuid`;
-      params.push(userId);
-      paramIndex++;
-    }
+//     if (userRole === "OWNER") {
+//       siteFilter = `WHERE s."ownerId" = $${paramIndex}::uuid`;
+//       params.push(userId);
+//       paramIndex++;
+//     } else if (userRole === "FOREMAN") {
+//       siteFilter = `WHERE s."foremanId" = $${paramIndex}::uuid`;
+//       params.push(userId);
+//       paramIndex++;
+//     }
 
-    const statistics = await prisma.$queryRawUnsafe(
-      `SELECT 
-        COUNT(*) FILTER (WHERE p.status = 'PENDING') as "pendingCount",
-        COUNT(*) FILTER (WHERE p.status = 'APPROVED') as "approvedCount",
-        COUNT(*) FILTER (WHERE p.status = 'PAID') as "paidCount",
-        COUNT(*) FILTER (WHERE p.status = 'REVIEW') as "reviewCount",
-        COUNT(*) FILTER (WHERE p.status = 'REJECTED') as "rejectedCount",
-        COALESCE(SUM(p."totalAmount") FILTER (WHERE p.status = 'PENDING'), 0) as "pendingAmount",
-        COALESCE(SUM(p."totalAmount") FILTER (WHERE p.status = 'APPROVED'), 0) as "approvedAmount",
-        COALESCE(SUM(p."totalAmount") FILTER (WHERE p.status = 'PAID'), 0) as "paidAmount",
-        COUNT(DISTINCT p."batchId") as "totalBatches"
-      FROM "Payment" p
-      INNER JOIN "Site" s ON p."siteId" = s.id
-      ${siteFilter}`,
-      ...params,
-    );
+//     const statistics = await prisma.$queryRawUnsafe(
+//       `SELECT
+//         COUNT(*) FILTER (WHERE p.status = 'PENDING') as "pendingCount",
+//         COUNT(*) FILTER (WHERE p.status = 'APPROVED') as "approvedCount",
+//         COUNT(*) FILTER (WHERE p.status = 'PAID') as "paidCount",
+//         COUNT(*) FILTER (WHERE p.status = 'REVIEW') as "reviewCount",
+//         COUNT(*) FILTER (WHERE p.status = 'REJECTED') as "rejectedCount",
+//         COALESCE(SUM(p."totalAmount") FILTER (WHERE p.status = 'PENDING'), 0) as "pendingAmount",
+//         COALESCE(SUM(p."totalAmount") FILTER (WHERE p.status = 'APPROVED'), 0) as "approvedAmount",
+//         COALESCE(SUM(p."totalAmount") FILTER (WHERE p.status = 'PAID'), 0) as "paidAmount",
+//         COUNT(DISTINCT p."batchId") as "totalBatches"
+//       FROM "Payment" p
+//       INNER JOIN "Site" s ON p."siteId" = s.id
+//       ${siteFilter}`,
+//       ...params,
+//     );
 
-    return res.status(200).json({
-      success: true,
-      statistics: statistics[0],
-    });
-  } catch (error) {
-    console.error("Error fetching payment statistics:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to fetch statistics",
-      error: error instanceof Error ? error.message : String(error),
-    });
-  }
-};
+//     return res.status(200).json({
+//       success: true,
+//       statistics: statistics[0],
+//     });
+//   } catch (error) {
+//     console.error("Error fetching payment statistics:", error);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Failed to fetch statistics",
+//       error: error instanceof Error ? error.message : String(error),
+//     });
+//   }
+// };
 
 // Export payments to CSV
-export const exportPayments = async (req: Request, res: Response) => {
-  const { status, siteId, startDate, endDate } = req.query;
+// export const exportPayments = async (req: Request, res: Response) => {
+//   const { status, siteId, startDate, endDate } = req.query;
 
-  try {
-    let whereClause = "WHERE 1=1";
-    const params: any[] = [];
-    let paramIndex = 1;
+//   try {
+//     let whereClause = "WHERE 1=1";
+//     const params: any[] = [];
+//     let paramIndex = 1;
 
-    if (status && status !== "all") {
-      whereClause += ` AND p.status = $${paramIndex}::"PaymentStatus"`;
-      params.push(status);
-      paramIndex++;
-    }
+//     if (status && status !== "all") {
+//       whereClause += ` AND p.status = $${paramIndex}::"PaymentStatus"`;
+//       params.push(status);
+//       paramIndex++;
+//     }
 
-    if (siteId) {
-      whereClause += ` AND p."siteId" = $${paramIndex}::uuid`;
-      params.push(siteId);
-      paramIndex++;
-    }
+//     if (siteId) {
+//       whereClause += ` AND p."siteId" = $${paramIndex}::uuid`;
+//       params.push(siteId);
+//       paramIndex++;
+//     }
 
-    if (startDate) {
-      whereClause += ` AND p."createdAt" >= $${paramIndex}::timestamp`;
-      params.push(startDate);
-      paramIndex++;
-    }
+//     if (startDate) {
+//       whereClause += ` AND p."createdAt" >= $${paramIndex}::timestamp`;
+//       params.push(startDate);
+//       paramIndex++;
+//     }
 
-    if (endDate) {
-      whereClause += ` AND p."createdAt" <= $${paramIndex}::timestamp`;
-      params.push(endDate);
-      paramIndex++;
-    }
+//     if (endDate) {
+//       whereClause += ` AND p."createdAt" <= $${paramIndex}::timestamp`;
+//       params.push(endDate);
+//       paramIndex++;
+//     }
 
-    const payments = await prisma.$queryRawUnsafe(
-      `SELECT 
-        p.id,
-        u.name as "Worker Name",
-        s.name as "Site Name",
-        p.month,
-        p.year,
-        p."totalHours" as "Total Hours",
-        p."totalAmount" as "Total Amount",
-        p.status as "Status",
-        p."createdAt" as "Created At",
-        p."approvedAt" as "Approved At",
-        p."paidAt" as "Paid At",
-        p."batchId" as "Batch ID"
-      FROM "Payment" p
-      INNER JOIN "User" u ON p."workerId" = u.id
-      INNER JOIN "Site" s ON p."siteId" = s.id
-      ${whereClause}
-      ORDER BY p."createdAt" DESC`,
-      ...params,
-    );
+//     const payments = await prisma.$queryRawUnsafe(
+//       `SELECT
+//         p.id,
+//         u.name as "Worker Name",
+//         s.name as "Site Name",
+//         p.month,
+//         p.year,
+//         p."totalHours" as "Total Hours",
+//         p."totalAmount" as "Total Amount",
+//         p.status as "Status",
+//         p."createdAt" as "Created At",
+//         p."approvedAt" as "Approved At",
+//         p."paidAt" as "Paid At",
+//         p."batchId" as "Batch ID"
+//       FROM "Payment" p
+//       INNER JOIN "User" u ON p."workerId" = u.id
+//       INNER JOIN "Site" s ON p."siteId" = s.id
+//       ${whereClause}
+//       ORDER BY p."createdAt" DESC`,
+//       ...params,
+//     );
 
-    // Convert to CSV
-    const csvRows = [];
-    const headers = Object.keys(payments[0] || {});
-    csvRows.push(headers.join(","));
+//     // Convert to CSV
+//     const csvRows = [];
+//     const headers = Object.keys(payments[0] || {});
+//     csvRows.push(headers.join(","));
 
-    for (const payment of payments as any[]) {
-      const values = headers.map((header) => {
-        const value = payment[header];
-        if (value === null || value === undefined) return "";
-        if (typeof value === "string" && value.includes(","))
-          return `"${value}"`;
-        if (value instanceof Date) return value.toISOString();
-        return value;
-      });
-      csvRows.push(values.join(","));
-    }
+//     for (const payment of payments as any[]) {
+//       const values = headers.map((header) => {
+//         const value = payment[header];
+//         if (value === null || value === undefined) return "";
+//         if (typeof value === "string" && value.includes(","))
+//           return `"${value}"`;
+//         if (value instanceof Date) return value.toISOString();
+//         return value;
+//       });
+//       csvRows.push(values.join(","));
+//     }
 
-    const csvContent = csvRows.join("\n");
+//     const csvContent = csvRows.join("\n");
 
-    res.setHeader("Content-Type", "text/csv");
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename=payments_export_${Date.now()}.csv`,
-    );
-    return res.status(200).send(csvContent);
-  } catch (error) {
-    console.error("Error exporting payments:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to export payments",
-      error: error instanceof Error ? error.message : String(error),
-    });
-  }
-};
+//     res.setHeader("Content-Type", "text/csv");
+//     res.setHeader(
+//       "Content-Disposition",
+//       `attachment; filename=payments_export_${Date.now()}.csv`,
+//     );
+//     return res.status(200).send(csvContent);
+//   } catch (error) {
+//     console.error("Error exporting payments:", error);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Failed to export payments",
+//       error: error instanceof Error ? error.message : String(error),
+//     });
+//   }
+// };
 
 // Get payment summary by date range
 export const getPaymentSummary = async (req: Request, res: Response) => {

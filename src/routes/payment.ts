@@ -79,7 +79,7 @@ router.post(
 
 // ==================== SINGLE PAYMENT ACTIONS ====================
 
-// Approve a single payment
+// Approve a single payment.
 router.post(
   "/:paymentId/approve",
   verifyToken,
@@ -193,22 +193,6 @@ router.get(
   verifyToken,
   authorize(["FOREMAN", "OWNER"]),
   paymentController.getPaymentSites,
-);
-
-// Get payment statistics/dashboard data
-router.get(
-  "/statistics",
-  verifyToken,
-  authorize(["FOREMAN", "OWNER"]),
-  paymentController.getPaymentStatistics,
-);
-
-// Export payments to CSV/Excel
-router.get(
-  "/export",
-  verifyToken,
-  authorize(["FOREMAN", "OWNER"]),
-  paymentController.exportPayments,
 );
 
 // Get payment summary by date range
