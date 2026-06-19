@@ -8,7 +8,6 @@ import {
   verifyEmail,
   //uploadImage,
   getActiveSiteWorkers,
-  getImage,
   getForemen,
   updateUser,
   getAllUsers,
@@ -90,6 +89,6 @@ router.patch("/resetPassword", resetPassword);
 router.get("/foremen", verifyToken, authorize(["OWNER"]), getForemen);
 
 //router.post("/upload", upload.single("image"), uploadImage);
-router.get("/images/:id", getImage);
+//crouter.get("/images/:id", getImage);
 
 export default router;
