@@ -2,7 +2,7 @@
 
 ## Overview
 
-The **Attendance & Payroll Management API Server** ```https://prisma-gold-chi.vercel.app/``` is the backend service powering the Attendance & Payroll Management Web Application.
+The **Attendance & Payroll Management API Server** [Live API Server](https://prisma-gold-chi.vercel.app/) is the backend service powering the Attendance & Payroll Management Web Application.
 
 This server provides secure REST API endpoints responsible for:
 
@@ -41,15 +41,13 @@ It provides:
 
 Frontend Repository:
 
-```
-https://github.com/sserwangaedrisa/labor_App_API
-```
+[Frontend repo] (https://github.com/sserwangaedrisa/labor_App_API)
+
 
 Live Application:
 
-```
-Live frontend app
-```
+[Live Frontend Application](INSERT_FRONTEND_URL_HERE)
+
 
 ---
 
@@ -186,203 +184,8 @@ Reports help company owners make better management decisions using accurate data
 
 ---
 
-# API Endpoints
 
-Base URL:
 
-```
-https://prisma-gold-chi.vercel.app
-```
-
----
-
-
-
-## Login User
-
-```
-POST /auth/login
-```
-
-Authenticates a user and generates a secure session.
-
----
-
-## Logout User
-
-```
-POST /auth/logout
-```
-
-Ends the current user session.
-
----
-
-# Attendance Endpoints
-
-## Create Attendance Record
-
-```
-POST /attendance
-```
-
-Creates a new worker attendance entry.
-
----
-
-## Get Attendance Records
-
-```
-GET /attendance
-```
-
-Retrieves attendance records.
-
----
-
-## Get Worker Attendance
-
-```
-GET /attendance/:workerId
-```
-
-Returns attendance history for a specific worker.
-
----
-
-## Update Attendance
-
-```
-PATCH /attendance/:id
-```
-
-Updates an existing attendance record.
-
----
-
-## Delete Attendance
-
-```
-DELETE /attendance/:id
-```
-
-Removes an attendance record.
-
----
-
-# Payment Endpoints
-
-## Create Payment Request
-
-```
-POST /payments
-```
-
-Creates a new worker payment request.
-
----
-
-## Get Payments
-
-```
-GET /payments
-```
-
-Returns payment records.
-
----
-
-## Review Payment Request
-
-```
-GET /payments/:id
-```
-
-Retrieves details of a specific payment request.
-
----
-
-## Approve Payment
-
-```
-PATCH /payments/:id/approve
-```
-
-Approves a worker payment request.
-
----
-
-## Reject Payment
-
-```
-PATCH /payments/:id/reject
-```
-
-Rejects a payment request.
-
----
-
-## Mark Payment As Paid
-
-```
-PATCH /payments/:id/pay
-```
-
-Confirms payment completion.
-
----
-
-## Update Payment
-
-```
-PATCH /payments/:id
-```
-
-Updates payment details.
-
----
-
-## Delete Payment
-
-```
-DELETE /payments/:id
-```
-
-Deletes a payment record.
-
----
-
-# Reports Endpoints
-
-## Generate Attendance Report
-
-```
-GET /reports/attendance
-```
-
-Generates attendance reports.
-
----
-
-## Generate Payment Report
-
-```
-GET /reports/payments
-```
-
-Generates payroll reports.
-
----
-
-## Company Operations Report
-
-```
-GET /reports/company
-```
-
-Returns company operation statistics.
-
----
 
 # Installation Guide
 
@@ -391,7 +194,7 @@ Returns company operation statistics.
 ```bash
 git clone https://github.com/sserwangaedrisa/prisma.git
 ```
-
+[Backend Repository](https://github.com/sserwangaedrisa/prisma)
 ---
 
 ## Navigate Into Project
@@ -483,6 +286,7 @@ Click the **Fork** button on GitHub.
 git clone https://github.com/sserwangaedrisa/prisma.git
 ```
 
+
 ---
 
 ## 3. Create A Development Branch
@@ -550,28 +354,21 @@ Open a Pull Request explaining:
 This project is licensed under the MIT License.
 
 ---
-
 # Author
 
 **Sserwanga Edirisa**
 
 GitHub:
 
-```
-https://github.com/sserwangaedrisa
-```
+[https://github.com/sserwangaedrisa](https://github.com/sserwangaedrisa)
 
 Email:
 
-```
-sserwangaedrisa@gmail.com
-```
+[sserwangaedrisa@gmail.com](mailto:sserwangaedrisa@gmail.com)
 
-linkedIn:
+LinkedIn:
 
-```
-https://www.linkedin.com/in/sserwanga-edirisa-808201197/
-```
+[Sserwanga Edirisa LinkedIn](https://www.linkedin.com/in/sserwanga-edirisa-808201197/)
 
 ---
 
