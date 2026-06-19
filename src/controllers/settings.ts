@@ -1,4 +1,4 @@
-import prisma from "../../prisma/config";
+import prisma from "../../prisma/config.js";
 import { Request, Response } from "express";
 
 type Role = "FOREMAN" | "OWNER" | "LABORER" | "WORKER";

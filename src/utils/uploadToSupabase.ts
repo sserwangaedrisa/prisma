@@ -1,4 +1,4 @@
-import { supabase } from "../config/supabase";
+import { supabase } from "../config/supabase.js";
 
 export const uploadToSupabase = async (file: Express.Multer.File) => {
   if (!file || !file.buffer) throw new Error("No file provided");

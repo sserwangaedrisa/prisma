@@ -1,6 +1,6 @@
 import express from "express";
-import verifyToken from "../middleware/auth";
-import { authorize } from "../middleware/authorize";
+import verifyToken from "../middleware/auth.js";
+import { authorize } from "../middleware/authorize.js";
 import {
   getLatestSettings,
   getSettingsByDate,

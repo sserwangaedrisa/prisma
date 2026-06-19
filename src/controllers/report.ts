@@ -1,6 +1,9 @@
 import { Request, Response } from "express";
-import prisma from "../../prisma/config";
-import { validateUser, validateMonthNotLocked } from "../middleware/validation";
+import prisma from "../../prisma/config.js";
+import {
+  validateUser,
+  validateMonthNotLocked,
+} from "../middleware/validation.js";
 
 // ----------------------------------------------------------------------
 // Helpers
@@ -750,7 +753,9 @@ export const getWorkersSummary = async (req: Request, res: Response) => {
       },
     });
 
-    const workerDetailsMap = new Map(workersDetails.map((w) => [w.id, w]));
+    const workerDetailsMap = new Map<string, (typeof workersDetails)[number]>(
+      workersDetails.map((w) => [w.id, w]),
+    );
 
     // 4. PAYMENT AGGREGATION (only for paginated workers – no extra search needed)
     const paymentParams = [

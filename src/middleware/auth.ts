@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import prisma from "../../prisma/config";
+import prisma from "../../prisma/config.js";
 import { type Request, type Response, type NextFunction } from "express";
 
 interface DecodedToken {
