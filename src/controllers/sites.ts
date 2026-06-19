@@ -180,15 +180,17 @@ export const getAllSites = async (req: Request, res: Response) => {
     const userRole = req.user?.role;
 
     // Pagination parameters
-    const page = parseInt(normalizeString(req.query.page) ?? "1", 10) || 1;
-    const limit = parseInt(normalizeString(req.query.limit) ?? "10", 10) || 10;
+    const page =
+      parseInt(normalizeString(req.query.page as string) ?? "1", 10) || 1;
+    const limit =
+      parseInt(normalizeString(req.query.limit as string) ?? "10", 10) || 10;
     const skip = (page - 1) * limit;
 
     // Filter parameters
-    const status = normalizeString(req.query.status);
-    const search = normalizeString(req.query.search);
-    const foremanId = normalizeString(req.query.foremanId);
-    const ownerId = normalizeString(req.query.ownerId);
+    const status = normalizeString(req.query.status as string);
+    const search = normalizeString(req.query.search as string);
+    const foremanId = normalizeString(req.query.foremanId as string);
+    const ownerId = normalizeString(req.query.ownerId as string);
 
     // Build where clause based on user role
     let whereClause: any = {};
@@ -593,7 +595,7 @@ export const deleteSite = async (req: Request, res: Response) => {
       existingSite._count.payments > 0 ||
       existingSite._count.monthCloses > 0
     ) {
-      if (permanent === "true") {
+      if (permanent === true) {
         return res.status(400).json({
           success: false,
           message:
