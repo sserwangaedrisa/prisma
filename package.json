@@ -7,7 +7,7 @@
     "start": "node dist/index.js",
     "build": "tsc",
     "postinstall": "prisma generate",
-    "vercel-build": "prisma generate && npm run build"
+    "vercel-build": "prisma generate && tsc --noEmit false --skipLibCheck true --noImplicitAny false --strictNullChecks false && npm run build"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.1.0",
