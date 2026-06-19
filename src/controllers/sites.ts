@@ -2,6 +2,19 @@
 import { Request, Response } from "express";
 import prisma from "../../prisma/config.js";
 
+const normalizeString = (
+  value: string | string[] | undefined,
+): string | undefined => {
+  if (Array.isArray(value)) {
+    return value[0];
+  }
+
+  return value;
+};
+
+const normalizeBoolean = (value: string | string[] | undefined): boolean =>
+  normalizeString(value) === "true";
+
 // Types for request bodies
 interface CreateSiteBody {
   name: string;
@@ -167,12 +180,15 @@ export const getAllSites = async (req: Request, res: Response) => {
     const userRole = req.user?.role;
 
     // Pagination parameters
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 10;
+    const page = parseInt(normalizeString(req.query.page) ?? "1", 10) || 1;
+    const limit = parseInt(normalizeString(req.query.limit) ?? "10", 10) || 10;
     const skip = (page - 1) * limit;
 
     // Filter parameters
-    const { status, search, foremanId, ownerId } = req.query;
+    const status = normalizeString(req.query.status);
+    const search = normalizeString(req.query.search);
+    const foremanId = normalizeString(req.query.foremanId);
+    const ownerId = normalizeString(req.query.ownerId);
 
     // Build where clause based on user role
     let whereClause: any = {};
@@ -192,11 +208,11 @@ export const getAllSites = async (req: Request, res: Response) => {
 
     // Apply additional filters
     if (foremanId) {
-      whereClause.foremanId = foremanId as string;
+      whereClause.foremanId = foremanId;
     }
 
     if (ownerId && userRole === "ADMIN") {
-      whereClause.ownerId = ownerId as string;
+      whereClause.ownerId = ownerId;
     }
 
     if (search) {
@@ -288,7 +304,13 @@ export const getAllSites = async (req: Request, res: Response) => {
  */
 export const getSiteById = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = normalizeString(req.params.id as string | string[] | undefined);
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "Site ID is required",
+      });
+    }
     const userId = req.user?.id;
     const userRole = req.user?.role;
 
@@ -398,7 +420,13 @@ export const getSiteById = async (req: Request, res: Response) => {
  */
 export const updateSite = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = normalizeString(req.params.id as string | string[] | undefined);
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "Site ID is required",
+      });
+    }
     const userId = req.user?.id;
     const userRole = req.user?.role;
     const updateData: UpdateSiteBody = req.body;
@@ -517,10 +545,18 @@ export const updateSite = async (req: Request, res: Response) => {
  */
 export const deleteSite = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = normalizeString(req.params.id as string | string[] | undefined);
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "Site ID is required",
+      });
+    }
     const userId = req.user?.id;
     const userRole = req.user?.role;
-    const { permanent = false } = req.query;
+    const permanent = normalizeBoolean(
+      req.query.permanent as string | string[] | undefined,
+    );
 
     // Check if site exists
     const existingSite = await prisma.site.findUnique({
@@ -618,7 +654,13 @@ export const deleteSite = async (req: Request, res: Response) => {
  */
 export const archiveSite = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = normalizeString(req.params.id as string | string[] | undefined);
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "Site ID is required",
+      });
+    }
     const userId = req.user?.id;
     const userRole = req.user?.role;
 
@@ -662,7 +704,13 @@ export const archiveSite = async (req: Request, res: Response) => {
  */
 export const getSiteStats = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = normalizeString(req.params.id as string | string[] | undefined);
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "Site ID is required",
+      });
+    }
 
     const stats = await prisma.$transaction([
       prisma.workEntry.count({

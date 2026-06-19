@@ -374,6 +374,7 @@ interface WorkEntryAggregateRow {
   total_overtime: number | string;
   unique_workers: number | string;
   unique_sites: number | string;
+  total_amount: number | string;
   site_id: string;
   site_name: string;
   site_hours: number | string;
@@ -398,18 +399,16 @@ export const getCompanyReport = async (req: Request, res: Response) => {
       endStr as string,
     );
 
-    // 1. Work entries aggregation – strongly typed raw query
+    // 1. Work entries aggregation
     const workAggResult: WorkEntryAggregateRow[] = await prisma.$queryRaw`
       SELECT
         COALESCE(SUM(we.hours), 0) AS total_hours,
         COALESCE(SUM(we.overtime), 0) AS total_overtime,
         COUNT(DISTINCT we."workerId") AS unique_workers,
         COUNT(DISTINCT we."siteId") AS unique_sites,
+        COALESCE(SUM(we.amount), 0) AS total_amount,
         we."siteId" AS site_id,
-        s.name AS site_name,
-        COALESCE(SUM(we.hours), 0) AS site_hours,
-        COALESCE(SUM(we.overtime), 0) AS site_overtime,
-        COUNT(DISTINCT we."workerId") AS site_unique_workers
+        s.name AS site_name
       FROM "WorkEntry" we
       JOIN "Site" s ON we."siteId" = s.id
       WHERE we.date BETWEEN ${startDate} AND ${endDate}
@@ -422,7 +421,7 @@ export const getCompanyReport = async (req: Request, res: Response) => {
     const totalOvertime = firstRow ? toNumber(firstRow.total_overtime) : 0;
     const uniqueWorkers = firstRow ? toNumber(firstRow.unique_workers) : 0;
     const uniqueSites = firstRow ? toNumber(firstRow.unique_sites) : 0;
-
+    const totalAmount = firstRow ? toNumber(firstRow.total_amount) : 0;
     // Build site breakdown with proper number conversion
     const formattedSiteBreakdown = workAggResult.map((row) => ({
       siteId: row.site_id,
@@ -430,6 +429,7 @@ export const getCompanyReport = async (req: Request, res: Response) => {
       totalHours: toNumber(row.site_hours),
       totalOvertime: toNumber(row.site_overtime),
       uniqueWorkers: toNumber(row.site_unique_workers),
+      totalAmount: toNumber(row.total_amount),
     }));
 
     type PaymentStatus =
@@ -474,6 +474,7 @@ export const getCompanyReport = async (req: Request, res: Response) => {
         totalOvertime: toNumber(totalOvertime),
         uniqueWorkers: toNumber(uniqueWorkers),
         uniqueSites: toNumber(uniqueSites),
+        totalAmount: toNumber(totalAmount),
         totalPaidAmount: amountsByStatus.PAID,
         totalApprovedAmount: amountsByStatus.APPROVED,
         totalRejectedAmount: amountsByStatus.REJECTED,
@@ -495,6 +496,7 @@ export const getCompanyReport = async (req: Request, res: Response) => {
 interface SiteWorkAggregateRow {
   total_hours: number | string;
   total_overtime: number | string;
+  total_amount: number | string;
   unique_workers: number | string;
 }
 
@@ -531,6 +533,7 @@ export const getSiteReport = async (req: Request, res: Response) => {
       SELECT
         COALESCE(SUM(we.hours), 0) AS total_hours,
         COALESCE(SUM(we.overtime), 0) AS total_overtime,
+        COALESCE(SUM(we.amount), 0 ) AS total_amount,
         COUNT(DISTINCT we."workerId") AS unique_workers
       FROM "WorkEntry" we
       WHERE we."siteId" = ${siteId}
@@ -541,7 +544,7 @@ export const getSiteReport = async (req: Request, res: Response) => {
     const totalHours = firstRow ? toNumber(firstRow.total_hours) : 0;
     const totalOvertime = firstRow ? toNumber(firstRow.total_overtime) : 0;
     const uniqueWorkers = firstRow ? toNumber(firstRow.unique_workers) : 0;
-
+    const totalAmount = firstRow ? toNumber(firstRow.total_amount) : 0;
     // 2. Payments aggregation (count + sum by status)
     const paymentAgg = await prisma.payment.groupBy({
       by: ["status"],
@@ -572,7 +575,7 @@ export const getSiteReport = async (req: Request, res: Response) => {
       };
     }
 
-    res.json({
+    return res.json({
       success: true,
       site: { id: site.id, name: site.name, location: site.location },
       dateRange: { startDate, endDate },
@@ -580,6 +583,7 @@ export const getSiteReport = async (req: Request, res: Response) => {
         totalHours,
         totalOvertime,
         uniqueWorkers,
+        totalAmount,
         paymentBreakdown: {
           paid: amountsByStatus.PAID,
           approved: amountsByStatus.APPROVED,
@@ -647,12 +651,14 @@ export const getWorkersSummary = async (req: Request, res: Response) => {
         totalHours: number;
         totalOvertime: number;
         totalWorkEntries: bigint;
+        totalAmount: number;
         totalWorkers: bigint;
       }>
     >(
       `SELECT 
         COALESCE(SUM("hours"), 0)::double precision as "totalHours",
         COALESCE(SUM("overtime"), 0)::double precision as "totalOvertime",
+        COALESCE(SUM("amount"), 0)::double precision as "totalAmount",
         COUNT("id") as "totalWorkEntries",
         COUNT(DISTINCT "workerId") as "totalWorkers"
       FROM "WorkEntry"
@@ -665,6 +671,7 @@ export const getWorkersSummary = async (req: Request, res: Response) => {
       totalOvertime: Number(overallAgg[0]?.totalOvertime ?? 0),
       totalWorkers: Number(overallAgg[0]?.totalWorkers ?? 0),
       totalWorkEntries: Number(overallAgg[0]?.totalWorkEntries ?? 0),
+      totalAmount: Number(overallAgg[0]?.totalAmount ?? 0),
     };
 
     // Early exit if no workers match
@@ -693,6 +700,7 @@ export const getWorkersSummary = async (req: Request, res: Response) => {
         totalOvertime: number;
         workEntriesCount: bigint;
         sitesWorkedCount: bigint;
+        totalAmount: number;
       }>
     >(
       `SELECT 
@@ -700,7 +708,8 @@ export const getWorkersSummary = async (req: Request, res: Response) => {
         SUM("hours")::double precision as "totalHours",
         SUM("overtime")::double precision as "totalOvertime",
         COUNT("id") as "workEntriesCount",
-        COUNT(DISTINCT "siteId") as "sitesWorkedCount"
+        COUNT(DISTINCT "siteId") as "sitesWorkedCount",
+        COALESCE(SUM("amount"), 0)::double precision as "totalAmount"
       FROM "WorkEntry"
       WHERE "date" >= $1 AND "date" <= $2 ${siteCondition} ${searchCondition}
       GROUP BY "workerId"
@@ -770,7 +779,7 @@ export const getWorkersSummary = async (req: Request, res: Response) => {
       ...paymentParams,
     );
 
-    // Build payment summary map
+    // Building payment summary map
     const paymentSummaryMap = new Map<
       string,
       Record<string, { count: number; amount: number }>
@@ -814,6 +823,7 @@ export const getWorkersSummary = async (req: Request, res: Response) => {
           workerPhone: details.phone,
           wageRating: details.wageRating,
           totalHours: Number(work.totalHours),
+          totalAmount: Number(work.totalAmount),
           imageUrl: details.imageUrl,
           totalOvertime: Number(work.totalOvertime),
           sitesWorkedCount: Number(work.sitesWorkedCount),

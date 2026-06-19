@@ -3,3 +3,5 @@ dist/
 *.env
 *service-account.json
 temp/
+tsc-errors.txt
+tsc-output.log
