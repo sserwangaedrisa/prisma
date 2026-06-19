@@ -1,9 +1,9 @@
 // routes/siteRoutes.ts
 import { Router } from "express";
 import verifyToken from "../middleware/auth.js";
-import { authorize } from "../middleware/authorize";
-import * as SiteController from "../controllers/sites";
-import { upload } from "../middleware/multer";
+import { authorize } from "../middleware/authorize.js";
+import * as SiteController from "../controllers/sites.js";
+import { upload } from "../middleware/multer.js";
 
 const router = Router();
 

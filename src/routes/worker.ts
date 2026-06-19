@@ -1,7 +1,7 @@
-import * as workerControllers from "../controllers/worker";
+import * as workerControllers from "../controllers/worker.js";
 import verifyToken from "../middleware/auth.js";
 import { Router } from "express";
-import { upload } from "../middleware/multer";
+import { upload } from "../middleware/multer.js";
 import { appendFile } from "fs";
 
 const router = Router();

@@ -761,7 +761,7 @@ export const bulkCreateWorkEntries = async (
       },
     });
 
-    const existingMap = new Map(
+    const existingMap = new Map<string, (typeof existingEntries)[number]>(
       existingEntries.map((entry) => [entry.workerId, entry]),
     );
 

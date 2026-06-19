@@ -1,6 +1,6 @@
 process.env.TZ = "Asia/Dubai";
 import "dotenv/config";
-import { PrismaClient } from "../prisma/generated/client";
+import { PrismaClient } from "../prisma/generated/client.js";
 import { PrismaPg } from "@prisma/adapter-pg";
 import express, {
   type Application,
@@ -17,13 +17,13 @@ import http from "http";
 import path from "path";
 import { fileURLToPath } from "url";
 // routes
-import settingsRoute from "./routes/settings";
+import settingsRoute from "./routes/settings.js";
 import userRoute from "./routes/user.js";
-import workerRoute from "./routes/worker";
-import attendanceRoute from "./routes/attendance";
-import reportRoute from "./routes/report";
-import paymentRoute from "./routes/payment";
-import siteRoute from "./routes/site";
+import workerRoute from "./routes/worker.js";
+import attendanceRoute from "./routes/attendance.js";
+import reportRoute from "./routes/report.js";
+import paymentRoute from "./routes/payment.js";
+import siteRoute from "./routes/site.js";
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
@@ -31,7 +31,7 @@ dotenv.config();
 
 // Swagger components
 import components from "./utils/swagger-components.js";
-import { sitePaymentRequest } from "./controllers/payment";
+import { sitePaymentRequest } from "./controllers/payment.js";
 
 const app: Application = express();
 

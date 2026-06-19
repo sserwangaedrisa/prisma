@@ -6,7 +6,10 @@ import prisma from "../../prisma/config.js";
 import handleError from "../utils/errorHandler.js";
 import { validateEmail } from "../utils/emailVerification.js";
 import { uploadToSupabase } from "../utils/uploadToSupabase.js";
-import { validateUser, validateMonthNotLocked } from "../middleware/validation";
+import {
+  validateUser,
+  validateMonthNotLocked,
+} from "../middleware/validation.js";
 import {
   generateAccessToken,
   generateRefreshToken,

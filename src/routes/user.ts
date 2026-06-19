@@ -24,7 +24,7 @@ import verifyToken from "../middleware/auth.js";
 import { authorize } from "../middleware/authorize.js";
 
 import { Router } from "express";
-import { upload } from "../middleware/multer";
+import { upload } from "../middleware/multer.js";
 import { ActivityLogScalarFieldEnum } from "../../prisma/generated/internal/prismaNamespace.js";
 const router = Router();
 

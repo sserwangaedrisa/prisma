@@ -1,6 +1,6 @@
-import * as attendanceController from "../controllers/attendance";
+import * as attendanceController from "../controllers/attendance.js";
 import verifyToken from "../middleware/auth.js";
-import { authorize } from "../middleware/authorize";
+import { authorize } from "../middleware/authorize.js";
 import { Router } from "express";
 
 const router = Router();

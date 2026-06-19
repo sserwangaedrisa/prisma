@@ -1,7 +1,10 @@
-import prisma from "../../prisma/config";
+import prisma from "../../prisma/config.js";
 import type { Request, Response } from "express";
-import { validateUser, validateMonthNotLocked } from "../middleware/validation";
-import { PaymentStatus, Prisma } from "../../prisma/generated/client";
+import {
+  validateUser,
+  validateMonthNotLocked,
+} from "../middleware/validation.js";
+import { PaymentStatus, Prisma } from "../../prisma/generated/client.js";
 
 interface worker {
   id: string;

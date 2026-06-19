@@ -1,6 +1,6 @@
 import express from "express";
-import { authorize } from "../middleware/authorize";
-import verifyToken from "../middleware/auth";
+import { authorize } from "../middleware/authorize.js";
+import verifyToken from "../middleware/auth.js";
 
 import {
   getSiteSummaries,
@@ -10,7 +10,7 @@ import {
   getCompanyReport,
   getSiteReport,
   getWorkersSummary,
-} from "../controllers/report";
+} from "../controllers/report.js";
 
 const router = express.Router();
 

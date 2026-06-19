@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import Joi from "joi";
-import prisma from "../../prisma/config";
+import prisma from "../../prisma/config.js";
 
 // users start
 export const registerUserPolicy = async (

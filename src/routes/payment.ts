@@ -1,7 +1,7 @@
-import * as paymentController from "../controllers/payment";
+import * as paymentController from "../controllers/payment.js";
 import { Router } from "express";
-import { authorize } from "../middleware/authorize";
-import verifyToken from "../middleware/auth";
+import { authorize } from "../middleware/authorize.js";
+import verifyToken from "../middleware/auth.js";
 
 const router = Router();
 
