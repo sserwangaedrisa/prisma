@@ -625,7 +625,6 @@ export const deleteSite = async (req: Request, res: Response) => {
         action: "DELETE",
         entity: "Site",
         entityId: id,
-        details: `Site "${existingSite.name}" was deleted`,
       },
     });
 
