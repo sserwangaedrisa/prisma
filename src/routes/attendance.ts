@@ -1,7 +1,6 @@
 import * as attendanceController from "../controllers/attendance";
 import verifyToken from "../middleware/auth.js";
 import { authorize } from "../middleware/authorize";
-import { isAdmin } from "../middleware/role.js";
 import { Router } from "express";
 
 const router = Router();

@@ -2298,14 +2298,13 @@ export const updateWorkEntriesStatus = async (req: Request, res: Response) => {
 
       const updatedEntryCount = updatedWorkEntriesRaw.length;
 
-      const affectedPaymentIds = [
-        ...new Set(
+      const affectedPaymentIds = Array.from(
+        new Set(
           updatedWorkEntriesRaw
             .map((row) => row.paymentId)
             .filter((id): id is string => id !== null),
         ),
-      ];
-
+      );
       const updatedPayments = [];
 
       if (status === "PAID" || status === "NOT_PAID") {
