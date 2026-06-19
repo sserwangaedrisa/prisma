@@ -598,7 +598,13 @@ export const getWorkerWorkEntries = async (
 
     // Calculate totals
     const totals = workEntries.reduce(
-      (acc, entry) => ({
+      (
+        acc: {
+          totalHours: number;
+          totalOvertime: number;
+        },
+        entry,
+      ) => ({
         totalHours: acc.totalHours + entry.hours,
         totalOvertime: acc.totalOvertime + entry.overtime,
       }),
