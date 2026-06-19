@@ -82,6 +82,24 @@ app.use(
   express.static(path.join(__dirname, "generated/generated/uploads/blog/")),
 );
 
+app.get("/", (req: Request, res: Response) => {
+  res.status(200).json({
+    success: true,
+    message: "Welcome to the Labor Management API. ",
+    version: "1.0.0",
+    status: "online",
+    timestamp: new Date().toISOString(),
+    endpoints: {
+      auth: "/auth",
+      workers: "/workers",
+      attendance: "/attendance",
+      sites: "/sites",
+      payments: "/payments",
+      users: "/users",
+      reports: "/reports",
+    },
+  });
+});
 app.use("/users", userRoute);
 app.use("/worker", workerRoute);
 app.use("/report", reportRoute);
