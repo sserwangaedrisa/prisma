@@ -1,0 +1,9 @@
+{
+  "buildCommand": "npm run vercel-build",
+  "installCommand": "npm install",
+  "functions": {
+    "src/index.ts": {
+      "runtime": "@vercel/node@2"
+    }
+  }
+}

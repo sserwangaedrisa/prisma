@@ -4,7 +4,10 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "start": "node src/index.ts"
+    "start": "node src/index.ts",
+    "build": "tsc",
+    "postinstall": "prisma generate",
+    "vercel-build": "prisma generate && npm run build"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.1.0",
