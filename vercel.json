@@ -1,9 +1,9 @@
 {
-  "buildCommand": "npm run vercel-build",
-  "installCommand": "npm install",
-  "functions": {
-    "src/index.ts": {
-      "runtime": "@vercel/node@2"
+  "builds": [
+    {
+      "src": "src/index.js",
+      "use": "@vercel/node"
     }
-  }
+  ],
+  "buildCommand": "prisma generate && npm run build"
 }

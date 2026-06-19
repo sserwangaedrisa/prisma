@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "start": "node src/index.ts",
-    "build": "tsc",
+    "build": "prisma generate && npm run build",
     "postinstall": "prisma generate",
     "vercel-build": "prisma generate && npm run build"
   },
